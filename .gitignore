@@ -15,4 +15,6 @@ tmp/
 uploads/
 mysql-data/
 redis-data/
+.local/
+mysql-run/
 MediConnectBD_Day1_Blueprint.zip

@@ -4,11 +4,17 @@ import Redis from "ioredis";
 import { createApiRouter } from "./api-router";
 import { createApp } from "./app";
 import { env } from "./config/env";
-import { AppDataSource } from "./database/data-source";
+import AppDataSource from "./database/data-source";
 import { AccessTokenService } from "./modules/auth/access-token.service";
 import { AuthService } from "./modules/auth/auth.service";
 import { BcryptPasswordHasher } from "./modules/auth/password-hasher";
 import { TypeOrmAuthRepository } from "./modules/auth/typeorm-auth.repository";
+import { DoctorService } from "./modules/doctors/doctor.service";
+import { TypeOrmDoctorRepository } from "./modules/doctors/typeorm-doctor.repository";
+import { SchedulingService } from "./modules/scheduling/scheduling.service";
+import { TypeOrmSchedulingRepository } from "./modules/scheduling/typeorm-scheduling.repository";
+import { AppointmentService } from "./modules/appointments/appointment.service";
+import { TypeOrmAppointmentRepository } from "./modules/appointments/typeorm-appointment.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -31,10 +37,22 @@ async function main(): Promise<void> {
     accessTokens,
     env.REFRESH_TOKEN_TTL_DAYS,
   );
+  const doctorRepository = new TypeOrmDoctorRepository(AppDataSource);
+  const doctorService = new DoctorService(doctorRepository);
+  const schedulingService = new SchedulingService(
+    new TypeOrmSchedulingRepository(AppDataSource),
+    doctorRepository,
+  );
+  const appointmentService = new AppointmentService(
+    new TypeOrmAppointmentRepository(AppDataSource),
+  );
   const apiRouter = createApiRouter({
     authService,
     authRepository,
     accessTokens,
+    doctorService,
+    schedulingService,
+    appointmentService,
     secureCookies: env.NODE_ENV === "production",
   });
 

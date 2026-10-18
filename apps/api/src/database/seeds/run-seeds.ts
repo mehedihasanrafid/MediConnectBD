@@ -1,9 +1,12 @@
 import { hash } from "bcryptjs";
-import { AppDataSource } from "../data-source";
+import AppDataSource from "../data-source";
 import {
   DoctorApplicationStatus,
   DoctorProfile,
 } from "../entities/doctor-profile.entity";
+import { DoctorChamber } from "../entities/doctor-chamber.entity";
+import { ConsultationMode } from "../entities/consultation-mode";
+import { DoctorSchedule } from "../entities/doctor-schedule.entity";
 import { Hospital } from "../entities/hospital.entity";
 import { BiologicalSex, PatientProfile } from "../entities/patient-profile.entity";
 import { Role } from "../entities/role.entity";
@@ -124,19 +127,65 @@ async function seedDemoUsers(roles: Map<string, Role>, password: string): Promis
     passwordHash,
     role: doctorRole,
   });
-  await AppDataSource.getRepository(DoctorProfile).upsert(
+  const doctorRepository = AppDataSource.getRepository(DoctorProfile);
+  await doctorRepository.upsert(
     {
       userId: doctorUser.id,
       bmdcNumber: "DEMO-BMDC-NOT-REAL",
       degrees: "Synthetic credentials for demonstration only",
       experienceYears: 10,
       bio: "Synthetic doctor profile. Not for clinical use.",
+      photoUrl: null,
+      languages: ["Bangla", "English"],
+      videoConsultationFee: "800.00",
       applicationStatus: DoctorApplicationStatus.APPROVED,
       reviewedAt: new Date(),
+      reviewedByUserId: null,
       rejectionReason: null,
     },
     ["userId"],
   );
+
+  const doctorProfile = await doctorRepository.findOneByOrFail({ userId: doctorUser.id });
+  const medicine = await AppDataSource.getRepository(Specialty).findOneByOrFail({
+    slug: "medicine",
+  });
+  doctorProfile.specialties = [medicine];
+  await doctorRepository.save(doctorProfile);
+
+  const demoHospital = await AppDataSource.getRepository(Hospital).findOneByOrFail({
+    slug: "mediconnect-demo-hospital",
+  });
+  await AppDataSource.getRepository(DoctorChamber).upsert(
+    {
+      doctorProfileId: doctorProfile.id,
+      hospitalId: demoHospital.id,
+      roomOrUnit: "Demo Chamber 1",
+      consultationFee: "600.00",
+      isActive: true,
+    },
+    ["doctorProfileId", "hospitalId"],
+  );
+
+  const scheduleRepository = AppDataSource.getRepository(DoctorSchedule);
+  for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek += 1) {
+    let schedule = await scheduleRepository.findOneBy({
+      doctorProfileId: doctorProfile.id,
+      dayOfWeek,
+      startTime: "10:00:00",
+    });
+    schedule ??= scheduleRepository.create({
+      doctorProfileId: doctorProfile.id,
+      dayOfWeek,
+      startTime: "10:00:00",
+    });
+    schedule.endTime = "12:00:00";
+    schedule.slotDurationMinutes = 20;
+    schedule.mode = ConsultationMode.VIDEO;
+    schedule.chamberId = null;
+    schedule.isActive = true;
+    await scheduleRepository.save(schedule);
+  }
 
   await saveDemoUser({
     email: "admin.demo@mediconnect.example",

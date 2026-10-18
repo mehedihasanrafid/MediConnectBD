@@ -14,8 +14,17 @@ MediConnect BD is a browser-based healthcare platform for doctor discovery, appo
 - Docker Compose startup and automated health-route tests.
 - Patient and doctor registration, login, refresh-token rotation, logout, and `/api/v1/me`.
 - Reusable role authorization and immediate suspended-account denial.
+- Doctor profile completion with specialties, languages, video fees, and hospital chambers.
+- Manual admin approval/rejection workflow with reviewer identity and timestamps.
+- Public approved-doctor directory with specialty, hospital, area, name, and fee filters.
+- Public specialty and hospital catalogs with paginated doctor results.
+- Approved-doctor recurring weekly schedules for video and chamber consultations.
+- Full-day and partial-day time off with automatic seven-day slot regeneration.
+- Public availability in `Asia/Dhaka` with UTC storage and a one-hour booking lead time.
+- Transactional ten-minute slot holds with concurrent double-booking protection.
+- Patient appointment creation and history with chamber confirmation and video-payment pending states.
 
-Booking, payment, video, prescriptions, and frontend screens are not implemented yet.
+Payment, video consultations, prescriptions, and frontend screens are not implemented yet.
 
 ## Prerequisites
 
@@ -85,6 +94,12 @@ npm run build
 
 Authentication routes are under `/api/v1/auth`. Access tokens are short-lived bearer JWTs; refresh tokens are hashed in MySQL and rotated through an HTTP-only cookie. See `docs/authentication.md` for requests, responses, and error codes.
 
+Doctor and directory routes are documented in `docs/doctor-directory.md`.
+
+Weekly schedules, time off, and public availability are documented in `docs/scheduling.md`.
+
+Transactional slot holds and patient appointment routes are documented in `docs/appointments.md`.
+
 ## Repository structure
 
 ```text
@@ -110,4 +125,4 @@ compose.yaml
 
 ## Next milestone
 
-Add Redis-backed authentication rate limits, email verification/password reset, session management, and audit events. Then implement admin doctor approval and the public doctor directory before scheduling and booking.
+Add SSLCommerz sandbox payment initiation and verified callbacks for video appointments. Payment success will confirm the appointment; timeout or failure will release the held slot.

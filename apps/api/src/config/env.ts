@@ -11,6 +11,9 @@ const envSchema = z.object({
   DB_USER: z.string().min(1).default("mediconnect_app"),
   DB_PASSWORD: z.string().min(1),
   REDIS_URL: z.string().url().default("redis://localhost:6379"),
+  JWT_ACCESS_SECRET: z.string().min(32),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3600).default(900),
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),

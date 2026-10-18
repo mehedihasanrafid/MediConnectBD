@@ -8,7 +8,8 @@ Date: 2026-10-18
 - Dependency audit: 0 known vulnerabilities reported by npm at installation time.
 - TypeScript strict type checks for shared, API, and worker workspaces: passed.
 - Production TypeScript builds for all workspaces: passed.
-- API health-route tests: 3 passed.
+- API health and authentication tests: 8 passed across 3 test files.
+- Authentication coverage includes refresh-token hashing/rotation/reuse, suspended-account denial, validation errors, and role denial.
 - Compose file YAML parsing, including anchors: passed.
 - Secret-pattern review of tracked source/config: no committed credential value found.
 

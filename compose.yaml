@@ -11,6 +11,9 @@ x-app-environment: &app-environment
   DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
   REDIS_URL: redis://redis:6379
   LOG_LEVEL: ${LOG_LEVEL:-info}
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+  ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-900}
+  REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
 
 services:
   mysql:

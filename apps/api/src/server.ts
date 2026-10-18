@@ -1,9 +1,14 @@
 import "reflect-metadata";
 import { createServer } from "node:http";
 import Redis from "ioredis";
+import { createApiRouter } from "./api-router";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { AppDataSource } from "./database/data-source";
+import { AccessTokenService } from "./modules/auth/access-token.service";
+import { AuthService } from "./modules/auth/auth.service";
+import { BcryptPasswordHasher } from "./modules/auth/password-hasher";
+import { TypeOrmAuthRepository } from "./modules/auth/typeorm-auth.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -15,9 +20,28 @@ async function main(): Promise<void> {
   await redis.connect();
   await redis.ping();
 
+  const authRepository = new TypeOrmAuthRepository(AppDataSource);
+  const accessTokens = new AccessTokenService(
+    env.JWT_ACCESS_SECRET,
+    env.ACCESS_TOKEN_TTL_SECONDS,
+  );
+  const authService = new AuthService(
+    authRepository,
+    new BcryptPasswordHasher(),
+    accessTokens,
+    env.REFRESH_TOKEN_TTL_DAYS,
+  );
+  const apiRouter = createApiRouter({
+    authService,
+    authRepository,
+    accessTokens,
+    secureCookies: env.NODE_ENV === "production",
+  });
+
   const app = createApp({
     appUrl: env.APP_URL,
     logLevel: env.LOG_LEVEL,
+    apiRouter,
     readiness: {
       database: async () => {
         await AppDataSource.query("SELECT 1");

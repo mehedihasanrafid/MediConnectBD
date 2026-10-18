@@ -12,8 +12,10 @@ MediConnect BD is a browser-based healthcare platform for doctor discovery, appo
 - Idempotent seed process for catalogs and optional synthetic demo users.
 - API liveness/readiness checks for MySQL and Redis.
 - Docker Compose startup and automated health-route tests.
+- Patient and doctor registration, login, refresh-token rotation, logout, and `/api/v1/me`.
+- Reusable role authorization and immediate suspended-account denial.
 
-Authentication, booking, payment, video, prescriptions, and frontend screens are not implemented yet.
+Booking, payment, video, prescriptions, and frontend screens are not implemented yet.
 
 ## Prerequisites
 
@@ -24,7 +26,8 @@ Authentication, booking, payment, video, prescriptions, and frontend screens are
 
 1. Copy `.env.example` to `.env`.
 2. Replace both database password placeholders with local-only values.
-3. Start the base platform:
+3. Replace `JWT_ACCESS_SECRET` with at least 32 random characters.
+4. Start the base platform:
 
 ```bash
 docker compose up --build
@@ -78,6 +81,10 @@ npm test
 npm run build
 ```
 
+## Authentication
+
+Authentication routes are under `/api/v1/auth`. Access tokens are short-lived bearer JWTs; refresh tokens are hashed in MySQL and rotated through an HTTP-only cookie. See `docs/authentication.md` for requests, responses, and error codes.
+
 ## Repository structure
 
 ```text
@@ -103,4 +110,4 @@ compose.yaml
 
 ## Next milestone
 
-Implement registration, login, refresh/logout, role checks, suspended-account denial, and role-specific profile endpoints. Booking, payment, and video work should not begin until authentication and migrations are tested.
+Add Redis-backed authentication rate limits, email verification/password reset, session management, and audit events. Then implement admin doctor approval and the public doctor directory before scheduling and booking.

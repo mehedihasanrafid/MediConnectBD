@@ -1,7 +1,11 @@
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import express, { type NextFunction, type Request, type Response } from "express";
+import type { Router } from "express";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
+import { ZodError } from "zod";
+import { AppError } from "./common/errors/app-error";
 import { requestId } from "./common/middleware/request-id";
 import { createHealthRouter, type ReadinessChecks } from "./health/health.routes";
 
@@ -9,6 +13,7 @@ export interface AppOptions {
   appUrl: string;
   logLevel?: string;
   readiness: ReadinessChecks;
+  apiRouter?: Router;
 }
 
 export function createApp(options: AppOptions): express.Express {
@@ -34,6 +39,7 @@ export function createApp(options: AppOptions): express.Express {
     }),
   );
   app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
 
   app.get("/", (_request, response) => {
     response.status(200).json({
@@ -43,6 +49,7 @@ export function createApp(options: AppOptions): express.Express {
     });
   });
   app.use("/health", createHealthRouter(options.readiness));
+  if (options.apiRouter) app.use("/api/v1", options.apiRouter);
 
   app.use((_request, response) => {
     response.status(404).json({
@@ -53,6 +60,27 @@ export function createApp(options: AppOptions): express.Express {
 
   app.use(
     (error: unknown, _request: Request, response: Response, _next: NextFunction) => {
+      if (error instanceof AppError) {
+        response.status(error.statusCode).json({
+          code: error.code,
+          message: error.message,
+          ...(error.details === undefined ? {} : { details: error.details }),
+        });
+        return;
+      }
+
+      if (error instanceof ZodError) {
+        response.status(422).json({
+          code: "VALIDATION_FAILED",
+          message: "The request data is invalid",
+          fieldErrors: error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+        return;
+      }
+
       response.status(500).json({
         code: "INTERNAL_SERVER_ERROR",
         message: "An unexpected error occurred",

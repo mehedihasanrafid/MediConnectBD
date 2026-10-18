@@ -1,8 +1,11 @@
-import "dotenv/config";
+import path from "node:path";
 import { Worker } from "bullmq";
+import { config } from "dotenv";
 import Redis from "ioredis";
 import pino from "pino";
 import { z } from "zod";
+
+config({ path: path.resolve(__dirname, "../../../.env"), quiet: true });
 
 const env = z
   .object({

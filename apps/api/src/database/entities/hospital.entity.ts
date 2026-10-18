@@ -1,4 +1,5 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { DoctorChamber } from "./doctor-chamber.entity";
 
 @Entity({ name: "hospitals" })
 @Index("idx_hospitals_area_active", ["area", "isActive"])
@@ -20,4 +21,7 @@ export class Hospital {
 
   @Column({ name: "is_active", type: "boolean", default: true })
   isActive!: boolean;
+
+  @OneToMany(() => DoctorChamber, (chamber) => chamber.hospital)
+  doctorChambers!: DoctorChamber[];
 }

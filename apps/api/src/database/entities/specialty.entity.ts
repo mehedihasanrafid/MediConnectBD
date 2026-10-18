@@ -1,7 +1,6 @@
 import {
   Column,
   Entity,
-  JoinTable,
   ManyToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -22,10 +21,5 @@ export class Specialty {
   isActive!: boolean;
 
   @ManyToMany(() => DoctorProfile, (doctor) => doctor.specialties)
-  @JoinTable({
-    name: "doctor_specialties",
-    joinColumn: { name: "specialty_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "doctor_id", referencedColumnName: "id" },
-  })
   doctors!: DoctorProfile[];
 }

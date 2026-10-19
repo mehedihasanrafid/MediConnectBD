@@ -10,6 +10,8 @@ Record client decisions here before they become difficult to reverse.
 | D004 | 2026-10-18 | Day-12 delivery is a synthetic-data and sandbox-payment demonstration, not a production clinical launch. | Proposed; client confirmation required | No real patient data or production payments may be used. |
 | D005 | 2026-10-18 | Use managed LiveKit for browser video rather than building WebRTC infrastructure. | Proposed; credentials required | Reduces delivery risk but creates a vendor dependency. |
 | D006 | 2026-10-18 | Admin APIs must never return report, prescription, diagnosis, or consultation-message contents. | Accepted for implementation | Enforced through module boundaries and authorization tests. |
+| D007 | 2026-10-19 | Develop with Node.js and local MySQL/Redis; defer Docker. | Requested by Mehedi | Local defaults and npm commands are the primary development path. |
+| D008 | 2026-10-19 | Match DokanBDbackend's familiar layout using `MediConnectBDbackend/src/modules`, controllers, singular `.schema.ts`, module-owned entities, `routes/v1.ts`, `middlewares`, `utils`, and `tests`. | Requested by Mehedi | Source paths change; API URLs, database table names, transaction logic, migrations, and local npm workflows stay compatible. |
 
 ## Open decisions
 

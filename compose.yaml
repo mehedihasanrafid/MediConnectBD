@@ -71,7 +71,7 @@ services:
       dockerfile: infra/docker/node.Dockerfile
     restart: unless-stopped
     environment: *app-environment
-    command: ["node", "apps/api/dist/server.js"]
+    command: ["node", "MediConnectBDbackend/dist/server.js"]
     ports:
       - "${PORT:-4000}:4000"
     depends_on:
@@ -98,7 +98,7 @@ services:
       dockerfile: infra/docker/node.Dockerfile
     restart: unless-stopped
     environment: *app-environment
-    command: ["node", "apps/worker/dist/worker.js"]
+    command: ["node", "worker/dist/worker.js"]
     depends_on:
       migrate:
         condition: service_completed_successfully

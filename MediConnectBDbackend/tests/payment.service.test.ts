@@ -15,6 +15,7 @@ function fixture() {
     prepare: vi.fn().mockResolvedValue({ payment, created: true }),
     saveSession: vi.fn().mockResolvedValue(payment), findOwned: vi.fn().mockResolvedValue(payment),
     findByTransaction: vi.fn().mockResolvedValue(payment), applyVerified: vi.fn().mockResolvedValue(payment),
+    expireUnpaidHolds: vi.fn().mockResolvedValue({ candidates: 1, expired: 1, protected: 0, skipped: 0 }),
   } satisfies PaymentRepository;
   const provider = { initiate: vi.fn().mockResolvedValue({ sessionId: "session", gatewayUrl: "https://sandbox.sslcommerz.com/pay" }),
     verify: vi.fn().mockResolvedValue(verified) } satisfies PaymentProvider;
@@ -88,6 +89,24 @@ describe("PaymentService", () => {
     const f = fixture();
     await expect(new PaymentService(f.repository, null).initiate("patient", "appointment", "key", customer)).rejects.toMatchObject({ code: "PAYMENTS_NOT_CONFIGURED" });
     expect(f.repository.prepare).not.toHaveBeenCalled();
+  });
+
+  it("runs bounded hold expiry without requiring payment-provider credentials", async () => {
+    const f = fixture();
+    const now = new Date("2026-10-19T10:00:00.000Z");
+    const service = new PaymentService(f.repository, null, () => now);
+
+    const result = await service.expireUnpaidHolds(25);
+
+    expect(result.expired).toBe(1);
+    expect(f.repository.expireUnpaidHolds).toHaveBeenCalledWith(now, 25);
+    expect(f.provider.verify).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsafe worker batch sizes before accessing persistence", async () => {
+    const f = fixture();
+    expect(() => f.service.expireUnpaidHolds(0)).toThrow(/batch size/i);
+    expect(f.repository.expireUnpaidHolds).not.toHaveBeenCalled();
   });
 
   it("normalizes decimal amounts without floating point rounding", () => {

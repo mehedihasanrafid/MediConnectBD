@@ -26,6 +26,7 @@ export enum SlotHoldStatus {
 @Entity({ name: "slot_holds" })
 @Index("idx_slot_holds_slot_status_expiry", ["slotId", "status", "expiresAt"])
 @Index("idx_slot_holds_patient_status", ["patientProfileId", "status"])
+@Index("idx_slot_holds_status_expiry", ["status", "expiresAt"])
 export class SlotHold {
   @PrimaryGeneratedColumn("uuid")
   id!: string;

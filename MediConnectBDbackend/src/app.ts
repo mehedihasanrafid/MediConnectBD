@@ -13,6 +13,7 @@ import pinoHttp from "pino-http";
 import { errorHandler } from "./middlewares/error-handler";
 import { notFound } from "./middlewares/not-found";
 import { requestId } from "./middlewares/request-id";
+import { createOpenApiRouter } from "./docs/openapi.routes";
 import { createHealthRouter, type ReadinessChecks } from "./modules/health/health.routes";
 
 export interface AppOptions {
@@ -51,10 +52,11 @@ export function createApp(options: AppOptions): express.Express {
     response.status(200).json({
       name: "MediConnect BD API",
       version: "0.1.0",
-      documentation: "/api/v1",
+      documentation: "/api-docs",
     });
   });
   app.use("/health", createHealthRouter(options.readiness));
+  app.use(createOpenApiRouter());
   if (options.apiRouter) app.use("/api/v1", options.apiRouter);
 
   app.use(notFound);

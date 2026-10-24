@@ -4,7 +4,11 @@
  * corresponding booking decision.
  */
 
-import type { PaymentView, VerifiedTransaction } from "./payment.types";
+import type {
+  PaymentView,
+  UnpaidHoldExpirationSummary,
+  VerifiedTransaction,
+} from "./payment.types";
 
 export interface PaymentRepository {
   prepare(patientId: string, appointmentId: string, key: string, now: Date, requestHash: string): Promise<{ payment: PaymentView; created: boolean }>;
@@ -15,4 +19,8 @@ export interface PaymentRepository {
    * Record a verified event and change the booking in one locked transaction.
    */
   applyVerified(paymentId: string, transaction: VerifiedTransaction, now: Date): Promise<PaymentView>;
+  /**
+   * Expire a bounded batch of unconfirmed holds while preserving paid/confirmed bookings.
+   */
+  expireUnpaidHolds(now: Date, limit: number): Promise<UnpaidHoldExpirationSummary>;
 }

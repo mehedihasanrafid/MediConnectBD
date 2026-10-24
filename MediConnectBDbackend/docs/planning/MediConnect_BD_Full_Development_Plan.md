@@ -2,6 +2,8 @@
 
 Current layout (19 October 2026): all backend code, settings, worker, shared code, dependencies, and documentation now live in one standalone `MediConnectBDbackend` folder. Older workspace/setup examples in this reference blueprint are historical; use [Local Development](../LOCAL_DEVELOPMENT.md) for current commands. The outer folder is reserved for the existing Git repository and a later separate frontend.
 
+Implementation update (19 October 2026): the BullMQ worker now runs a versioned, retryable 30-second scheduler for bounded unpaid-hold expiry. Its MySQL transaction protects confirmed/successfully paid bookings and releases only the matching stale reservation. Real SSLCommerz sandbox evidence, public HTTPS callbacks, and automated provider reconciliation remain outstanding; use [Development Control](../DEVELOPMENT_CONTROL.md) for current status.
+
 Reference blueprint retained during project cleanup on 19 October 2026. For the current implementation and startup instructions, use [Development Control](../DEVELOPMENT_CONTROL.md) and [Local Development](../LOCAL_DEVELOPMENT.md). Docker sections below describe future deployment ideas; Docker files are not part of the active backend folder.
 
 > **Version:** 1.0 · **Prepared:** 18 October 2026 · **Status:** Proposed implementation blueprint (not implemented)  

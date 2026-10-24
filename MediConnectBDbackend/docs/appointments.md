@@ -65,9 +65,15 @@ Authorization: Bearer <patient-access-token>
 ```
 
 Releasing an active video-payment hold cancels its pending appointment and makes the
-slot available again. Expired holds are also reclaimed transactionally when another
+slot available again. The background worker checks every 30 seconds and expires up to
+100 overdue holds per run. Expired holds are also reclaimed transactionally when another
 patient attempts to claim the slot. Public availability treats an expired hold as
 available even before that cleanup occurs.
+
+Worker cleanup rechecks the hold, slot, appointment, and optional payment under MySQL
+write locks. It changes a pending video appointment to `PAYMENT_EXPIRED`, marks an
+unconfirmed payment `EXPIRED`, and releases only a slot whose reservation timestamp
+still matches that hold. A confirmed appointment or successful payment is never released.
 
 ## Patient appointment history
 

@@ -115,4 +115,33 @@ describe.skipIf(!socketPath)("payment MySQL integration", () => {
       expect((await source.getRepository(AppointmentSlot).findOneByOrFail({ id: f.slot.id })).status).toBe(AppointmentSlotStatus.AVAILABLE);
     } finally { await f.cleanup(); }
   });
+
+  it("expires an unpaid hold atomically in real MySQL", async () => {
+    const f = await fixture();
+    try {
+      const expiredAt = new Date(f.now.getTime() - 1);
+      await source.getRepository(SlotHold).update(
+        { id: f.hold.id },
+        { expiresAt: expiredAt },
+      );
+      await source.getRepository(AppointmentSlot).update(
+        { id: f.slot.id },
+        { heldUntil: expiredAt },
+      );
+      await source.getRepository(Payment).update(
+        { id: f.payment.id },
+        { expiresAt: expiredAt },
+      );
+
+      const result = await f.repository.expireUnpaidHolds(f.now, 100);
+
+      expect(result.expired).toBe(1);
+      expect((await source.getRepository(Payment).findOneByOrFail({ id: f.payment.id })).status).toBe("EXPIRED");
+      expect((await source.getRepository(Appointment).findOneByOrFail({ id: f.appointment.id })).status).toBe(AppointmentStatus.PAYMENT_EXPIRED);
+      expect((await source.getRepository(SlotHold).findOneByOrFail({ id: f.hold.id })).status).toBe(SlotHoldStatus.EXPIRED);
+      const slot = await source.getRepository(AppointmentSlot).findOneByOrFail({ id: f.slot.id });
+      expect(slot.status).toBe(AppointmentSlotStatus.AVAILABLE);
+      expect(slot.heldUntil).toBeNull();
+    } finally { await f.cleanup(); }
+  });
 });

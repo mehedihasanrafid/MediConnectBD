@@ -86,6 +86,8 @@ async function main(): Promise<void> {
 
   server.listen(env.PORT, () => {
     process.stdout.write(`MediConnect API listening on port ${env.PORT}\n`);
+    process.stdout.write(`Swagger UI: http://localhost:${env.PORT}/api-docs/\n`);
+    process.stdout.write(`OpenAPI JSON: http://localhost:${env.PORT}/openapi.json\n`);
   });
 
   let stopping = false;

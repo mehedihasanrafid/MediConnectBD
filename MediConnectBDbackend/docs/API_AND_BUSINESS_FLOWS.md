@@ -394,6 +394,7 @@ Exact enum values already present in the source must be preserved when extending
 INITIATED -> PENDING -> SUCCEEDED
                     -> FAILED
                     -> CANCELLED
+                    -> EXPIRED (worker closes the unpaid hold)
 Verified late/risky success -> REVIEW_REQUIRED
 Refund states belong to the separate refund table; refund execution is planned.
 ```

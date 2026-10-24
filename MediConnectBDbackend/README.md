@@ -34,6 +34,7 @@ Node.js 24+, npm 11+, MySQL, and Redis are required. Keep the existing private `
 ```bash
 cd /home/mehedi/Desktop/MediConnectBD/MediConnectBDbackend
 npm install
+npm run db:setup:local
 npm run db:migrate
 npm run db:seed
 npm run dev
@@ -45,7 +46,7 @@ Run the worker from the same folder in a second terminal:
 npm run dev:worker
 ```
 
-`db:migrate` and `db:seed` build the backend automatically. MySQL/Redis startup is separate; the current database profile uses port 3307. The local Redis installation and its data are under `.local`. Stop each Node process with Ctrl+C.
+`db:setup:local` is a one-time Linux setup for the installed system MySQL on port 3306. Run it in your terminal and enter your computer login password at the sudo prompt. It reads database credentials from private `.env`, creates the database if needed, updates the dedicated app account password to match `.env`, and preserves database contents. It does not start MySQL or Redis. `db:migrate` and `db:seed` build the backend automatically. See [local development](docs/LOCAL_DEVELOPMENT.md) for service startup. Stop each Node process with Ctrl+C.
 
 ## Commands
 
@@ -64,14 +65,20 @@ npm run dev:worker
 
 API: `http://localhost:4000`; readiness: `http://localhost:4000/health/ready`.
 
+## Test in your browser
+
+Open Swagger UI at `http://localhost:4000/api-docs/` after starting the API. Use registration/login, copy `accessToken`, click **Authorize → bearerAuth**, then test protected endpoints. Paste the token without `Bearer`.
+
+OpenAPI JSON is available at `/openapi.json` and `/api-docs.json`. See [Swagger testing](docs/SWAGGER_TESTING.md) for the full patient/doctor/payment testing flow. `npm run test:docs` checks the specification and route coverage.
+
 ## Implemented features
 
 - Patient/doctor registration, login, rotating refresh sessions, and role authorization.
 - Doctor profiles, admin approval/rejection, public search, and catalogs.
 - Weekly schedules, time off, generated slots, ten-minute holds, and appointments.
-- SSLCommerz sandbox checkout, provider-verified callbacks, payment status/reconciliation, and refund-table foundation.
+- SSLCommerz sandbox checkout, provider-verified callbacks, payment status/reconciliation, automatic unpaid-hold expiry, and refund-table foundation.
 
-The worker currently handles only healthcheck jobs. Automated reconciliation/cleanup, notification jobs, refund execution, video, prescriptions, and frontend work remain pending. Real sandbox payment verification needs store credentials and a public HTTPS callback.
+The worker registers a BullMQ job every 30 seconds to expire bounded batches of unpaid appointment holds. Automated provider reconciliation, notification jobs, refund execution, video, prescriptions, and frontend work remain pending. Real sandbox payment verification needs store credentials and a public HTTPS callback.
 
 ## Documentation
 
@@ -83,5 +90,6 @@ The worker currently handles only healthcheck jobs. Automated reconciliation/cle
 - [Database design](docs/DATABASE_DESIGN_AND_MIGRATIONS.md)
 - [API and business flows](docs/API_AND_BUSINESS_FLOWS.md)
 - [Payment setup](docs/payments.md)
+- [Swagger and OpenAPI testing](docs/SWAGGER_TESTING.md)
 
 Private settings/data and existing database tables were preserved during consolidation. The Git repository stays in the outer project folder so a frontend can be added beside this backend later.

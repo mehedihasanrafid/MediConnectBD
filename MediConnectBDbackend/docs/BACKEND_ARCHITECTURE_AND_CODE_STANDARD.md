@@ -24,6 +24,7 @@
 | File storage | Private S3-compatible service | Medical files and prescription PDFs |
 | Logging | Pino | Structured logs and request IDs |
 | Tests | Vitest + Supertest | Unit and HTTP tests |
+| API documentation | OpenAPI 3.0.3 + Swagger UI | Browser testing of implemented contracts; validate with `npm run test:docs` |
 | PDF | PDFKit or pdf-lib | Server-generated prescription documents |
 | Email | Nodemailer/SMTP | Transactional email through worker |
 
@@ -578,6 +579,8 @@ Critical state changes should use a transactional outbox:
 
 Do not publish a critical job and then separately commit business state; a crash
 between the two operations can lose or duplicate behavior.
+
+Current implementation: `expire-unpaid-appointment-holds-v1` is registered with one stable BullMQ scheduler ID every 30 seconds. Each delivery validates a versioned payload and processes at most 100 candidates. MySQL row locks and current-state checks make retries safe; confirmed appointments and successful payments are never released, and a slot is released only when its `held_until` value still matches the expiring hold.
 
 ## 22. Logging standard
 

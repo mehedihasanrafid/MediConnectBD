@@ -1,7 +1,7 @@
 # MediConnect BD Backend Development Control
 
 > Document owner: Mehedi Hasan  
-> Version: 1.3  
+> Version: 1.4
 > Last reviewed: 19 October 2026  
 > Backend status: Active development  
 > Delivery model: Modular monolith  
@@ -134,8 +134,8 @@ Status meanings:
 | Public directory | DONE | Search by name, specialty, hospital, area, fee | Ratings and richer sorting |
 | Scheduling | DONE | Weekly rules and time off | Worker-driven periodic regeneration |
 | Appointment slots | DONE | Seven-day concrete slots in UTC | Booking-window configuration |
-| Holds and booking | DONE | Atomic ten-minute holds and double-book protection | Payment confirmation and cancellation policies |
-| Payments | IN PROGRESS | Sandbox adapter, initiation, verified callbacks, payment reads/reconciliation, ledger and refund-table foundation | Real sandbox end-to-end evidence, periodic cleanup/reconciliation, admin review/refund actions |
+| Holds and booking | DONE | Atomic ten-minute holds, double-book protection, and worker-driven unpaid expiry | Cancellation policies |
+| Payments | IN PROGRESS | Sandbox adapter, initiation, verified callbacks, private reconciliation, automatic expiry, ledger and refund-table foundation | Real sandbox evidence, automated provider reconciliation, admin review/refund actions |
 | Notifications | PLANNED | BullMQ worker exists | Email jobs, reminders, retries |
 | Video consultations | PLANNED | LiveKit selected | Room grants, tokens, participant policy |
 | Messaging | PLANNED | Socket.IO selected | Persistent conversations and authorization |
@@ -236,10 +236,11 @@ Deliverables:
 - video appointment `PENDING_PAYMENT` state;
 - patient appointment history;
 - release and stale-hold recovery.
+- bounded automatic expiry through the BullMQ worker.
 
 ### M5 — SSLCommerz sandbox payment
 
-Status: `IN PROGRESS` — core routes, adapter, persistence, state transitions, and automated tests implemented on 2026-10-19. Credentials/public HTTPS callback, real provider evidence, and periodic cleanup/reconciliation remain pending. See [payment implementation](./payments.md).
+Status: `IN PROGRESS` — core routes, adapter, persistence, state transitions, automatic unpaid-hold cleanup, and automated tests implemented on 2026-10-19. Credentials/public HTTPS callback, real provider evidence, and automated provider reconciliation remain pending. See [payment implementation](./payments.md).
 
 Required deliverables:
 
@@ -266,6 +267,8 @@ Acceptance tests:
 ### M6 — Notifications and background work
 
 Status: `PLANNED`
+
+The BullMQ process and its recurring unpaid-hold expiry job are implemented. The notification/outbox deliverables below remain planned.
 
 Required deliverables:
 
@@ -493,7 +496,7 @@ Do not silently rename fields, remove error codes, or change state meanings.
 
 - Node.js 24+
 - npm 11+
-- MySQL on local port `3307`
+- MySQL on local port `3306`
 - Redis on local port `6379`
 - API on local port `4000`
 - display timezone `Asia/Dhaka`
@@ -506,7 +509,7 @@ Docker work is intentionally deferred while core backend modules are being compl
 Do not redesign business logic around Docker. Containerization must package the same
 tested application and migrations without changing domain behavior.
 
-Use [Local development](./LOCAL_DEVELOPMENT.md). The existing private MySQL profile uses port `3307`; the template uses standard local port `3306`. Keep `DB_PORT` aligned with your running server. Use persistent local MySQL storage for valuable manual test data. Docker is not a prerequisite for backend development.
+Use [Local development](./LOCAL_DEVELOPMENT.md). The existing private MySQL profile and template both use standard local port `3306`. Keep `DB_PORT` aligned with your running server. Use persistent local MySQL storage for valuable manual test data. Docker is not a prerequisite for backend development.
 
 ### 12.3 Secret control
 
@@ -583,10 +586,12 @@ Next action:
 - Verified the full migration chain on an isolated temporary MySQL 8.0.46 server; the existing project database was unavailable and was not changed.
 - Verified concurrent initiation, duplicate callbacks, rollback, late success, risk handling, and ownership boundaries.
 - Automated result: 60 tests across 11 files with the disposable MySQL suite enabled; typecheck and build passed.
-- Outstanding: MySQL 8.4 target verification, real SSLCommerz sandbox checkout credentials/public HTTPS callback, periodic reconciliation/cleanup, admin review/refund execution, and rate limiting.
+- Outstanding: MySQL 8.4 target verification, real SSLCommerz sandbox checkout credentials/public HTTPS callback, automated provider reconciliation, admin review/refund execution, and rate limiting.
 - Next action: configure the sandbox account and verify the complete hosted checkout/IPN flow.
 
 ## 16. Release gate
+
+Swagger/OpenAPI update (19 October 2026): added `/api-docs/`, `/openapi.json`, and `/api-docs.json`, documenting all 35 implemented operations across 33 paths. Contracts include role/bearer requirements, refresh-cookie behavior, request examples, response models, payment idempotency, provider form callbacks, and the `EXPIRED` payment status. Formal OpenAPI validation, actual-router coverage, example-to-Zod validation, and UI asset/security tests passed. Browser rendering was checked with no console errors using a temporary documentation-only server, then that preview was stopped. Current standard result after worker expiry implementation: 99 passed and five optional database tests skipped; typecheck/build passed. See [Swagger testing](./SWAGGER_TESTING.md).
 
 Standalone backend update (19 October 2026): consolidated all backend assets into `MediConnectBDbackend`. Worker code is in `src/workers`, shared constants in `src/shared`, documentation in `docs`, and private `.env`/local Redis files are inside the backend. This package owns its dependencies, lockfile, scripts, and full TypeScript configuration; parent workspaces and separate worker/shared packages were removed. The outer folder retains the existing Git repository and a short README for adding a sibling frontend later. No commits or pushes were made.
 
@@ -599,7 +604,7 @@ Comment handover update (19 October 2026): reviewed and documented 80 implemente
 - Reorganized the backend under `MediConnectBDbackend` to match the familiar DokanBDbackend project.
 - Added controllers, module-owned entities, singular `.schema.ts` files, `src/routes/v1.ts`, `src/middlewares`, `src/utils`, and `tests`.
 - Scheduling HTTP handlers now have their own module. Existing URL paths and database table names remain unchanged.
-- Moved the worker to the root `worker` folder and refreshed workspace links and lockfile. The private `.env` stays at the project root.
+- Kept the worker in `src/workers` inside the standalone backend package. The private `.env` stays at the backend root.
 - Added backend `README.md`, `CODE-MAP.md`, and `CHANGE-GUIDE.md`.
 - All 77 tests passed, including real MySQL transaction/concurrency checks and 17 new route/controller wiring cases. Typecheck and build passed.
 - Docker remains deferred. Local MySQL/Redis startup and real sandbox provider verification are still pending.
@@ -624,5 +629,7 @@ The demonstration cannot be called ready until all items below are true:
 
 ## 17. Immediate next action
 
-Finish M5 by verifying the sandbox checkout with a public HTTPS callback and adding periodic reconciliation/cleanup. The payment module now has transaction, verified-event, refund-table, and payment-state definitions with idempotency keys and
+Local startup completed (2026-10-19): the user provisioned the dedicated account on system MySQL port `3306` after the private password was adjusted to meet its policy. All seven migrations and catalog/synthetic demo seeds succeeded. The API on port 4000 remains ready with database/Redis up. Patient login, doctor search, availability, hold creation, and video `PENDING_PAYMENT` appointment creation were verified with synthetic data. The recurring worker was then verified against a forced-expired synthetic hold: appointment `PAYMENT_EXPIRED`, hold `EXPIRED`, slot `AVAILABLE`, and `held_until` cleared. Typecheck/build and 99 automated tests passed; five disposable-MySQL integration tests were skipped. The temporary worker was stopped after verification. No commit/push was made.
+
+Finish M5 by supplying sandbox credentials, exposing the API through a public HTTPS origin, and verifying checkout/IPN plus provider reconciliation. The payment module now has transaction, verified-event, refund-table, automatic expiry, and payment-state definitions with idempotency keys and
 database constraints.

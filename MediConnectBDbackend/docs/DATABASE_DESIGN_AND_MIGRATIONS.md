@@ -276,6 +276,9 @@ ACTIVE → RELEASED
 ```
 
 The application locks the slot row before it examines or writes active hold state.
+Migration `1761307200000-add-hold-expiry-index.ts` adds
+`idx_slot_holds_status_expiry(status, expires_at)` for the worker's bounded global scan;
+the earlier slot-first index remains for per-slot booking work.
 
 ### 4.14 `appointments`
 
@@ -687,6 +690,7 @@ Migration filenames use an increasing timestamp and a concise action:
 
 ```text
 1761134400000-add-appointment-booking.ts
+1761307200000-add-hold-expiry-index.ts
 ```
 
 Every migration must:

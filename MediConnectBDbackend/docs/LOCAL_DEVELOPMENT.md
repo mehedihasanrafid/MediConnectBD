@@ -18,6 +18,7 @@ The main backend is now in `MediConnectBDbackend`, following the DokanBDbackend 
 | `tests/payment*.test.ts` | Payment automated tests |
 | `src/modules/` | Authentication, doctors, scheduling, appointments, payments |
 | `src/workers/worker.ts` | Background worker entry point |
+| `src/workers/system-jobs.ts` | Stable job names, schedules, payload validation, and processors |
 
 ## Prerequisites
 
@@ -41,7 +42,7 @@ DB_PASSWORD=your_local_database_password
 REDIS_URL=redis://127.0.0.1:6379
 ```
 
-The existing private profile uses MySQL port `3307`. Keep it if your server runs there. If switching to a system MySQL server on `3306`, update `DB_PORT` and ensure its database/user exist. Keep your existing private password.
+The private profile uses MySQL port `3306`, matching the installed system server. The previous `3307` endpoint was unavailable. The dedicated application account is now provisioned, and the private password was adjusted to satisfy the installed MySQL password policy.
 
 Set `JWT_ACCESS_SECRET` to at least 32 random characters. Generate a value locally with:
 
@@ -52,6 +53,8 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 Put the generated value in private `.env`. Never commit `.env`.
 
 ## Database creation: fresh installations only
+
+On this Linux machine, run `npm run db:setup:local` in your terminal. Enter your **computer login password** at the sudo prompt. This reads private `.env`, creates the database if needed, aligns the dedicated local application account's password with `.env`, and grants access to the configured database. It does not drop database contents. It requires working `sudo mysql` administrator access. Then run migrations and seeds below.
 
 If the database and user do not already exist, run this template through a MySQL administrator connection. Replace the password privately to match `.env`:
 
@@ -67,11 +70,21 @@ GRANT ALL PRIVILEGES ON mediconnect.* TO 'mediconnect_app'@'127.0.0.1';
 
 ## Start the backend
 
+If the bundled Redis is stopped, start it in a separate terminal (keep that terminal open):
+
+```bash
+cd /home/mehedi/Desktop/MediConnectBD/MediConnectBDbackend
+./.local/bin/redis-server --bind 127.0.0.1 --port 6379 --dir "$PWD/.local/redis-data" --appendonly yes
+```
+
+Do not start a second Redis if port 6379 is already in use.
+
 First terminal:
 
 ```bash
 cd /home/mehedi/Desktop/MediConnectBD/MediConnectBDbackend
 npm install
+npm run db:setup:local
 npm run db:migrate
 npm run db:seed
 npm run dev
@@ -92,6 +105,8 @@ npm run dev:worker
 - Liveness: `http://localhost:4000/health/live`
 - Readiness: `http://localhost:4000/health/ready`
 - Doctor search: `http://localhost:4000/api/v1/doctors`
+- Swagger UI: `http://localhost:4000/api-docs/`
+- OpenAPI JSON: `http://localhost:4000/openapi.json`
 
 ```bash
 npm run typecheck
@@ -99,7 +114,7 @@ npm test
 npm run build
 ```
 
-Normal tests run 73 checks and skip four opt-in disposable-MySQL checks. The full 77-check suite separately passed against a temporary MySQL 8.0.46 instance. Ordinary unit/HTTP tests need neither Docker nor the project database.
+Normal tests now run 99 checks and skip five opt-in disposable-MySQL checks. The earlier 77-check suite (before the documentation and worker-expiry tests were added) separately passed against temporary MySQL 8.0.46. Ordinary unit/HTTP tests need neither Docker nor the project database. Follow [Swagger testing](./SWAGGER_TESTING.md) to test requests in your browser.
 
 ## Troubleshooting
 
@@ -118,4 +133,4 @@ Readiness passes only when MySQL and Redis respond. Passing automated tests does
 
 ## Current machine status
 
-On 2026-10-19 the existing project database on port `3307` refused connections. Redis was not in the shell path, but cleanup inspection subsequently located its executables under `.local/bin` and persistent data under `.local/redis-data`; those files were preserved. A separate temporary MySQL server verified the payment migration and concurrency tests and was stopped afterward. Start/configure local MySQL and Redis before applying the project migration or expecting API readiness to pass.
+On 2026-10-19 the user completed administrator provisioning on system MySQL at `127.0.0.1:3306`. All seven migrations and the catalog/synthetic demo user seed completed successfully. The API on port 4000 returns HTTP 200 readiness with database and Redis up. Patient login, doctor search, availability, hold creation, and video appointment creation were verified with synthetic data. A temporary worker run automatically expired a forced-expired synthetic hold and released its slot; the worker was stopped afterward. Redis uses preserved `.local/redis-data`. The separate disposable MySQL server used earlier for integration tests is not the project database.

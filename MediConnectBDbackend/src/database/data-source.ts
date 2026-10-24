@@ -29,6 +29,7 @@ import { AddAuthSessions1760875200000 } from "./migrations/1760875200000-add-aut
 import { AddDoctorDirectory1760961600000 } from "./migrations/1760961600000-add-doctor-directory";
 import { AddDoctorScheduling1761048000000 } from "./migrations/1761048000000-add-doctor-scheduling";
 import { AddAppointmentBooking1761134400000 } from "./migrations/1761134400000-add-appointment-booking";
+import { AddHoldExpiryIndex1761307200000 } from "./migrations/1761307200000-add-hold-expiry-index";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -66,6 +67,7 @@ const AppDataSource = new DataSource({
     AddDoctorScheduling1761048000000,
     AddAppointmentBooking1761134400000,
     AddPayments1761220800000,
+    AddHoldExpiryIndex1761307200000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

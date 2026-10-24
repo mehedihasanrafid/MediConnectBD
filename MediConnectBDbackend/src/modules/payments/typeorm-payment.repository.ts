@@ -5,7 +5,7 @@
  */
 
 import { createHash, randomBytes } from "node:crypto";
-import type { DataSource } from "typeorm";
+import { LessThanOrEqual, type DataSource } from "typeorm";
 import { AppError } from "../../utils/app-error";
 import { Appointment, AppointmentStatus } from "../appointments/appointment.entity";
 import { AppointmentSlot, AppointmentSlotStatus } from "../scheduling/appointment-slot.entity";
@@ -14,7 +14,12 @@ import { Payment } from "./payment.entity";
 import { PaymentEvent } from "./payment-event.entity";
 import { SlotHold, SlotHoldStatus } from "../appointments/slot-hold.entity";
 import type { PaymentRepository } from "./payment.repository";
-import { decimalAmount, type PaymentView, type VerifiedTransaction } from "./payment.types";
+import {
+  decimalAmount,
+  type PaymentView,
+  type UnpaidHoldExpirationSummary,
+  type VerifiedTransaction,
+} from "./payment.types";
 
 export class TypeOrmPaymentRepository implements PaymentRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -159,6 +164,102 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
       }
       return this.view(await payments.save(payment));
     });
+  }
+
+  /**
+   * Expires only rows that are still unconfirmed after locks are acquired. Candidate selection is
+   * intentionally outside the per-hold transaction: each transaction stays short, and stale
+   * candidates are harmless because their current state is checked again under row locks.
+   */
+  async expireUnpaidHolds(now: Date, limit: number): Promise<UnpaidHoldExpirationSummary> {
+    const candidates = await this.dataSource.getRepository(SlotHold).find({
+      select: { id: true },
+      where: {
+        status: SlotHoldStatus.ACTIVE,
+        expiresAt: LessThanOrEqual(now),
+      },
+      order: { expiresAt: "ASC", id: "ASC" },
+      take: limit,
+    });
+
+    const summary: UnpaidHoldExpirationSummary = {
+      candidates: candidates.length,
+      expired: 0,
+      protected: 0,
+      skipped: 0,
+    };
+
+    for (const candidate of candidates) {
+      const outcome = await this.dataSource.transaction(async (manager) => {
+        const holds = manager.getRepository(SlotHold);
+        const hold = await holds.findOne({
+          where: { id: candidate.id },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!hold || hold.status !== SlotHoldStatus.ACTIVE || hold.expiresAt > now) {
+          return "SKIPPED" as const;
+        }
+
+        const slots = manager.getRepository(AppointmentSlot);
+        const slot = await slots.findOne({
+          where: { id: hold.slotId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!slot) return "SKIPPED" as const;
+
+        const appointments = manager.getRepository(Appointment);
+        const appointment = await appointments.findOne({
+          where: { holdId: hold.id },
+          lock: { mode: "pessimistic_write" },
+        });
+        const payments = manager.getRepository(Payment);
+        const payment = appointment
+          ? await payments.findOne({
+              where: { appointmentId: appointment.id },
+              lock: { mode: "pessimistic_write" },
+            })
+          : null;
+
+        // A succeeded charge and a confirmed appointment are both terminal safety barriers.
+        if (
+          appointment?.status === AppointmentStatus.CONFIRMED ||
+          payment?.status === "SUCCEEDED"
+        ) {
+          return "PROTECTED" as const;
+        }
+
+        if (appointment?.status === AppointmentStatus.PENDING_PAYMENT) {
+          appointment.status = AppointmentStatus.PAYMENT_EXPIRED;
+          appointment.cancellationReason = "Payment hold expired";
+          await appointments.save(appointment);
+        }
+        if (payment?.status === "INITIATED" || payment?.status === "PENDING") {
+          payment.status = "EXPIRED";
+          await payments.save(payment);
+        }
+
+        hold.status = SlotHoldStatus.EXPIRED;
+        hold.releasedAt = now;
+        await holds.save(hold);
+
+        // A later reservation may already occupy the slot. Only release this hold's exact window.
+        if (
+          slot.status === AppointmentSlotStatus.HELD &&
+          slot.heldUntil?.getTime() === hold.expiresAt.getTime()
+        ) {
+          slot.status = AppointmentSlotStatus.AVAILABLE;
+          slot.heldUntil = null;
+          await slots.save(slot);
+        }
+        return "EXPIRED" as const;
+      });
+
+      if (outcome === "EXPIRED") summary.expired += 1;
+      else if (outcome === "PROTECTED") summary.protected += 1;
+      else summary.skipped += 1;
+    }
+
+    return summary;
   }
 
   /**

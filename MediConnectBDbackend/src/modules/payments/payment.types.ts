@@ -4,7 +4,21 @@
  * confirm a booking.
  */
 
-export type PaymentStatus = "INITIATED" | "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REVIEW_REQUIRED";
+export type PaymentStatus =
+  | "INITIATED"
+  | "PENDING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED"
+  | "EXPIRED"
+  | "REVIEW_REQUIRED";
+
+export interface UnpaidHoldExpirationSummary {
+  candidates: number;
+  expired: number;
+  protected: number;
+  skipped: number;
+}
 
 /**
  * Exact decimal strings are used at the payment boundary.

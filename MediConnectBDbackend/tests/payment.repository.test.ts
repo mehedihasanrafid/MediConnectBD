@@ -29,6 +29,14 @@ function fixture() {
       const rows = tables.get(entity)!;
       return {
         create: (input: any) => ({ id: randomUUID(), ...input }),
+        find: async (options: any) => {
+          if (entity !== SlotHold) return [...rows];
+          const boundary = options.where.expiresAt._value as Date;
+          return rows
+            .filter((row) => row.status === options.where.status && row.expiresAt <= boundary)
+            .sort((left, right) => left.expiresAt.getTime() - right.expiresAt.getTime())
+            .slice(0, options.take);
+        },
         findOneBy: async (where: any) => rows.find((row) => matches(row, where)) ?? null,
         findOne: async ({ where }: any) => rows.find((row) => matches(row, where)) ?? null,
         findOneOrFail: async ({ where }: any) => { const row = rows.find((item) => matches(item, where)); if (!row) throw new Error("Missing fixture row"); return row; },
@@ -117,5 +125,57 @@ describe("payment booking decisions", () => {
   it("does not expose another patient's payment", async () => {
     const f = fixture();
     expect(await f.repository.findOwned(f.payment.id, randomUUID())).toBeNull();
+  });
+
+  it("expires an unpaid appointment, payment, hold, and matching slot together", async () => {
+    const f = fixture();
+    f.hold.expiresAt = f.now;
+    f.slot.heldUntil = f.now;
+    f.payment.expiresAt = f.now;
+
+    const result = await f.repository.expireUnpaidHolds(f.now, 100);
+
+    expect(result).toEqual({ candidates: 1, expired: 1, protected: 0, skipped: 0 });
+    expect(f.payment.status).toBe("EXPIRED");
+    expect(f.appointment.status).toBe(AppointmentStatus.PAYMENT_EXPIRED);
+    expect(f.hold.status).toBe(SlotHoldStatus.EXPIRED);
+    expect(f.slot.status).toBe(AppointmentSlotStatus.AVAILABLE);
+    expect(f.slot.heldUntil).toBeNull();
+    expect(await f.repository.expireUnpaidHolds(f.now, 100)).toEqual({
+      candidates: 0,
+      expired: 0,
+      protected: 0,
+      skipped: 0,
+    });
+  });
+
+  it("never releases a confirmed or successfully paid booking", async () => {
+    const f = fixture();
+    f.hold.expiresAt = f.now;
+    f.slot.heldUntil = f.now;
+    f.payment.status = "SUCCEEDED";
+    f.appointment.status = AppointmentStatus.CONFIRMED;
+
+    const result = await f.repository.expireUnpaidHolds(f.now, 100);
+
+    expect(result).toEqual({ candidates: 1, expired: 0, protected: 1, skipped: 0 });
+    expect(f.hold.status).toBe(SlotHoldStatus.ACTIVE);
+    expect(f.slot.status).toBe(AppointmentSlotStatus.HELD);
+    expect(f.payment.status).toBe("SUCCEEDED");
+    expect(f.appointment.status).toBe(AppointmentStatus.CONFIRMED);
+  });
+
+  it("does not release a slot whose reservation window belongs to newer work", async () => {
+    const f = fixture();
+    f.hold.expiresAt = f.now;
+    const newerHeldUntil = new Date(f.now.getTime() + 600_000);
+    f.slot.heldUntil = newerHeldUntil;
+
+    const result = await f.repository.expireUnpaidHolds(f.now, 100);
+
+    expect(result.expired).toBe(1);
+    expect(f.hold.status).toBe(SlotHoldStatus.EXPIRED);
+    expect(f.slot.status).toBe(AppointmentSlotStatus.HELD);
+    expect(f.slot.heldUntil).toBe(newerHeldUntil);
   });
 });

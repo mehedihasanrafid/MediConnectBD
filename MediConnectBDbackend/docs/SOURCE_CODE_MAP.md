@@ -23,7 +23,7 @@ MediConnectBDbackend/
 │   ├── middlewares/            Errors, not-found, request IDs
 │   ├── utils/                  General helpers
 │   ├── database/               Connection, migrations, seeds
-│   ├── workers/worker.ts       Separate BullMQ process, same npm package
+│   ├── workers/                BullMQ process plus testable job definitions
 │   └── shared/index.ts         Backend constants/types
 ├── tests/                      Automated backend tests
 ├── docs/                       Architecture, contracts, decisions, runbooks
@@ -38,6 +38,8 @@ MediConnectBDbackend/
 The original long-form blueprint lives in `docs/planning/`. Unused Docker configuration and generated build output were moved out of the active project during cleanup. `npm run build` recreates `dist` output. Preserve `.local` because it contains local Redis executables and data.
 
 ## 3. API startup and composition
+
+Interactive API documentation is in `src/docs/openapi.ts` (35 implemented operations), `src/docs/openapi.schemas.ts` (payload/response contracts and examples), and `src/docs/openapi.routes.ts` (Swagger UI and JSON endpoints). `tests/openapi.test.ts` compares the inventory against the actual feature routers, validates the specification/examples, and checks served assets and headers. Run `npm run test:docs`; browser instructions are in [Swagger testing](./SWAGGER_TESTING.md).
 
 | File | Responsibility | Change when |
 | --- | --- | --- |
@@ -91,6 +93,7 @@ Current migration sequence:
 | `1761048000000-add-doctor-scheduling.ts` | Weekly schedules, time off, concrete appointment slots |
 | `1761134400000-add-appointment-booking.ts` | Slot holds and appointments |
 | `1761220800000-add-payments.ts` | Payments, verification events, refund foundation |
+| `1761307200000-add-hold-expiry-index.ts` | Global status/expiry index for bounded worker cleanup |
 
 Never edit an already-applied migration to change history. Add a new timestamped migration and provide both `up` and safe `down` logic where data preservation permits.
 
@@ -208,7 +211,8 @@ Concurrency guarantees belong in MySQL constraints and transactions, not only in
 
 | File | Responsibility |
 | --- | --- |
-| `src/workers/worker.ts` | Starts BullMQ workers and handles background jobs; will host hold expiry, reminders, callbacks, notifications, scanning, and document jobs |
+| `src/workers/worker.ts` | Connects Redis/MySQL, starts the BullMQ worker, registers schedules, and handles shutdown |
+| `src/workers/system-jobs.ts` | Stable job names, versioned payload validation, retryable schedules, and the unpaid-hold processor |
 | `src/shared/index.ts` | Small framework-neutral constants/types shared by API and worker |
 
 Do not move TypeORM entities or Express types into `shared`. Shared code must be safe for both processes and have a clear second consumer.
@@ -263,7 +267,7 @@ Recommended placement:
 
 | Feature | API module | Important infrastructure |
 | --- | --- | --- |
-| SSLCommerz payment/refund | `modules/payments` (core payment implemented) | Sandbox adapter in `sslcommerz-payment-provider.ts`; worker/refund execution pending |
+| SSLCommerz payment/refund | `modules/payments` (core payment implemented) | Sandbox adapter plus automatic hold expiry implemented; provider reconciliation/refund execution pending |
 | Cancellation policy | Extend `appointments` | Transaction with payment/refund/outbox |
 | Video consultation | `modules/consultations` | WebRTC/TURN adapter and Socket.IO gateway |
 | Appointment messaging | `modules/messages` | Socket.IO gateway plus durable message repository |
@@ -296,7 +300,7 @@ When adding or changing a backend feature:
 
 ### Payment module added 2026-10-19
 
-`src/modules/payments/` now contains routes, controller, Zod schema, service, repository interface, TypeORM repository, payment types/decimal normalization, provider interface, and sandbox adapter. The same payment module contains `payment.entity.ts`, `payment-event.entity.ts`, and `refund.entity.ts`; migration `1761220800000-add-payments.ts` adds their tables. Five `tests/payment*.test.ts` files cover business decisions, HTTP contracts, provider behavior, and opt-in real MySQL transactions/concurrency. See [payments](./payments.md) for setup and limitations.
+`src/modules/payments/` now contains routes, controller, Zod schema, service, repository interface, TypeORM repository, payment types/decimal normalization, provider interface, and sandbox adapter. The same payment module contains `payment.entity.ts`, `payment-event.entity.ts`, and `refund.entity.ts`; migration `1761220800000-add-payments.ts` adds their tables, while `1761307200000-add-hold-expiry-index.ts` supports worker scans. Payment and worker tests cover business decisions, HTTP contracts, provider behavior, job payload/scheduling, expiry safety, and opt-in real MySQL transactions/concurrency. See [payments](./payments.md) for setup and limitations.
 
 - Git is the historical record for every line of source code.
 - Do not paste full source-file copies into documentation.

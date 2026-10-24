@@ -8,10 +8,19 @@ import { createHash } from "node:crypto";
 import { AppError } from "../../utils/app-error";
 import type { PaymentProvider } from "./payment-provider";
 import type { PaymentRepository } from "./payment.repository";
-import { decimalAmount, type PaymentCustomer, type PaymentView } from "./payment.types";
+import {
+  decimalAmount,
+  type PaymentCustomer,
+  type PaymentView,
+  type UnpaidHoldExpirationSummary,
+} from "./payment.types";
 
 export class PaymentService {
-  constructor(private readonly repository: PaymentRepository, private readonly provider: PaymentProvider | null) {}
+  constructor(
+    private readonly repository: PaymentRepository,
+    private readonly provider: PaymentProvider | null,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   /**
    * Persists a payload hash and payment intent before provider I/O. Retries reuse that intent;
@@ -20,7 +29,7 @@ export class PaymentService {
   async initiate(patientId: string, appointmentId: string, key: string, customer: PaymentCustomer): Promise<PaymentView> {
     const provider = this.requireProvider();
     const requestHash = createHash("sha256").update(JSON.stringify([appointmentId, customer.name, customer.email, customer.phone, customer.address, customer.city, customer.postcode])).digest("hex");
-    const result = await this.repository.prepare(patientId, appointmentId, key, new Date(), requestHash);
+    const result = await this.repository.prepare(patientId, appointmentId, key, this.now(), requestHash);
     // A request may reach the gateway before the process crashes. Never initiate it twice.
     if (!result.created) {
       if (result.payment.status === "INITIATED") {
@@ -66,7 +75,7 @@ export class PaymentService {
     if ((verified.status === "VALID" || verified.status === "VALIDATED") && !verified.bankTransactionId) {
       throw new AppError(502, "PAYMENT_PROVIDER_INVALID_RESPONSE", "The payment provider returned incomplete transaction details");
     }
-    return this.repository.applyVerified(payment.id, verified, new Date());
+    return this.repository.applyVerified(payment.id, verified, this.now());
   }
 
   /**
@@ -75,6 +84,17 @@ export class PaymentService {
   async reconcile(id: string, patientId: string): Promise<PaymentView> {
     const payment = await this.getOwned(id, patientId);
     return this.callback(payment.transactionId);
+  }
+
+  /**
+   * Worker entry point for bounded, idempotent expiry. The repository rechecks every row under
+   * locks, so retries and overlapping delivery cannot release a confirmed or paid booking.
+   */
+  expireUnpaidHolds(limit = 100): Promise<UnpaidHoldExpirationSummary> {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new Error("Unpaid hold expiry batch size must be between 1 and 500");
+    }
+    return this.repository.expireUnpaidHolds(this.now(), limit);
   }
 
   private requireProvider(): PaymentProvider {

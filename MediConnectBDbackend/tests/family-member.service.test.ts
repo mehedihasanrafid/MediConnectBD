@@ -10,9 +10,7 @@ import { FamilyMemberService } from "../src/modules/patients/family-member.servi
 
 class FakeFamilyMemberRepository implements FamilyMemberRepository {
   members = new Map<string, FamilyMemberView>();
-  nextId = 1;
-
-  private _timeOffset = 0;
+  timeOffset = 0;
 
   async listByPatient(patientProfileId: string): Promise<FamilyMemberView[]> {
     return [...this.members.values()]
@@ -26,12 +24,10 @@ class FakeFamilyMemberRepository implements FamilyMemberRepository {
     return member;
   }
 
-  private _timeOffset = 0;
-
   async create(input: NewFamilyMemberInput): Promise<FamilyMemberView> {
-    this._timeOffset += 10;
+    this.timeOffset += 10;
     const id = randomUUID();
-    const now = new Date(Date.now() + this._timeOffset);
+    const now = new Date(Date.now() + this.timeOffset);
     const member: FamilyMemberView = {
       ...input,
       id,

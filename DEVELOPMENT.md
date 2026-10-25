@@ -29,7 +29,7 @@ This document translates the **client requirements** (`MediConnect BD – Client
 | Area | What the client asked for | What we commit to deliver in MVP |
 |------|--------------------------|----------------------------------|
 | Doctor discovery | Search by name, specialty, hospital, area, fee; see profile with rating/reviews | ✅ Search + profile (ratings/reviews missing — P0 task) |
-| Patient booking | Book chamber or video slots; pay for video; manage appointments | ✅ Hold + book flow; ❌ Family-member booking (P0); ❌ Cancellation/refund (P0); ❌ Reschedule (P1) |
+| Patient booking | Book chamber or video slots; pay for video; manage appointments | ✅ Hold + book + family members; ❌ Cancellation/refund (P0); ❌ Reschedule (P1) |
 | Video consultation | Browser-based video call with chat/file sharing | ❌ Deferred to post-MVP or P1 |
 | Medical records | Upload reports, receive prescriptions (PDF), verify prescriptions | ❌ Missing entirely (P0 tasks) |
 | Reviews | Rate doctors after completed visits | ❌ Missing entirely (P0 task) |
@@ -131,7 +131,7 @@ route → authentication/role checks → controller → service → repository �
 | Role | Main access | Key restrictions | Status |
 |---|---|---|---|
 | Visitor | Public doctor search/profile/catalog | No booking or private patient data | ✅ Implemented |
-| Patient | Own profile, appointments, payment status | Cannot read other patients' data; family member must belong to patient | ⚠️ Basic auth works; family-member logic missing |
+| Patient | Own profile, family members, appointments, payment status | Cannot read other patients' data; family member must belong to patient | ⚠️ Auth + family members work; cancellation/reschedule missing |
 | Doctor | Own profile/schedule, assigned appointments | Cannot access unrelated patient records or another doctor's appointments | ✅ Implemented (basic) |
 | Admin | Doctor review, account status, specialties/hospitals | Cannot read clinical report or prescription contents | ⚠️ Doctor review works; rest missing |
 
@@ -172,9 +172,11 @@ All endpoints live under `/api/v1` except health/readiness (`/health`).
 |----------|--------|--------|-------|
 | `GET /patients/me` | GET | ⚠️ Partially wired | Via `user.routes.ts` |
 | `PATCH /patients/me` | PATCH | ❌ Missing | Profile update |
-| `GET /patients/me/family-members` | GET | ❌ Missing | Core P0 requirement |
-| `POST /patients/me/family-members` | POST | ❌ Missing | Core P0 requirement |
-| `PATCH/DELETE /patients/me/family-members/:id` | PATCH/DELETE | ❌ Missing | Core P0 requirement |
+| `GET /patients/me/family-members` | GET | ✅ Implemented | Lists patient's family members |
+| `POST /patients/me/family-members` | POST | ✅ Implemented | Creates (max 10 per patient) |
+| `GET /patients/me/family-members/:id` | GET | ✅ Implemented | Single member, ownership enforced |
+| `PATCH /patients/me/family-members/:id` | PATCH | ✅ Implemented | Partial update |
+| `DELETE /patients/me/family-members/:id` | DELETE | ✅ Implemented | Returns 204 |
 
 #### Doctors
 | Endpoint | Method | Status | Notes |
@@ -296,16 +298,16 @@ All endpoints live under `/api/v1` except health/readiness (`/health`).
 | `AppointmentSlot` | `appointment_slots` | id, doctorProfileId, scheduleId, chamberId, startAt, endAt, mode, feeAmount, status, heldUntil | ✅ Complete |
 | `SlotHold` | `slot_holds` | id, slotId, patientProfileId, status, expiresAt, releasedAt | ✅ Complete |
 | `Appointment` | `appointments` | id, slotId, holdId, patientProfileId, doctorProfileId, scheduledStartAt, scheduledEndAt, mode, feeAmount, status, paymentReference, cancellationReason | ✅ Complete |
-| `Payment` | `payments` | id, appointmentId, patientProfileId, transactionId, idempotencyKey, requestHash, amount, currency, status, sessionId, gatewayUrl, validationId, bankTransactionId, expiresAt | ✅ Complete |
+| `Payment` | `payments` | id, appointmentId, patientProfileId, transactionId, idempotencyKey, requestHash, amount, currency, status, sessionId, gatewayUrl, validationId, bankTransactionId, expiresAt | ✅ Complete (commission missing — T-P0-2) |
 | `PaymentEvent` | `payment_events` | id, paymentId, fingerprint, providerStatus, riskLevel, validationId, amount, currency | ✅ Complete |
 | `Refund` | `refunds` | id, paymentId, refundTransactionId, amount, status, reason, providerReference | ✅ Foundation only |
 | `RefreshSession` | `refresh_sessions` | id, userId, tokenHash, expiresAt, lastUsedAt, revokedAt, replacedBySessionId, userAgent, ipAddress | ✅ Complete |
+| `FamilyMember` | `family_members` | id, patientProfileId, name, relationship, dateOfBirth, phone | ✅ Complete (T-P0-1) |
 
 ### Missing entities (required by client)
 
 | Entity | Table | Purpose | Priority |
 |--------|-------|---------|----------|
-| `FamilyMember` | `family_members` | Patient-owned profiles for booking on behalf of relatives | P0 |
 | `Prescription` | `prescriptions` | Diagnosis, medicines, tests, advice; 24h edit window; unique verification code | P0 |
 | `PrescriptionVersion` | `prescription_versions` | Audit trail for prescription edits | P0 |
 | `Review` | `reviews` | Appointment, patient, doctor, rating, text; one per completed appointment | P0 |
@@ -323,8 +325,10 @@ Unique indexes verified in entities:
 - `uq_appointment_slots_doctor_start` — prevents duplicate slots
 - `uq_refresh_sessions_token_hash` — unique refresh token hash
 - `idx_slot_holds_status_expiry` — supports hold expiry worker
+- `idx_family_members_patient` — family member lookup by patient
+- `fk_family_members_patient` — cascade delete when patient profile is removed
 
-**Gaps:** No index on `family_members.patient_profile_id`, no patient overlap check constraint, no review uniqueness constraint (needs implementation).
+**Gaps:** No patient overlap check constraint, no review uniqueness constraint (needs implementation), no commission columns on `payments` (T-P0-2).
 
 ---
 
@@ -716,54 +720,83 @@ The documented workflow for incremental development:
 
 ## 16. Current next task
 
-### Task: Add `family_members` table and API (T-P0-1)
+### Completed: T-P0-1 — `family_members` table and API
 
-**Evidence for priority:**
-- Client explicitly requires: "Manage family members (book for a parent or child from one account)" (Section 2, last bullet).
-- Required for the booking flow to support family-member selection.
-- No existing code, entities, or endpoints for this feature.
-- Blocks nothing else; independent foundation task.
+**Status:** ✅ Implemented and verified (2026-10-25)
 
-**Files to create/modify:**
+**Implemented files:**
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/modules/patients/family-member.entity.ts` | Create | Entity: id, patientProfileId, name, relationship, dateOfBirth, phone |
-| `src/modules/patients/family-member.repository.ts` | Create | Interface for family member CRUD |
-| `src/modules/patients/typeorm-family-member.repository.ts` | Create | TypeORM implementation |
-| `src/modules/patients/family-member.service.ts` | Create | Business logic: validate ownership, max members limit |
-| `src/modules/patients/family-member.schema.ts` | Create | Zod schemas for create/update/validation |
-| `src/modules/patients/family-member.controller.ts` | Create | HTTP handlers |
-| `src/modules/patients/family-member.routes.ts` | Create | Route definitions |
-| `src/routes/v1.ts` | Modify | Wire family-member routes under `/patients/me/family-members` |
-| `src/database/migrations/XXXXX-add-family-members.ts` | Create | Migration: create `family_members` table |
-| `src/database/data-source.ts` | Modify | Register FamilyMember entity |
-| `tests/family-member.service.test.ts` | Create | Unit tests for service layer |
+| `src/modules/patients/family-member.entity.ts` | Created | Entity: id, patientProfileId, name, relationship, dateOfBirth, phone |
+| `src/modules/patients/family-member.repository.ts` | Created | Repository interface |
+| `src/modules/patients/typeorm-family-member.repository.ts` | Created | TypeORM implementation |
+| `src/modules/patients/family-member.service.ts` | Created | Business logic: ownership, max 10 members |
+| `src/modules/patients/family-member.schema.ts` | Created | Zod validation schemas |
+| `src/modules/patients/family-member.controller.ts` | Created | HTTP handlers |
+| `src/modules/patients/family-member.routes.ts` | Created | Route definitions |
+| `src/routes/v1.ts` | Modified | Wired routes under `/patients/me/family-members` |
+| `src/server.ts` | Modified | Injected FamilyMemberService |
+| `src/database/data-source.ts` | Modified | Registered entity + migration |
+| `src/database/migrations/1761393600000-add-family-members.ts` | Created | Applied successfully |
+| `tests/family-member.service.test.ts` | Created | 9 unit tests |
+
+**Verification evidence:**
+- `npm run typecheck` — passes, no errors
+- `npm test` — 108 passed, 5 skipped
+- `npm run db:migrate` — migration applied successfully
+- Manual API testing — all 5 endpoints returned expected results:
+  - `GET /api/v1/patients/me/family-members` → 200 with items list
+  - `POST /api/v1/patients/me/family-members` → 201 with created member
+  - `GET /api/v1/patients/me/family-members/:id` → 200 with member
+  - `PATCH /api/v1/patients/me/family-members/:id` → 200 with updated member
+  - `DELETE /api/v1/patients/me/family-members/:id` → 204
+  - Unauthenticated request → 401 `AUTHENTICATION_REQUIRED`
+
+**Remaining follow-up (not blocking):** The booking endpoint does not yet accept an optional `familyMemberId`. This must be added when the booking flow is extended so patients can book on behalf of a family member. Track as part of T-P2-4.
+
+---
+
+### Next task: T-P0-2 — Add commission (10%) to the payment record
+
+**Evidence for priority:**
+- Client business rule (Section 5, item 16): "The platform keeps a 10% commission on each paid consultation."
+- The `Payment` entity currently stores only `amount` and `currency`; no commission field exists (verified in `src/modules/payments/payment.entity.ts`).
+- Cancellation/refund work (T-P0-3) depends on commission being recorded, because refunds must reverse commission proportionally.
+- Admin revenue reporting (T-P4-7) cannot be built without it.
+
+**Files to inspect/change:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/payments/payment.entity.ts` | Modify | Add `commission_amount` and `net_amount` columns |
+| `src/modules/payments/payment.types.ts` | Modify | Add commission fields to `PaymentView` |
+| `src/modules/payments/typeorm-payment.repository.ts` | Modify | Compute and persist commission on verified payment |
+| `src/modules/payments/payment.service.ts` | Modify | Apply the 10% rate at confirmation time |
+| `src/database/migrations/XXXXX-add-payment-commission.ts` | Create | Add columns to `payments` |
+| `src/database/data-source.ts` | Modify | Register the new migration |
+| `tests/payment.service.test.ts` | Modify | Assert commission is recorded on a verified payment |
 
 **Intended behavior:**
-- `GET /api/v1/patients/me/family-members` — list all family members for authenticated patient
-- `POST /api/v1/patients/me/family-members` — add a family member (name, relationship, DOB, phone)
-- `PATCH /api/v1/patients/me/family-members/:id` — update family member details
-- `DELETE /api/v1/patients/me/family-members/:id` — remove a family member
-- All endpoints derive patient identity from authentication context; no client-supplied patient ID accepted.
-- Maximum N family members per patient (recommend 10).
-- Booking endpoint accepts optional `familyMemberId`; server validates that the member belongs to the authenticated patient.
+- Commission rate is 10% of the captured amount, computed server-side from the trusted payment amount — never from a client value.
+- `commissionAmount = round(amount * 0.10, 2)`; `netAmount = amount - commissionAmount`.
+- Commission is recorded only when the payment reaches a verified/paid state.
+- Existing INITIATED/FAILED rows keep null commission until verified.
 
 **Acceptance criteria:**
-1. Migration creates `family_members` table with proper foreign keys and indexes.
-2. All four endpoints respond correctly with proper status codes.
-3. Unauthorized users cannot access another patient's family members.
-4. Service validates that family member belongs to the authenticated patient.
-5. Unit tests cover: create, list, update, delete, unauthorized access, max limit.
-6. `npm run typecheck` passes.
-7. `npm test` passes.
-8. Implementation status updated in this document.
+1. Migration adds `commission_amount` and `net_amount` decimal columns without breaking existing rows.
+2. A verified payment stores commission equal to 10% of the amount and the correct net amount.
+3. Money values remain exact decimals (no floating-point arithmetic on stored values).
+4. Unit test proves the 10% calculation for a representative amount (e.g. 800.00 → 80.00 commission, 720.00 net).
+5. `npm run typecheck` and `npm test` pass.
+6. Implementation status updated in this document.
 
 **Verification commands:**
 ```bash
 cd MediConnectBDbackend
 npm run typecheck
 npm test
+npm run db:migrate
 ```
 
 ---

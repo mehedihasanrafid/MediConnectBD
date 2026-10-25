@@ -24,6 +24,9 @@ import {
   createCatalogRouter,
   createDoctorRouter,
 } from "../modules/doctors/doctor.routes";
+import { createFamilyMemberRouter } from "../modules/patients/family-member.routes";
+import type { FamilyMemberService } from "../modules/patients/family-member.service";
+import { TypeOrmFamilyMemberRepository } from "../modules/patients/typeorm-family-member.repository";
 
 export interface ApiRouterOptions {
   authService: AuthService;
@@ -33,6 +36,7 @@ export interface ApiRouterOptions {
   schedulingService: SchedulingService;
   appointmentService: AppointmentService;
   paymentService?: PaymentService;
+  familyMemberService?: FamilyMemberService;
   secureCookies: boolean;
 }
 
@@ -75,6 +79,13 @@ export function createApiRouter(options: ApiRouterOptions): Router {
   );
 
   router.use(createUserRouter(authenticate));
+
+  if (options.familyMemberService) {
+    router.use(
+      "/patients/me/family-members",
+      createFamilyMemberRouter(options.familyMemberService, authenticate),
+    );
+  }
 
   return router;
 }

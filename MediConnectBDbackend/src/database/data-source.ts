@@ -20,6 +20,7 @@ import { Refund } from "../modules/payments/refund.entity";
 import { AddPayments1761220800000 } from "./migrations/1761220800000-add-payments";
 import { Hospital } from "../modules/hospitals/hospital.entity";
 import { PatientProfile } from "../modules/patients/patient-profile.entity";
+import { FamilyMember } from "../modules/patients/family-member.entity";
 import { RefreshSession } from "../modules/auth/refresh-session.entity";
 import { Role } from "../modules/role/role.entity";
 import { Specialty } from "../modules/specialties/specialty.entity";
@@ -30,6 +31,7 @@ import { AddDoctorDirectory1760961600000 } from "./migrations/1760961600000-add-
 import { AddDoctorScheduling1761048000000 } from "./migrations/1761048000000-add-doctor-scheduling";
 import { AddAppointmentBooking1761134400000 } from "./migrations/1761134400000-add-appointment-booking";
 import { AddHoldExpiryIndex1761307200000 } from "./migrations/1761307200000-add-hold-expiry-index";
+import { AddFamilyMembers1761393600000 } from "./migrations/1761393600000-add-family-members";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -46,6 +48,7 @@ const AppDataSource = new DataSource({
     User,
     Role,
     PatientProfile,
+    FamilyMember,
     DoctorProfile,
     DoctorChamber,
     DoctorSchedule,
@@ -68,6 +71,7 @@ const AppDataSource = new DataSource({
     AddAppointmentBooking1761134400000,
     AddPayments1761220800000,
     AddHoldExpiryIndex1761307200000,
+    AddFamilyMembers1761393600000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

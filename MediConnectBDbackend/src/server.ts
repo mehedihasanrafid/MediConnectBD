@@ -24,6 +24,8 @@ import { TypeOrmAppointmentRepository } from "./modules/appointments/typeorm-app
 import { PaymentService } from "./modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "./modules/payments/typeorm-payment.repository";
 import { SslcommerzPaymentProvider } from "./modules/payments/sslcommerz-payment-provider";
+import { FamilyMemberService } from "./modules/patients/family-member.service";
+import { TypeOrmFamilyMemberRepository } from "./modules/patients/typeorm-family-member.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -55,11 +57,16 @@ async function main(): Promise<void> {
   const appointmentService = new AppointmentService(
     new TypeOrmAppointmentRepository(AppDataSource),
   );
+  const familyMemberService = new FamilyMemberService(
+    new TypeOrmFamilyMemberRepository(),
+  );
+
   const apiRouter = createApiRouter({
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource),
       env.SSLCOMMERZ_STORE_ID && env.SSLCOMMERZ_STORE_PASSWORD && env.PUBLIC_API_URL
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
         : null),
+    familyMemberService,
     authService,
     authRepository,
     accessTokens,

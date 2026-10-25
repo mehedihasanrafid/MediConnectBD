@@ -1,6 +1,6 @@
 # MediConnect BD — Technical Development Blueprint
 
-**Status:** Updated after codebase audit — 2026-10-25  
+**Status:** Updated after codebase audit and frontend build — 2026-10-25  
 **Purpose:** Accurate, practical, single source of truth for project development. Maps every client requirement to its real implementation status and defines ordered, testable next steps.
 
 ---
@@ -35,7 +35,7 @@ This document translates the **client requirements** (`MediConnect BD – Client
 | Reviews | Rate doctors after completed visits | ❌ Missing entirely (P0 task) |
 | Notifications | Email confirmations + reminders at 24h/30min | ❌ Missing entirely (P0 task) |
 | Admin | Review doctors, suspend accounts, manage catalogs, view reports, handle refunds | ⚠️ Doctor review works; rest missing (P1) |
-| Frontend | React + TypeScript web platform | ❌ Not created yet (P0) |
+| Frontend | React + TypeScript web platform | ⚠️ Demo UI built (T-P0-8 partial); payment, video, records, reviews, admin reports pages missing |
 
 ### Explicitly deferred unless re-approved
 
@@ -76,7 +76,7 @@ flowchart LR
 
 | Layer | Current choice | Adjustable option / decision |
 |---|---|---|
-| Frontend | **Not yet created** | React, TypeScript, Vite, Tailwind (as recommended by client) |
+| Frontend | React 19 + TypeScript 6 + Vite 8 + react-router-dom 7, hand-written CSS | Tailwind was recommended by the client but is **not** installed; the current stylesheet is plain CSS. Adopt Tailwind only if the team agrees it is worth the migration. |
 | API | Node.js 24+, Express 5.1, TypeScript 5.9 | Keep existing stack |
 | API validation | Zod 4.1 at every request boundary | Already used consistently; keep |
 | Database | MySQL 8, InnoDB, TypeORM 0.3 via mysql2 | Migrations enabled, synchronize: false |
@@ -102,10 +102,13 @@ MediConnectBD/                          ← Git root (existing)
 │   ├── docs/                           ← Architecture docs
 │   ├── .env / .env.example             ← Credentials
 │   └── package.json / tsconfig.json
-├── frontend/                           ← React app (NOT YET CREATED)
-│   ├── src/features/                   ← auth, doctors, availability, appointments, payments, video, prescriptions, reviews, admin
-│   ├── src/shared/                     ← API client, utilities
-│   └── tests/
+├── frontend/                           ← React demo UI (existing, committed)
+│   ├── src/features/                   ← auth, doctors, appointments, patient, doctor, admin
+│   ├── src/shared/                     ← api.ts (fetch client), types.ts, format.ts
+│   ├── src/components/ui.tsx           ← Card, Button, Field, Alert, Spinner, EmptyState, Badge
+│   ├── src/App.tsx                     ← routes + RequireAuth role guard + role-aware nav
+│   ├── vite.config.ts                  ← dev proxy /api → http://localhost:4000
+│   └── package.json / tsconfig*.json
 └── DEVELOPMENT.md                      ← This document
 ```
 
@@ -114,6 +117,89 @@ Feature modules own their API handlers, domain rules, database access, validatio
 ```
 route → authentication/role checks → controller → service → repository → database
 ```
+
+### Frontend architecture (as built)
+
+The frontend is a single-page React app that talks only to the existing API. It adds no new backend surface.
+
+| Concern | Implementation | Why |
+|---|---|---|
+| Routing | `react-router-dom` v7, `BrowserRouter` in `src/main.tsx` | Standard SPA routing; no framework needed |
+| Authorization | `RequireAuth` in `src/App.tsx` checks `user.roles` and redirects to `/login` | UI-level guard only. **The backend remains the authority**; the UI never decides access on its own |
+| Session | Access token held in memory only; refresh token in the HTTP-only cookie | Access token is never written to `localStorage`, so XSS cannot exfiltrate it |
+| API access | `src/shared/api.ts` — typed `fetch` wrapper, `ApiRequestError`, `API_BASE` defaults to the relative `/api/v1` | Relative base routes through the Vite proxy so the browser sees one origin |
+| Dev proxy | `vite.config.ts` proxies `/api` → `http://localhost:4000` | The refresh cookie is `SameSite=Strict`. Without a single origin the cookie is dropped on reload and the session is lost. The proxy avoids weakening `SameSite` |
+| Styling | `src/index.css`, mobile-first plain CSS | No CSS framework installed; keeps the dependency surface small |
+| Time display | `src/shared/format.ts` uses `Intl.DateTimeFormat` with `timeZone: "Asia/Dhaka"` | Matches the backend's fixed UTC+06:00 slot generation |
+
+**Critical constraint — `erasableSyntaxOnly`:** `frontend/tsconfig.app.json` enables `erasableSyntaxOnly`, so TypeScript constructor parameter properties (`constructor(public readonly x: T)`) are **rejected**. Declare class fields separately and assign them in the constructor body. This is why `ApiRequestError` in `src/shared/api.ts` is written the long way.
+
+**Critical constraint — single-flight refresh:** Refresh tokens are single-use and rotate on every call; reusing a revoked token triggers `revokeAllSessions()` and returns `REFRESH_TOKEN_REUSED` (401). React StrictMode double-invokes effects in development, which fired two concurrent `/auth/refresh` calls and revoked the session. `src/features/auth/AuthContext.tsx` fixes this with a module-level `refreshInFlight` promise that serializes concurrent refreshes. **Do not remove this guard**, and do not add a second independent refresh path.
+
+**Pages currently implemented:**
+
+| Route | Page | Roles |
+|---|---|---|
+| `/login` | `LoginPage` — login with demo account shortcuts | public |
+| `/doctors` | `DoctorSearchPage` — search + specialty filter | public |
+| `/doctors/:doctorId` | `DoctorDetailPage` — profile, 7-day slots, hold, confirm booking | public |
+| `/appointments` | `AppointmentsPage` — upcoming/past with status badges | PATIENT |
+| `/family-members` | `FamilyMembersPage` — family member CRUD | PATIENT |
+| `/doctor` | `DoctorDashboardPage` — profile, weekly schedule, time off | DOCTOR |
+| `/admin/applications` | `AdminApplicationsPage` — approve/reject doctor applications | ADMIN |
+
+**Frontend commands:**
+
+```bash
+cd frontend
+npm install
+npm run dev      # Vite dev server on :5173 (requires the API on :4000)
+npm run build    # tsc -b && vite build
+npm run lint     # oxlint
+```
+
+**Not yet built in the frontend:** payment return/redirect handling, video consultation, medical report upload, prescription view/download/verify, reviews, doctor earnings, admin reports and refunds, and appointment cancellation. These follow the backend tasks that provide their endpoints.
+
+### Running the full stack locally
+
+Three processes are needed: MySQL, Redis, the API, and the BullMQ worker. The frontend is a fourth.
+
+**Backend scripts (verified in `MediConnectBDbackend/package.json`):**
+
+| Script | Command | Purpose |
+|---|---|---|
+| `npm run dev` | `tsx watch src/server.ts` | API on :4000 |
+| `npm run dev:worker` | `tsx watch src/workers/worker.ts` | BullMQ worker (expires unpaid holds) |
+| `npm run dev:start` | `concurrently -k -n redis,api,worker ...` | Starts a local Redis, the API, and the worker together |
+| `npm run typecheck` | `tsc -p tsconfig.json --noEmit` | Type check without emitting |
+| `npm test` | `vitest run` | Full test suite |
+| `npm run db:migrate` | `npm run build && npm run migration:run` | Build then run pending migrations |
+| `npm run db:seed` | `npm run build && npm run seed` | Build then seed demo data |
+| `npm run db:setup:local` | `node scripts/setup-local-database.cjs` | Create the local database and app user |
+
+**Recommended startup order:**
+
+```bash
+# 1. MySQL must already be running (system service or container).
+# 2. Backend — starts Redis, API, and worker together:
+cd MediConnectBDbackend
+npm run dev:start
+
+# 3. Frontend, in a second terminal:
+cd frontend
+npm run dev
+```
+
+**Known issue with `dev:start`:** the script starts its own Redis on port 6379. If a Redis instance is already running, that step fails with `Address already in use` and `concurrently -k` may tear down the other processes. When Redis is already running, start the two Node processes directly instead:
+
+```bash
+cd MediConnectBDbackend
+npx concurrently -k -n api,worker "npm run dev" "npm run dev:worker"
+```
+
+**Ports:** API `4000`, frontend `5173`, MySQL `3306`, Redis `6379`.
+
+**Note:** `npm run dev` must be run from `MediConnectBDbackend/`, not the repository root — the root has no `package.json`.
 
 ---
 
@@ -483,6 +569,8 @@ Client requires:
 
 ## 10. Requirements-to-implementation checklist
 
+**Scope note:** the statuses below describe **backend/API capability**, which is the authoritative measure of whether a requirement is met. A requirement marked `Implemented` may still lack a frontend page — see the page table in [Frontend architecture](#frontend-architecture-as-built) for current UI coverage. Conversely, a frontend page never makes a requirement `Implemented` on its own.
+
 ### Section 2 — What Patients Need
 
 | # | Requirement | Status | Task ID | Acceptance criteria |
@@ -574,7 +662,7 @@ Client requires:
 |-------|------|-------------|------------|------------------|
 | 6 | T-P0-6 | Prescription system (entity, CRUD, 24h lock, PDF, verify) | — | Doctor creates prescription; 24h edit window; unique verification code |
 | 7 | T-P0-7 | Review system (entity, endpoints, moderation) | — | One review per completed appointment; admin can remove |
-| 8 | T-P0-8 | Basic frontend pages (search, booking, payment, dashboards) | T-P0-1, T-P0-3 | End-to-end booking flow works in browser |
+| 8 | T-P0-8 | Frontend pages (search, booking, payment, dashboards) | T-P0-1, T-P0-3 | ⚠️ **Partial** — search, doctor detail, hold/booking, appointments, family members, doctor dashboard, admin applications are built and verified in the browser. Payment return, cancellation, records, prescriptions, reviews, and admin reports pages remain. |
 
 ### Phase 3: Admin & doctor enhancements (P1)
 
@@ -633,6 +721,24 @@ Client requires:
 - Frontend tests for booking flow, payment return, cancellation, error paths.
 - Mobile layout smoke checks.
 - Type-check, lint, production build verification.
+
+### Frontend verification (current state)
+
+The frontend has **no automated test suite yet** — `frontend/package.json` defines only `dev`, `build`, `lint`, and `preview`. Verification so far has been manual, in the browser, against a running API. The following were exercised and passed:
+
+- Login as patient, doctor, and admin; role-aware navigation renders the correct links.
+- Doctor search and specialty filter; doctor detail renders 36 slots across 7 days.
+- Slot hold, then booking confirmation; the appointment appears under `/appointments`.
+- Family member create, edit, and delete.
+- Doctor dashboard renders the weekly schedule and time off.
+- Admin applications page lists and actions pending doctor applications.
+- Logout clears the session and returns to `/login`.
+
+**Known browser artifact (not a bug):** the console shows `net::ERR_ABORTED` for `DELETE` and logout requests. This is the browser reporting a 204 response with no body; the operations succeed and the UI updates correctly.
+
+**Unverified:** session persistence across a full page reload after the single-flight refresh fix. This must be re-confirmed before the demo and is listed as a follow-up below.
+
+**Required before the demo:** add a minimal frontend test setup (Vitest + React Testing Library) covering the auth context refresh guard and the booking flow, and add a reload-persistence check. Until then, treat frontend behavior as manually verified only.
 
 ### Test environment rules
 
@@ -754,6 +860,51 @@ The documented workflow for incremental development:
   - Unauthenticated request → 401 `AUTHENTICATION_REQUIRED`
 
 **Remaining follow-up (not blocking):** The booking endpoint does not yet accept an optional `familyMemberId`. This must be added when the booking flow is extended so patients can book on behalf of a family member. Track as part of T-P2-4.
+
+---
+
+### Completed: T-P0-8 (partial) — React demo frontend
+
+**Status:** ⚠️ Partially implemented and manually verified (2026-10-25). Committed in `5234078 "test frontend created"`.
+
+**Implemented files:**
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/shared/api.ts` | Typed `fetch` client, `ApiRequestError`, in-memory access token |
+| `frontend/src/shared/types.ts` | API response types mirroring backend contracts |
+| `frontend/src/shared/format.ts` | `formatDhakaDateTime`, `formatMoney`, `formatStatus` (Asia/Dhaka) |
+| `frontend/src/components/ui.tsx` | Card, Button, Field, Alert, Spinner, EmptyState, Badge |
+| `frontend/src/features/auth/AuthContext.tsx` | Auth provider with the single-flight refresh guard |
+| `frontend/src/features/auth/LoginPage.tsx` | Login with demo account shortcuts |
+| `frontend/src/features/doctors/DoctorSearchPage.tsx` | Search + specialty filter |
+| `frontend/src/features/doctors/DoctorDetailPage.tsx` | Profile, 7-day slots, hold, confirm booking |
+| `frontend/src/features/appointments/AppointmentsPage.tsx` | Upcoming/past appointments with status badges |
+| `frontend/src/features/patient/FamilyMembersPage.tsx` | Family member CRUD |
+| `frontend/src/features/doctor/DoctorDashboardPage.tsx` | Profile, weekly schedule, time off |
+| `frontend/src/features/admin/AdminApplicationsPage.tsx` | Approve/reject doctor applications |
+| `frontend/src/App.tsx` | Routes, `RequireAuth` role guard, role-aware nav |
+| `frontend/src/main.tsx` | `BrowserRouter` + `AuthProvider` |
+| `frontend/src/index.css` | Mobile-first stylesheet |
+| `frontend/vite.config.ts` | Dev proxy `/api` → `http://localhost:4000` |
+
+**Verification evidence:**
+- `npm run build` (frontend) — passes (279.81 kB JS, 4.95 kB CSS)
+- Manual browser testing — login, doctor search, doctor detail with 36 slots, hold, booking, appointments, family members CRUD, doctor dashboard, admin applications, logout, and role-based navigation all verified against the running API.
+
+**Defects found and fixed during this work:**
+- `REFRESH_TOKEN_REUSED` — React StrictMode double-invoked the refresh effect, so two concurrent `/auth/refresh` calls rotated the token twice and the second was treated as reuse, revoking all sessions. Fixed with a module-level `refreshInFlight` promise in `AuthContext.tsx`.
+- Session lost on reload — the refresh cookie is `SameSite=Strict` and the frontend and API were different origins. Fixed by adding the Vite dev proxy so the browser sees one origin.
+- Build errors from `erasableSyntaxOnly` (constructor parameter properties) and incorrect import paths.
+
+**Remaining work for T-P0-8:**
+- Payment return/redirect handling.
+- Appointment cancellation UI (blocked on T-P0-3).
+- Medical report upload, prescription view/download/verify (blocked on T-P0-6).
+- Reviews UI (blocked on T-P0-7).
+- Doctor earnings and admin reports/refunds UI (blocked on T-P1-1, T-P1-2).
+- Automated frontend tests (none exist yet).
+- Re-confirm session persistence across a full page reload.
 
 ---
 

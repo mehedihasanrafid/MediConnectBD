@@ -29,6 +29,8 @@ import { TypeOrmFamilyMemberRepository } from "./modules/patients/typeorm-family
 import { DefaultEmailService } from "./modules/notifications/email-service";
 import { ConsoleTransport } from "./modules/notifications/console-transport";
 import { NotificationService } from "./modules/notifications/notification-service";
+import { ReviewService } from "./modules/reviews/review.service";
+import { TypeOrmReviewRepository } from "./modules/reviews/typeorm-review.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -66,6 +68,9 @@ async function main(): Promise<void> {
   const familyMemberService = new FamilyMemberService(
     new TypeOrmFamilyMemberRepository(),
   );
+  const reviewService = new ReviewService(
+    new TypeOrmReviewRepository(AppDataSource),
+  );
 
   const apiRouter = createApiRouter({
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource),
@@ -73,6 +78,7 @@ async function main(): Promise<void> {
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
         : null),
     familyMemberService,
+    reviewService,
     authService,
     authRepository,
     accessTokens,

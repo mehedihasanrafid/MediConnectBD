@@ -21,6 +21,8 @@ import { updateDoctorProfileSchema, doctorReviewSchema } from "../src/modules/do
 import { createTimeOffSchema, replaceScheduleSchema } from "../src/modules/scheduling/scheduling.schema";
 import { createHoldSchema, bookAppointmentSchema } from "../src/modules/appointments/appointment.schema";
 import { paymentCustomerSchema, paymentCallbackSchema } from "../src/modules/payments/payment.schema";
+import { createReviewRouter } from "../src/modules/reviews/review.routes";
+import type { ReviewService } from "../src/modules/reviews/review.service";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -61,6 +63,7 @@ describe("OpenAPI and Swagger", () => {
     const schedulingService = {} as SchedulingService;
     const appointmentService = {} as AppointmentService;
     const paymentService = {} as PaymentService;
+    const reviewService = {} as ReviewService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -71,6 +74,7 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createAppointmentRouter({ appointmentService, authenticate }), "/api/v1/appointments"),
       ...collect(createPaymentRouter(paymentService, authenticate), "/api/v1"),
       ...collect(createUserRouter(authenticate), "/api/v1"),
+      ...collect(createReviewRouter({ reviewService, authenticate }), "/reviews"),
     ];
     const documented = Object.entries(openApiDocument.paths).flatMap(([path, item]) => methods.filter(method => item?.[method]).map(method => `${method.toUpperCase()} ${path}`));
     expect(documented.sort()).toEqual(actual.sort());

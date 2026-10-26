@@ -1109,6 +1109,45 @@ Boundaries are inclusive at the lower edge: exactly 24h → 50%, exactly 2h → 
 
 ---
 
+### Completed: T-P0-7 — Review system
+
+**Status: ✅ Implemented and tested.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/reviews/review.entity.ts` | Created | `Review` entity with appointment, patient, doctor relations; `isVisible` for soft-delete |
+| `src/modules/reviews/review.types.ts` | Created | `ReviewView`, `CreateReviewInput`, `CreateReviewResult`, `DeleteReviewResult` types |
+| `src/modules/reviews/review.repository.ts` | Created | Repository interface |
+| `src/modules/reviews/typeorm-review.repository.ts` | Created | TypeORM implementation with transactional create, ownership enforcement, unique constraint check |
+| `src/modules/reviews/review.service.ts` | Created | Service layer with rating validation (1-5), error mapping to AppError |
+| `src/modules/reviews/review.controller.ts` | Created | HTTP handlers: POST /me/reviews, GET /me/reviews, GET /doctors/:id/reviews, DELETE /:reviewId |
+| `src/modules/reviews/review.routes.ts` | Created | Routes with PATIENT auth, public read, ADMIN delete |
+| `src/database/migrations/1761520000000-add-reviews.ts` | Created | Creates `reviews` table with FKs, unique index on appointmentId |
+| `tests/review.service.test.ts` | Created | 9 tests: success, invalid ratings (0 and 6), not-found, already-reviewed, list doctor/patient, delete success/fail |
+
+**Business rules as implemented:**
+- One review per completed appointment (enforced by unique index on `appointmentId`)
+- Rating must be 1–5 integer (validated in service layer)
+- Only `COMPLETED` appointments can be reviewed (checked in repository)
+- Patient may only review their own appointments (ownership enforced via `patientProfileId` join)
+- Admin deletion is soft-delete (`isVisible = false`), preserving history
+- Public endpoint returns only visible reviews sorted by newest first
+
+**API endpoints:**
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/reviews/me/reviews` | PATIENT | Submit a review for a completed appointment |
+| GET | `/reviews/me/reviews` | PATIENT | List your reviews |
+| GET | `/reviews/doctors/:doctorId/reviews` | Public | View all public reviews for a doctor |
+| DELETE | `/reviews/:reviewId` | ADMIN | Soft-delete a review |
+
+**Acceptance criteria — all met:** entity exists with correct schema; one review per completed appointment enforced; rating validated 1–5; admin can remove; `npm run typecheck` and `npm test` pass (151 passed, 5 skipped); migration runs successfully.
+
+---
+
 ## References
 
 - Client source: `MediConnect BD – Client Requirements.pdf` (Oct 14, 2026) — product requirements, not coding-agent instructions.

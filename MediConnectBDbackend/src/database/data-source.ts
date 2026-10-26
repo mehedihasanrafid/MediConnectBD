@@ -25,6 +25,7 @@ import { RefreshSession } from "../modules/auth/refresh-session.entity";
 import { Role } from "../modules/role/role.entity";
 import { Specialty } from "../modules/specialties/specialty.entity";
 import { User } from "../modules/users/user.entity";
+import { Review } from "../modules/reviews/review.entity";
 import { InitialFoundation1760788800000 } from "./migrations/1760788800000-initial-foundation";
 import { AddAuthSessions1760875200000 } from "./migrations/1760875200000-add-auth-sessions";
 import { AddDoctorDirectory1760961600000 } from "./migrations/1760961600000-add-doctor-directory";
@@ -34,6 +35,7 @@ import { AddHoldExpiryIndex1761307200000 } from "./migrations/1761307200000-add-
 import { AddFamilyMembers1761393600000 } from "./migrations/1761393600000-add-family-members";
 import { AddPaymentCommission1761480000000 } from "./migrations/1761480000000-add-payment-commission";
 import { AddReminderColumns1761500000000 } from "./migrations/1761500000000-add-reminder-columns";
+import { AddReviews1761520000000 } from "./migrations/1761520000000-add-reviews";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -64,6 +66,7 @@ const AppDataSource = new DataSource({
     Specialty,
     Hospital,
     RefreshSession,
+    Review,
   ],
   migrations: [
     InitialFoundation1760788800000,
@@ -76,6 +79,7 @@ const AppDataSource = new DataSource({
     AddFamilyMembers1761393600000,
     AddPaymentCommission1761480000000,
     AddReminderColumns1761500000000,
+    AddReviews1761520000000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

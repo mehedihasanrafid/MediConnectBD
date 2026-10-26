@@ -114,6 +114,20 @@ add("post", `${appointments}/{appointmentId}/cancel`, "cancelAppointment", "Appo
   description: "PATIENT only. Refund depends on notice: more than 24 hours is full, 2 to 24 hours is half, under 2 hours is none. A doctor or admin cancellation always refunds in full. The refund is recorded as REQUESTED; no provider refund is executed yet. Repeating the call for an already-cancelled appointment returns its current state.",
 });
 
+add("post", "/reviews/me/reviews", "createReview", "Reviews", "Submit a review for a completed appointment", "Review", 201, {
+  ...patientAccess, body: "CreateReview", errors: [404, 409], parameters: [],
+  description: "PATIENT only. One review per completed appointment. Rating must be 1-5. Only COMPLETED appointments can be reviewed.",
+});
+add("get", "/reviews/me/reviews", "listMyReviews", "Reviews", "List your reviews", "ReviewsList", 200, patientAccess);
+add("get", "/reviews/doctors/{doctorId}/reviews", "listDoctorReviews", "Reviews", "View all public reviews for a doctor", "ReviewsList", 200, {
+  access: "public", parameters: [id("doctorId")],
+  description: "Public endpoint. Returns visible reviews sorted by newest first.",
+});
+add("delete", "/reviews/{reviewId}", "deleteReview", "Reviews", "Admin: remove a review (soft delete)", null, 204, {
+  ...adminAccess, parameters: [id("reviewId")], errors: [404],
+  description: "ADMIN only. Soft-deletes by setting isVisible=false.",
+});
+
 add("post", `${appointments}/{appointmentId}/payments`, "initiatePayment", "Payments", "Create a sandbox hosted checkout", "Payment", 200, {
   ...patientAccess, body: "PaymentCustomer", errors: [404, 409, 502, 503], parameters: [id("appointmentId"), {
     name: "Idempotency-Key", in: "header", required: true, description: "Keep the same key and body when retrying the same checkout. A changed payload or key conflicts with the existing payment.",

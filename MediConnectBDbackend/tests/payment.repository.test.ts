@@ -21,6 +21,7 @@ function fixture() {
     holdId: hold.id, slotId: slot.id, mode: ConsultationMode.VIDEO, feeAmount: "800.00", status: AppointmentStatus.PENDING_PAYMENT });
   const payment = Object.assign(new Payment(), { id: randomUUID(), appointmentId: appointment.id, patientProfileId: appointment.patientProfileId,
     transactionId: "MCtest", amount: "800.00", currency: "BDT", status: "PENDING", expiresAt: expiry,
+    commissionAmount: null, netAmount: null,
     idempotencyKey: "original_key_12345", requestHash: "hash", gatewayUrl: "https://sandbox.sslcommerz.com/pay" });
   const tables = new Map<unknown, any[]>([[AppointmentSlot, [slot]], [SlotHold, [hold]], [Appointment, [appointment]], [Payment, [payment]], [PaymentEvent, []]]);
   const matches = (row: any, where: any) => Object.entries(where).every(([key, value]) => row[key] === value);
@@ -62,6 +63,38 @@ describe("payment booking decisions", () => {
     expect(f.hold.status).toBe(SlotHoldStatus.CONVERTED);
     expect(f.slot.status).toBe(AppointmentSlotStatus.BOOKED);
     expect(f.slot.heldUntil).toBeNull();
+  });
+
+  it("records 10% commission and the doctor net on a verified payment", async () => {
+    const f = fixture();
+    const result = await f.repository.applyVerified(f.payment.id, f.transaction, f.now);
+    expect(result.status).toBe("SUCCEEDED");
+    expect(result.commissionAmount).toBe("80.00");
+    expect(result.netAmount).toBe("720.00");
+    expect(f.payment.commissionAmount).toBe("80.00");
+    expect(f.payment.netAmount).toBe("720.00");
+  });
+
+  it("leaves commission unset until the payment is verified", async () => {
+    const f = fixture();
+    expect(f.payment.commissionAmount).toBeNull();
+    expect(f.payment.netAmount).toBeNull();
+  });
+
+  it("does not record commission for a risk-flagged charge held for review", async () => {
+    const f = fixture();
+    const result = await f.repository.applyVerified(f.payment.id, { ...f.transaction, riskLevel: "1" }, f.now);
+    expect(result.status).toBe("REVIEW_REQUIRED");
+    expect(result.commissionAmount).toBeNull();
+    expect(result.netAmount).toBeNull();
+  });
+
+  it("does not record commission for a failed charge", async () => {
+    const f = fixture();
+    const result = await f.repository.applyVerified(f.payment.id, { ...f.transaction, status: "FAILED" }, f.now);
+    expect(result.status).toBe("FAILED");
+    expect(result.commissionAmount).toBeNull();
+    expect(result.netAmount).toBeNull();
   });
 
   it("deduplicates VALID and VALIDATED callbacks for the same charge", async () => {

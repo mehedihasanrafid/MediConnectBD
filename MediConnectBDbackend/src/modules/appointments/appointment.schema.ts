@@ -14,3 +14,9 @@ export const bookAppointmentSchema = z.object({
 });
 
 export const holdIdSchema = z.string().uuid();
+
+export const appointmentIdSchema = z.string().uuid();
+
+export const cancelAppointmentSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
+});

@@ -6,6 +6,7 @@
 
 import { AppError } from "../../utils/app-error";
 import type { AppointmentRepository } from "./appointment.repository";
+import type { CancellationActor } from "./cancellation-policy";
 
 const HOLD_DURATION_MILLISECONDS = 10 * 60 * 1000;
 const MINIMUM_BOOKING_LEAD_MILLISECONDS = 60 * 60 * 1000;
@@ -85,6 +86,39 @@ export class AppointmentService {
     if (result.kind === "HOLD_FORBIDDEN") {
       throw new AppError(403, "HOLD_FORBIDDEN", "This hold belongs to another patient");
     }
+  }
+
+  /**
+   * Cancels a booking and reports the refund decision. Repeating the call is idempotent: an
+   * already-cancelled appointment returns its current state instead of an error.
+   */
+  async cancelAppointment(
+    actor: CancellationActor,
+    actorId: string,
+    appointmentId: string,
+    reason: string,
+  ) {
+    const result = await this.repository.cancelAppointment({
+      appointmentId,
+      actor,
+      actorId,
+      reason,
+      now: this.now(),
+    });
+    if (result.kind === "APPOINTMENT_NOT_FOUND") {
+      throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+    }
+    if (result.kind === "APPOINTMENT_FORBIDDEN") {
+      throw new AppError(403, "APPOINTMENT_FORBIDDEN", "This appointment belongs to another patient");
+    }
+    if (result.kind === "APPOINTMENT_NOT_CANCELLABLE") {
+      throw new AppError(
+        409,
+        "APPOINTMENT_NOT_CANCELLABLE",
+        "Only a confirmed or pending-payment appointment can be cancelled",
+      );
+    }
+    return result.outcome;
   }
 
   listMyAppointments(patientProfileId: string) {

@@ -8,6 +8,7 @@ import { AppointmentService } from "../src/modules/appointments/appointment.serv
 import type {
   AppointmentView,
   BookHoldResult,
+  CancelAppointmentResult,
   CreateHoldResult,
   ReleaseHoldResult,
   SlotHoldView,
@@ -62,6 +63,15 @@ class FakeAppointmentRepository implements AppointmentRepository {
   createResult: CreateHoldResult = { kind: "CREATED", hold: hold() };
   bookResult: BookHoldResult = { kind: "BOOKED", appointment: appointment() };
   releaseResult: ReleaseHoldResult = { kind: "RELEASED" };
+  cancelResult: CancelAppointmentResult = {
+    kind: "CANCELLED",
+    outcome: {
+      appointment: { ...appointment(), status: AppointmentStatus.CANCELLED },
+      refundPercent: 100,
+      refundAmount: "800.00",
+      refundId: randomUUID(),
+    },
+  };
   createInput: Parameters<AppointmentRepository["createHold"]>[0] | null = null;
 
   async createHold(
@@ -81,6 +91,10 @@ class FakeAppointmentRepository implements AppointmentRepository {
 
   async listPatientAppointments(): Promise<AppointmentView[]> {
     return [appointment()];
+  }
+
+  async cancelAppointment(): Promise<CancelAppointmentResult> {
+    return this.cancelResult;
   }
 }
 
@@ -130,5 +144,65 @@ describe("AppointmentService", () => {
 
     expect(items).toHaveLength(1);
     expect(items[0]?.patientProfileId).toBe(patientProfileId);
+  });
+
+  it("returns the refund decision when a patient cancels", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, () => now);
+
+    const outcome = await service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict");
+
+    expect(outcome.refundPercent).toBe(100);
+    expect(outcome.refundAmount).toBe("800.00");
+    expect(outcome.appointment.status).toBe(AppointmentStatus.CANCELLED);
+  });
+
+  it("refuses to cancel another patient's appointment", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.cancelResult = { kind: "APPOINTMENT_FORBIDDEN" };
+    const service = new AppointmentService(repository, () => now);
+
+    await expect(
+      service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
+    ).rejects.toMatchObject({ statusCode: 403, code: "APPOINTMENT_FORBIDDEN" });
+  });
+
+  it("reports a missing appointment", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.cancelResult = { kind: "APPOINTMENT_NOT_FOUND" };
+    const service = new AppointmentService(repository, () => now);
+
+    await expect(
+      service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
+    ).rejects.toMatchObject({ statusCode: 404, code: "APPOINTMENT_NOT_FOUND" });
+  });
+
+  it("refuses to cancel a completed appointment", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.cancelResult = { kind: "APPOINTMENT_NOT_CANCELLABLE" };
+    const service = new AppointmentService(repository, () => now);
+
+    await expect(
+      service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
+    ).rejects.toMatchObject({ statusCode: 409, code: "APPOINTMENT_NOT_CANCELLABLE" });
+  });
+
+  it("treats a repeated cancellation as idempotent", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.cancelResult = {
+      kind: "ALREADY_CANCELLED",
+      outcome: {
+        appointment: { ...appointment(), status: AppointmentStatus.CANCELLED },
+        refundPercent: 100,
+        refundAmount: "0.00",
+        refundId: null,
+      },
+    };
+    const service = new AppointmentService(repository, () => now);
+
+    const outcome = await service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict");
+
+    expect(outcome.refundId).toBeNull();
+    expect(outcome.refundAmount).toBe("0.00");
   });
 });

@@ -114,6 +114,13 @@ export interface Appointment {
   slot: AvailabilitySlot;
 }
 
+export interface CancellationOutcome {
+  appointment: Appointment;
+  refundPercent: number;
+  refundAmount: string;
+  refundId: string | null;
+}
+
 export interface FamilyMember {
   id: string;
   patientProfileId: string;

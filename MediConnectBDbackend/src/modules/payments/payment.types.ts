@@ -30,6 +30,8 @@ export interface PaymentView {
   transactionId: string;
   amount: string;
   currency: "BDT";
+  commissionAmount: string | null;
+  netAmount: string | null;
   status: PaymentStatus;
   gatewayUrl: string | null;
   expiresAt: Date;
@@ -61,4 +63,25 @@ export function decimalAmount(value: string): string {
   if (!/^\d{1,8}(\.\d{1,2})?$/.test(value)) throw new Error("Invalid monetary amount");
   const [whole = "0", fraction = ""] = value.split(".");
   return `${BigInt(whole)}.${fraction.padEnd(2, "0")}`;
+}
+
+/**
+ * Platform commission rate applied to each paid consultation.
+ */
+export const COMMISSION_RATE_PERCENT = 10n;
+
+/**
+ * Splits a captured amount into platform commission and doctor net using integer paisa, so no
+ * floating-point error can reach the ledger. Commission rounds half-up to the nearest paisa.
+ */
+export function splitCommission(amount: string): { commissionAmount: string; netAmount: string } {
+  const normalized = decimalAmount(amount);
+  const [whole = "0", fraction = "00"] = normalized.split(".");
+  const amountPaisa = BigInt(whole) * 100n + BigInt(fraction);
+  const commissionPaisa = (amountPaisa * COMMISSION_RATE_PERCENT + 50n) / 100n;
+  const netPaisa = amountPaisa - commissionPaisa;
+  return {
+    commissionAmount: `${commissionPaisa / 100n}.${String(commissionPaisa % 100n).padStart(2, "0")}`,
+    netAmount: `${netPaisa / 100n}.${String(netPaisa % 100n).padStart(2, "0")}`,
+  };
 }

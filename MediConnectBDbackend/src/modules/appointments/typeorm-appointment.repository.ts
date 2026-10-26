@@ -15,15 +15,18 @@ import {
 } from "../scheduling/appointment-slot.entity";
 import { ConsultationMode } from "./consultation-mode";
 import { SlotHold, SlotHoldStatus } from "./slot-hold.entity";
-import type { AppointmentRepository } from "./appointment.repository";
-import type {
+import type { AppointmentRepository } from "./appointment.repository";import type {
   AppointmentView,
   BookingSlotView,
   BookHoldResult,
+  CancelAppointmentResult,
   CreateHoldResult,
   ReleaseHoldResult,
   SlotHoldView,
 } from "./appointment.types";
+import { decideRefund, refundAmountFor, type CancellationActor } from "./cancellation-policy";
+import { Payment } from "../payments/payment.entity";
+import { Refund } from "../payments/refund.entity";
 
 export class TypeOrmAppointmentRepository implements AppointmentRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -212,6 +215,107 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
         await manager.getRepository(AppointmentSlot).save(slot);
       }
       return { kind: "RELEASED" };
+    });
+  }
+
+  /**
+   * Cancels an appointment under row locks, releases its slot, and records a refund request. The
+   * refund row is a request only; no provider refund is executed here. Repeating the call for an
+   * already-cancelled appointment is idempotent and creates no second refund.
+   */
+  async cancelAppointment(input: {
+    appointmentId: string;
+    actor: CancellationActor;
+    actorId: string;
+    reason: string;
+    now: Date;
+  }): Promise<CancelAppointmentResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const appointments = manager.getRepository(Appointment);
+      const appointment = await appointments.findOne({
+        where: { id: input.appointmentId },
+        relations: { slot: { chamber: { hospital: true } } },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!appointment) return { kind: "APPOINTMENT_NOT_FOUND" };
+
+      // A patient may only cancel their own booking; staff act on any booking.
+      if (input.actor === "PATIENT" && appointment.patientProfileId !== input.actorId) {
+        return { kind: "APPOINTMENT_FORBIDDEN" };
+      }
+
+      const decision = decideRefund(input.actor, appointment.scheduledStartAt, input.now);
+
+      if (appointment.status === AppointmentStatus.CANCELLED) {
+        return {
+          kind: "ALREADY_CANCELLED",
+          outcome: {
+            appointment: this.toAppointment(appointment),
+            refundPercent: decision.refundPercent,
+            refundAmount: "0.00",
+            refundId: null,
+          },
+        };
+      }
+
+      // Only a live booking can be cancelled; completed and no-show visits are historical.
+      if (
+        appointment.status !== AppointmentStatus.CONFIRMED &&
+        appointment.status !== AppointmentStatus.PENDING_PAYMENT
+      ) {
+        return { kind: "APPOINTMENT_NOT_CANCELLABLE" };
+      }
+
+      appointment.status = AppointmentStatus.CANCELLED;
+      appointment.cancellationReason = input.reason;
+      await appointments.save(appointment);
+
+      const slot = await manager.getRepository(AppointmentSlot).findOne({
+        where: { id: appointment.slotId },
+        lock: { mode: "pessimistic_write" },
+      });
+      // A confirmed booking owns the slot; an unpaid video booking still holds it. Free either.
+      if (slot && slot.status !== AppointmentSlotStatus.BLOCKED) {
+        slot.status = AppointmentSlotStatus.AVAILABLE;
+        slot.heldUntil = null;
+        await manager.getRepository(AppointmentSlot).save(slot);
+      }
+      await manager.getRepository(SlotHold).update(
+        { id: appointment.holdId, status: SlotHoldStatus.ACTIVE },
+        { status: SlotHoldStatus.RELEASED, releasedAt: input.now },
+      );
+
+      // A refund is only meaningful against a captured payment.
+      const payment = await manager.getRepository(Payment).findOne({
+        where: { appointmentId: appointment.id },
+        lock: { mode: "pessimistic_write" },
+      });
+      let refundId: string | null = null;
+      let refundAmount = "0.00";
+      if (payment && payment.status === "SUCCEEDED" && decision.refundPercent > 0) {
+        refundAmount = refundAmountFor(payment.amount, decision.refundPercent);
+        const refund = await manager.getRepository(Refund).save(
+          manager.getRepository(Refund).create({
+            paymentId: payment.id,
+            refundTransactionId: `RF${input.now.getTime()}${Math.floor(Math.random() * 1000)}`,
+            amount: refundAmount,
+            status: "REQUESTED",
+            reason: decision.reason,
+            providerReference: null,
+          }),
+        );
+        refundId = refund.id;
+      }
+
+      return {
+        kind: "CANCELLED",
+        outcome: {
+          appointment: this.toAppointment(appointment),
+          refundPercent: decision.refundPercent,
+          refundAmount,
+          refundId,
+        },
+      };
     });
   }
 

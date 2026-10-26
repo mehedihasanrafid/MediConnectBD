@@ -7,9 +7,11 @@
 import type {
   AppointmentView,
   BookHoldResult,
+  CancelAppointmentResult,
   CreateHoldResult,
   ReleaseHoldResult,
 } from "./appointment.types";
+import type { CancellationActor } from "./cancellation-policy";
 
 export interface AppointmentRepository {
   createHold(input: {
@@ -29,5 +31,12 @@ export interface AppointmentRepository {
     patientProfileId: string;
     now: Date;
   }): Promise<ReleaseHoldResult>;
+  cancelAppointment(input: {
+    appointmentId: string;
+    actor: CancellationActor;
+    actorId: string;
+    reason: string;
+    now: Date;
+  }): Promise<CancelAppointmentResult>;
   listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]>;
 }

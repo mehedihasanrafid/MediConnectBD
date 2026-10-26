@@ -29,7 +29,7 @@ This document translates the **client requirements** (`MediConnect BD – Client
 | Area | What the client asked for | What we commit to deliver in MVP |
 |------|--------------------------|----------------------------------|
 | Doctor discovery | Search by name, specialty, hospital, area, fee; see profile with rating/reviews | ✅ Search + profile (ratings/reviews missing — P0 task) |
-| Patient booking | Book chamber or video slots; pay for video; manage appointments | ✅ Hold + book + family members; ❌ Cancellation/refund (P0); ❌ Reschedule (P1) |
+| Patient booking | Book chamber or video slots; pay for video; manage appointments | ✅ Hold + book + family members + cancellation/refund calculation; ❌ Reschedule (P1) |
 | Video consultation | Browser-based video call with chat/file sharing | ❌ Deferred to post-MVP or P1 |
 | Medical records | Upload reports, receive prescriptions (PDF), verify prescriptions | ❌ Missing entirely (P0 tasks) |
 | Reviews | Rate doctors after completed visits | ❌ Missing entirely (P0 task) |
@@ -217,7 +217,7 @@ npx concurrently -k -n api,worker "npm run dev" "npm run dev:worker"
 | Role | Main access | Key restrictions | Status |
 |---|---|---|---|
 | Visitor | Public doctor search/profile/catalog | No booking or private patient data | ✅ Implemented |
-| Patient | Own profile, family members, appointments, payment status | Cannot read other patients' data; family member must belong to patient | ⚠️ Auth + family members work; cancellation/reschedule missing |
+| Patient | Own profile, family members, appointments, payment status | Cannot read other patients' data; family member must belong to patient | ⚠️ Auth + family members + cancellation work; reschedule missing |
 | Doctor | Own profile/schedule, assigned appointments | Cannot access unrelated patient records or another doctor's appointments | ✅ Implemented (basic) |
 | Admin | Doctor review, account status, specialties/hospitals | Cannot read clinical report or prescription contents | ⚠️ Doctor review works; rest missing |
 
@@ -306,7 +306,7 @@ All endpoints live under `/api/v1` except health/readiness (`/health`).
 | `POST /appointments/` | POST | ✅ Implemented | Convert hold to appointment |
 | `GET /appointments/me` | GET | ✅ Implemented | Patient's appointment list |
 | `GET /appointments/:id` | GET | ❌ Missing | Single appointment detail |
-| `POST /appointments/:id/cancel` | POST | ❌ Missing | Core P0 — cancellation + refund calculation |
+| `POST /appointments/:id/cancel` | POST | ✅ Implemented | Cancellation + refund calculation (T-P0-3) |
 | `POST /appointments/:id/reschedule` | POST | ❌ Missing | P1 — new slot selection |
 | `POST /appointments/:id/complete` | POST | ❌ Missing | P1 — doctor marks completed |
 | `POST /appointments/:id/no-show` | POST | ❌ Missing | P1 — doctor marks no-show |
@@ -320,7 +320,7 @@ All endpoints live under `/api/v1` except health/readiness (`/health`).
 | `POST /payments/:paymentId/reconcile` | POST | ✅ Implemented | Re-verify with provider |
 | `POST /payments/sslcommerz/{ipn,success,fail,cancel}` | POST | ✅ Implemented | Provider callbacks with server verification |
 
-**Missing:** Admin refund execution endpoint, commission tracking field on Payment entity.
+**Missing:** Admin refund execution endpoint (refund rows are recorded as `REQUESTED` but never sent to the provider).
 
 #### Reports/files
 | Endpoint | Method | Status | Notes |
@@ -384,9 +384,9 @@ All endpoints live under `/api/v1` except health/readiness (`/health`).
 | `AppointmentSlot` | `appointment_slots` | id, doctorProfileId, scheduleId, chamberId, startAt, endAt, mode, feeAmount, status, heldUntil | ✅ Complete |
 | `SlotHold` | `slot_holds` | id, slotId, patientProfileId, status, expiresAt, releasedAt | ✅ Complete |
 | `Appointment` | `appointments` | id, slotId, holdId, patientProfileId, doctorProfileId, scheduledStartAt, scheduledEndAt, mode, feeAmount, status, paymentReference, cancellationReason | ✅ Complete |
-| `Payment` | `payments` | id, appointmentId, patientProfileId, transactionId, idempotencyKey, requestHash, amount, currency, status, sessionId, gatewayUrl, validationId, bankTransactionId, expiresAt | ✅ Complete (commission missing — T-P0-2) |
+| `Payment` | `payments` | id, appointmentId, patientProfileId, transactionId, idempotencyKey, requestHash, amount, currency, status, sessionId, gatewayUrl, validationId, bankTransactionId, expiresAt, commissionAmount, netAmount | ✅ Complete (T-P0-2) |
 | `PaymentEvent` | `payment_events` | id, paymentId, fingerprint, providerStatus, riskLevel, validationId, amount, currency | ✅ Complete |
-| `Refund` | `refunds` | id, paymentId, refundTransactionId, amount, status, reason, providerReference | ✅ Foundation only |
+| `Refund` | `refunds` | id, paymentId, refundTransactionId, amount, status, reason, providerReference | ✅ Written on cancellation (T-P0-3); provider execution still missing |
 | `RefreshSession` | `refresh_sessions` | id, userId, tokenHash, expiresAt, lastUsedAt, revokedAt, replacedBySessionId, userAgent, ipAddress | ✅ Complete |
 | `FamilyMember` | `family_members` | id, patientProfileId, name, relationship, dateOfBirth, phone | ✅ Complete (T-P0-1) |
 
@@ -414,7 +414,7 @@ Unique indexes verified in entities:
 - `idx_family_members_patient` — family member lookup by patient
 - `fk_family_members_patient` — cascade delete when patient profile is removed
 
-**Gaps:** No patient overlap check constraint, no review uniqueness constraint (needs implementation), no commission columns on `payments` (T-P0-2).
+**Gaps:** No patient overlap check constraint, no review uniqueness constraint (needs implementation).
 
 ---
 
@@ -439,7 +439,7 @@ CONFIRMED ── (future) ──> CANCELLED
 - Chamber bookings skip payment entirely (correct per client: "in-person visits can be paid at the chamber")
 - Video bookings create appointment with PENDING_PAYMENT status but the `bookAppointment()` method does not set a payment deadline or trigger payment session creation
 - No automatic transition from PENDING_PAYMENT to PAYMENT_EXPIRED via the hold-expiry worker (the worker expires slot holds, not payment states)
-- No cancellation workflow exists
+- Cancellation exists (T-P0-3) but refunds are recorded only, never executed through the provider
 
 ### Concurrency-safe booking (current implementation)
 
@@ -459,9 +459,8 @@ CONFIRMED ── (future) ──> CANCELLED
 5. On match: applies VERIFIED state to Payment.
 
 **Current gaps:**
-- No commission tracking (10% not recorded)
-- No refund execution (Refund entity exists but no admin endpoint to trigger provider refund)
-- No automatic refund on appointment cancellation
+- Refund execution is not implemented (Refund rows are created with status `REQUESTED`; no provider refund call exists)
+- Commission is recorded on capture (T-P0-2) but is not reversed on refund
 
 ### Expired holds, reminders, and notifications (current implementation)
 
@@ -478,7 +477,7 @@ CONFIRMED ── (future) ──> CANCELLED
 - Scheduled job/outbox table for delayed jobs
 - Notification invalidation on reschedule/cancel
 
-### Cancellation and refunds (NOT implemented)
+### Cancellation and refunds (implemented — T-P0-3)
 
 Client requires:
 - >24 hours before → full refund
@@ -486,12 +485,18 @@ Client requires:
 - <2 hours before → no refund
 - Doctor cancellation → always full refund
 
-**Implementation needed:**
-1. `POST /appointments/:id/cancel` endpoint with actor context (patient vs. doctor)
-2. Refund calculation based on appointment start time and cancellation actor
-3. Payment state transition: CONFIRMED → REFUND_PENDING → REFUNDED
-4. Refund execution through SSLCommerz provider API
-5. Idempotent: repeated cancel requests return same result
+**Implemented:**
+1. `POST /appointments/:appointmentId/cancel` endpoint with actor context (patient vs. doctor vs. admin)
+2. Refund calculation in `cancellation-policy.ts`, based on appointment start time and cancellation actor
+3. Slot and hold released in the same locked transaction
+4. Refund row recorded with status `REQUESTED`
+5. Idempotent: repeated cancel requests return the same result and create no second refund
+
+**Still missing:**
+1. Refund execution through the SSLCommerz provider API (`PaymentProvider` has only `initiate` and `verify`)
+2. Payment state transition: CONFIRMED → REFUND_PENDING → REFUNDED
+3. Doctor and admin cancellation routes (repository support exists; routes do not)
+4. Cancellation notification email
 
 ### Doctor approval, records, prescription, and review
 
@@ -630,8 +635,8 @@ Client requires:
 | BR-4 | Book up to 7 days ahead | Implemented | — | Availability query capped at 7 days |
 | BR-5 | Not less than 1 hour before slot | Implemented | — | Lead-time enforcement in service |
 | BR-6 | Patient cannot have overlapping appointments | Partial | T-BR-6 | Cross-doctor overlap check added |
-| BR-7 | Cancellation refund policy | Missing | T-BR-7 | >24h = full, 2–24h = 50%, <2h = none |
-| BR-8 | Doctor cancellation = full refund | Missing | T-BR-8 | Actor-based refund calculation |
+| BR-7 | Cancellation refund policy | Implemented | T-BR-7 | >24h = full, 2–24h = 50%, <2h = none |
+| BR-8 | Doctor cancellation = full refund | Implemented | T-BR-8 | Actor-based refund calculation |
 | BR-9 | Reminders at 24h and 30min | Missing | T-BR-9 | Scheduled reminder jobs |
 | BR-10 | Video room opens 5 min before | Missing | T-BR-10 | Token validity window enforced |
 | BR-11 | Prescription editable 24h then locked | Missing | T-BR-11 | Edit window check in service |
@@ -639,7 +644,7 @@ Client requires:
 | BR-13 | Only patient + assigned doctors see records | Missing | T-BR-13 | Authorization middleware |
 | BR-14 | Admin cannot read medical content | Not tested | T-BR-14 | Tests verify admin access denial |
 | BR-15 | Review after completed appointment, once per appointment | Missing | T-BR-15 | Uniqueness constraint + validation |
-| BR-16 | 10% commission on each paid consultation | Missing | T-BR-16 | Commission field on Payment; proportional reversal |
+| BR-16 | 10% commission on each paid consultation | Implemented | T-BR-16 | Commission recorded on capture. Proportional reversal on refund is **not** implemented. |
 | BR-17 | All times shown in Bangladesh time | Implemented | — | Fixed UTC+06:00 offset |
 
 ---
@@ -651,8 +656,8 @@ Client requires:
 | Order | Task | Description | Depends on | Acceptance gate |
 |-------|------|-------------|------------|-----------------|
 | 1 | T-P0-1 | Add `family_members` table + API | ✅ Done | All 5 endpoints working; max 10 per patient; ownership enforced |
-| 2 | T-P0-2 | Add commission field to Payment entity | — | Payment records 10% commission; partial refund reverses proportionally |
-| 3 | T-P0-3 | Add cancellation endpoint + refund calculation | T-P0-2 | >24h = full, 2–24h = 50%, <2h = none; doctor cancel = full |
+| 2 | T-P0-2 | Add commission field to Payment entity | ✅ Done | Payment records 10% commission on capture. Proportional reversal on refund is **not** implemented — see open question 3. |
+| 3 | T-P0-3 | Add cancellation endpoint + refund calculation | ✅ Done | >24h = full, 2–24h = 50%, <2h = none; doctor cancel = full. Refunds are recorded, not executed. |
 | 4 | T-P0-4 | Add email service interface + confirmation job | — | Email sent on booking confirmation |
 | 5 | T-P0-5 | Add reminder scheduling (24h + 30min) | T-P0-4 | Reminders sent at correct intervals; invalidated on cancel |
 
@@ -662,7 +667,7 @@ Client requires:
 |-------|------|-------------|------------|------------------|
 | 6 | T-P0-6 | Prescription system (entity, CRUD, 24h lock, PDF, verify) | — | Doctor creates prescription; 24h edit window; unique verification code |
 | 7 | T-P0-7 | Review system (entity, endpoints, moderation) | — | One review per completed appointment; admin can remove |
-| 8 | T-P0-8 | Frontend pages (search, booking, payment, dashboards) | T-P0-1, T-P0-3 | ⚠️ **Partial** — search, doctor detail, hold/booking, appointments, family members, doctor dashboard, admin applications are built and verified in the browser. Payment return, cancellation, records, prescriptions, reviews, and admin reports pages remain. |
+| 8 | T-P0-8 | Frontend pages (search, booking, payment, dashboards) | T-P0-1, T-P0-3 | ⚠️ **Partial** — search, doctor detail, hold/booking, appointments, **cancellation**, family members, doctor dashboard, admin applications are built and verified in the browser. Payment return, records, prescriptions, reviews, and admin reports pages remain. |
 
 ### Phase 3: Admin & doctor enhancements (P1)
 
@@ -708,12 +713,12 @@ Client requires:
 |------|----------|-----|
 | Concurrent booking (two patients, same slot) | P0 | Proves BR-1 |
 | Patient overlap across different doctors | P0 | Proves BR-6 |
-| Cancellation refund boundary calculations | P0 | Proves BR-7, BR-8 |
+| Cancellation refund boundary calculations | ✅ Covered | Proves BR-7, BR-8 — `tests/cancellation-policy.test.ts` (15 tests) |
 | Hold expiry worker idempotency | P1 | Ensures safe retries |
 | Role/ownership access control matrix | P0 | Verifies security model |
 | Prescription 24h edit window | P0 | Proves BR-11 |
 | Review uniqueness per appointment | P0 | Proves BR-15 |
-| Commission tracking accuracy | P0 | Proves BR-16 |
+| Commission tracking accuracy | ✅ Covered | Proves BR-16 — `tests/commission.test.ts` (7 tests) + `tests/payment.repository.test.ts` (4 tests) |
 
 ### Integration and E2E tests
 
@@ -722,6 +727,13 @@ Client requires:
 - Mobile layout smoke checks.
 - Type-check, lint, production build verification.
 
+### Backend verification (current state)
+
+- `npm run typecheck` — passes, no errors
+- `npm test` — **139 passed, 5 skipped** (17 test files, 1 skipped)
+- `npm run db:migrate` — all migrations applied successfully
+- Live end-to-end verification of the cancellation endpoint against a running server (see the T-P0-3 section below)
+
 ### Frontend verification (current state)
 
 The frontend has **no automated test suite yet** — `frontend/package.json` defines only `dev`, `build`, `lint`, and `preview`. Verification so far has been manual, in the browser, against a running API. The following were exercised and passed:
@@ -729,16 +741,56 @@ The frontend has **no automated test suite yet** — `frontend/package.json` def
 - Login as patient, doctor, and admin; role-aware navigation renders the correct links.
 - Doctor search and specialty filter; doctor detail renders 36 slots across 7 days.
 - Slot hold, then booking confirmation; the appointment appears under `/appointments`.
+- **Appointment cancellation** — see the dedicated section below.
 - Family member create, edit, and delete.
 - Doctor dashboard renders the weekly schedule and time off.
 - Admin applications page lists and actions pending doctor applications.
 - Logout clears the session and returns to `/login`.
+- **Session persistence across a full page reload** — confirmed working. A hard reload of `/appointments` kept the patient signed in and re-rendered the list, so the single-flight refresh guard holds. This was previously listed as unverified.
 
 **Known browser artifact (not a bug):** the console shows `net::ERR_ABORTED` for `DELETE` and logout requests. This is the browser reporting a 204 response with no body; the operations succeed and the UI updates correctly.
 
-**Unverified:** session persistence across a full page reload after the single-flight refresh fix. This must be re-confirmed before the demo and is listed as a follow-up below.
+**Required before the demo:** add a minimal frontend test setup (Vitest + React Testing Library) covering the auth context refresh guard and the booking flow. Until then, treat frontend behavior as manually verified only.
 
-**Required before the demo:** add a minimal frontend test setup (Vitest + React Testing Library) covering the auth context refresh guard and the booking flow, and add a reload-persistence check. Until then, treat frontend behavior as manually verified only.
+### Frontend cancellation UI (implemented)
+
+**Files:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/shared/refund.ts` | Created | Client mirror of the refund tiers and integer-paisa rounding, used only for the preview |
+| `src/shared/types.ts` | Modified | Added `CancellationOutcome` |
+| `src/shared/api.ts` | Modified | Added `api.cancelAppointment(appointmentId, reason)` |
+| `src/features/appointments/AppointmentsPage.tsx` | Modified | Inline confirm panel with refund preview, success notice, and list refresh |
+
+**Behaviour:**
+- A "Cancel appointment" button appears only on `CONFIRMED` and `PENDING_PAYMENT` rows. Past, cancelled, and expired appointments show no action.
+- Clicking it opens an inline confirm panel (matching the existing admin reject pattern — no modal library) that states the refund tier and the exact amount **before** the patient commits.
+- The reason field is optional; the backend accepts an empty string.
+- On success the card updates in place, a success notice shows the refunded amount, and the appointment moves to the Past list on the next load.
+- On failure an inline error appears and the panel stays open so the patient can retry.
+
+**Preview accuracy:** the preview duplicates the backend's tier boundaries and half-up paisa rounding. Both were verified against the backend implementation across the boundary cases (25h, 24.001h, 24h, 23.999h, 2.001h, 2h, 1.999h, 0.5h, 0h) and the amounts `800.00`, `805.55`, `0.05`, `0.01`, `999.99`, `600.00` — all agreed. The server still recomputes and remains authoritative; the preview is display-only.
+
+**Live browser verification:** booked a slot, confirmed the button appears only on cancellable rows, opened the panel, saw "Between 2 and 24 hours before the appointment, so you get a 50% refund. That is ৳400.00 of ৳800.00.", confirmed, and saw "Appointment cancelled. A refund of ৳400.00 has been requested." The backend recorded a `400.00` refund row, set the appointment to `CANCELLED` with the reason, and returned the slot to `AVAILABLE`. The preview and the recorded amount matched exactly.
+
+**Not covered:** no automated frontend tests exist, so this is manually verified only. Doctor and admin cancellation remain unavailable because no routes exist for them.
+
+### Pre-existing bug found: doctor availability returns 500
+
+While verifying the cancellation UI in the browser, `GET /doctors/:doctorId/availability` returned **500** and the doctor detail page showed "Could not load this doctor's availability."
+
+**Cause:** the slot generator deletes and regenerates slots for the requested window, but `appointments.slot_id` has a `FOREIGN KEY ... ON DELETE RESTRICT` constraint. Once any appointment references a slot in that window, the delete fails:
+
+```
+Cannot delete or update a parent row: a foreign key constraint fails
+(`mediconnect`.`appointments`, CONSTRAINT `fk_appointments_slot`
+FOREIGN KEY (`slot_id`) REFERENCES `appointment_slots` (`id`) ON DELETE RESTRICT)
+```
+
+This is **not** caused by the commission or cancellation work — it reproduces on the unmodified availability path and was first observed via curl before any frontend change. It is recorded here rather than fixed, because the correct fix is a design decision: either stop regenerating slots that already have appointments, or change the constraint to `ON DELETE SET NULL` / soft-delete slots. Both have consequences for booking history and need a deliberate choice.
+
+**Impact:** the doctor detail page is broken for any doctor who already has an appointment in the next 7 days. This blocks the demo booking flow through the UI.
 
 ### Test environment rules
 
@@ -899,56 +951,100 @@ The documented workflow for incremental development:
 
 **Remaining work for T-P0-8:**
 - Payment return/redirect handling.
-- Appointment cancellation UI (blocked on T-P0-3).
+- Appointment cancellation UI — **done**, see the frontend cancellation section below.
 - Medical report upload, prescription view/download/verify (blocked on T-P0-6).
 - Reviews UI (blocked on T-P0-7).
 - Doctor earnings and admin reports/refunds UI (blocked on T-P1-1, T-P1-2).
 - Automated frontend tests (none exist yet).
-- Re-confirm session persistence across a full page reload.
+- ~~Re-confirm session persistence across a full page reload.~~ **Done** — confirmed working.
 
 ---
 
-### Next task: T-P0-2 — Add commission (10%) to the payment record
+### Completed: T-P0-2 — Commission (10%) on the payment record
 
-**Evidence for priority:**
-- Client business rule (Section 5, item 16): "The platform keeps a 10% commission on each paid consultation."
-- The `Payment` entity currently stores only `amount` and `currency`; no commission field exists (verified in `src/modules/payments/payment.entity.ts`).
-- Cancellation/refund work (T-P0-3) depends on commission being recorded, because refunds must reverse commission proportionally.
-- Admin revenue reporting (T-P4-7) cannot be built without it.
+**Status: ✅ Implemented and verified.**
 
-**Files to inspect/change:**
+**What was built:**
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/modules/payments/payment.entity.ts` | Modify | Add `commission_amount` and `net_amount` columns |
-| `src/modules/payments/payment.types.ts` | Modify | Add commission fields to `PaymentView` |
-| `src/modules/payments/typeorm-payment.repository.ts` | Modify | Compute and persist commission on verified payment |
-| `src/modules/payments/payment.service.ts` | Modify | Apply the 10% rate at confirmation time |
-| `src/database/migrations/XXXXX-add-payment-commission.ts` | Create | Add columns to `payments` |
-| `src/database/data-source.ts` | Modify | Register the new migration |
-| `tests/payment.service.test.ts` | Modify | Assert commission is recorded on a verified payment |
+| `src/modules/payments/payment.types.ts` | Modified | `COMMISSION_RATE_PERCENT`, `splitCommission()`, `commissionAmount`/`netAmount` on `PaymentView` |
+| `src/modules/payments/payment.entity.ts` | Modified | `commission_amount`, `net_amount` nullable decimal columns |
+| `src/modules/payments/typeorm-payment.repository.ts` | Modified | Commission computed inside `applyVerified()` at the exact point the payment becomes `SUCCEEDED` |
+| `src/database/migrations/1761480000000-add-payment-commission.ts` | Created | Raw-SQL `ALTER TABLE payments ADD ...` |
+| `src/database/data-source.ts` | Modified | Migration registered |
+| `tests/commission.test.ts` | Created | 7 tests for the rounding rules |
+| `tests/payment.repository.test.ts` | Modified | 4 tests proving commission is persisted on verification |
 
-**Intended behavior:**
-- Commission rate is 10% of the captured amount, computed server-side from the trusted payment amount — never from a client value.
-- `commissionAmount = round(amount * 0.10, 2)`; `netAmount = amount - commissionAmount`.
-- Commission is recorded only when the payment reaches a verified/paid state.
-- Existing INITIATED/FAILED rows keep null commission until verified.
+**Behaviour as implemented:**
+- Commission is 10% of the **server-verified** captured amount — never a client-supplied value.
+- Arithmetic is integer paisa via `BigInt`, so there is no floating-point drift. Rounding is half-up: `commissionPaisa = (amountPaisa * 10n + 50n) / 100n`.
+- Verified: `800.00` → `80.00` commission / `720.00` net; `805.55` → `80.56` / `724.99`; `0.05` → `0.01` / `0.04`.
+- Commission is written only when the payment reaches `SUCCEEDED`. `REVIEW_REQUIRED` and `FAILED` payments keep `NULL` commission.
+- Existing rows are unaffected — both columns are nullable.
 
-**Acceptance criteria:**
-1. Migration adds `commission_amount` and `net_amount` decimal columns without breaking existing rows.
-2. A verified payment stores commission equal to 10% of the amount and the correct net amount.
-3. Money values remain exact decimals (no floating-point arithmetic on stored values).
-4. Unit test proves the 10% calculation for a representative amount (e.g. 800.00 → 80.00 commission, 720.00 net).
-5. `npm run typecheck` and `npm test` pass.
-6. Implementation status updated in this document.
+**Acceptance criteria — all met:** migration applies cleanly; verified payments store the correct commission and net; money stays exact decimal; unit tests cover the 10% calculation; `npm run typecheck` and `npm test` pass.
 
-**Verification commands:**
-```bash
-cd MediConnectBDbackend
-npm run typecheck
-npm test
-npm run db:migrate
-```
+---
+
+### Completed: T-P0-3 — Cancellation endpoint and refund calculation
+
+**Status: ✅ Implemented and verified end-to-end against a running server.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/appointments/cancellation-policy.ts` | Created | Pure `decideRefund()` + `refundAmountFor()`; all refund rules live here |
+| `src/modules/appointments/appointment.types.ts` | Modified | `CancellationOutcome`, `CancelAppointmentResult` |
+| `src/modules/appointments/appointment.repository.ts` | Modified | `cancelAppointment` added to the interface |
+| `src/modules/appointments/typeorm-appointment.repository.ts` | Modified | Locked transaction: cancel → release slot → release hold → insert refund row |
+| `src/modules/appointments/appointment.service.ts` | Modified | Maps result unions to `AppError` (404/403/409) |
+| `src/modules/appointments/appointment.controller.ts` | Modified | `cancelAppointment` handler |
+| `src/modules/appointments/appointment.routes.ts` | Modified | `POST /appointments/:appointmentId/cancel` |
+| `src/modules/appointments/appointment.schema.ts` | Modified | `appointmentIdSchema`, `cancelAppointmentSchema` |
+| `src/docs/openapi.ts`, `src/docs/openapi.schemas.ts` | Modified | Endpoint + `CancelAppointment`/`CancellationOutcome` schemas |
+| `tests/cancellation-policy.test.ts` | Created | 15 tests covering every refund tier and boundary |
+| `tests/appointment.service.test.ts` | Modified | 5 service-level tests: success, forbidden, not-found, not-cancellable, idempotent re-cancel |
+
+**Refund tiers as implemented:**
+
+| Actor / timing | Refund |
+|----------------|--------|
+| Doctor or admin cancels | 100% |
+| More than 24h before start | 100% |
+| Between 2h and 24h before start | 50% |
+| Less than 2h before start | 0% |
+
+Boundaries are inclusive at the lower edge: exactly 24h → 50%, exactly 2h → 50%. `refundAmountFor()` uses integer paisa; `805.55` at 50% → `402.78`.
+
+**Behaviour as implemented:**
+- Only `CONFIRMED` or `PENDING_PAYMENT` appointments can be cancelled; anything else returns `APPOINTMENT_NOT_CANCELLABLE` (409).
+- A patient may only cancel their own appointment; staff act on any booking. The route is currently patient-only (`requireRole("PATIENT")`), but the repository signature already accepts `DOCTOR` and `ADMIN` actors.
+- Re-cancelling is idempotent: returns `ALREADY_CANCELLED` with `refundAmount: "0.00"` and `refundId: null`, and creates no second refund row.
+- The slot is freed and the hold released in the same transaction, so a cancelled unpaid video booking does not keep the slot locked until hold expiry.
+- A refund row is created only when the payment is `SUCCEEDED` and the refund percentage is above zero. `refundTransactionId` format: `RF<epochMillis><0-999>`.
+- **Refunds are recorded, not executed.** The row is written with status `REQUESTED`; no SSLCommerz refund call is made, because `PaymentProvider` exposes only `initiate` and `verify`.
+
+**Live verification performed:** booked a real slot, cancelled it, and confirmed via SQL that the appointment became `CANCELLED`, the slot returned to `AVAILABLE` with `held_until` cleared, the hold became `RELEASED`, and a `refunds` row was written for the correct amount. Re-cancelling produced no second row. A doctor token against the patient route returned 403. All synthetic verification rows were removed afterwards.
+
+**Two bugs found and fixed during live verification:**
+1. `cancelAppointment` loaded the appointment without its `slot` relation, so building the response view threw `TypeError: Cannot read properties of undefined (reading 'id')` and returned 500. Fixed by eager-loading `slot: { chamber: { hospital: true } }`.
+2. Cancelling a `PENDING_PAYMENT` video booking left the slot `HELD` and the hold `ACTIVE`, keeping the slot locked until expiry. Fixed by releasing the slot unless it is `BLOCKED` and marking the active hold `RELEASED`.
+
+**Acceptance criteria — all met:** endpoint exists and is documented; refund tiers match BR-7 and BR-8; cancellation is idempotent; slot and hold are released; `npm run typecheck` and `npm test` pass (139 passed, 5 skipped).
+
+**Deliberately out of scope for T-P0-3:**
+- Executing the refund through SSLCommerz (needs a provider method that does not exist yet).
+- Cancellation email or notification (no email provider is wired up at all).
+- Doctor and admin cancellation **routes** (repository support exists; routes do not).
+- Frontend cancellation UI — **done** (patient-facing). Doctor and admin cancellation routes still do not exist.
+- Rescheduling (P1).
+
+**Open questions needing client confirmation:**
+1. Does the 10% commission apply to chamber consultations, or only to paid online ones? Chamber bookings currently create no payment row, so no commission is recorded for them.
+2. Are the refund tier boundaries inclusive or exclusive at exactly 24h and exactly 2h? Inclusive was chosen as the default.
+3. On a partial refund, is commission reversed proportionally or retained in full? Currently the refund amount is computed from the gross amount and commission is left untouched.
 
 ---
 

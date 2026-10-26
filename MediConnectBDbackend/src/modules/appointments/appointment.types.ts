@@ -71,3 +71,16 @@ export type ReleaseHoldResult =
   | { kind: "RELEASED" | "ALREADY_CLOSED" }
   | { kind: "HOLD_NOT_FOUND" }
   | { kind: "HOLD_FORBIDDEN" };
+
+export interface CancellationOutcome {
+  appointment: AppointmentView;
+  refundPercent: number;
+  refundAmount: string;
+  refundId: string | null;
+}
+
+export type CancelAppointmentResult =
+  | { kind: "CANCELLED" | "ALREADY_CANCELLED"; outcome: CancellationOutcome }
+  | { kind: "APPOINTMENT_NOT_FOUND" }
+  | { kind: "APPOINTMENT_FORBIDDEN" }
+  | { kind: "APPOINTMENT_NOT_CANCELLABLE" };

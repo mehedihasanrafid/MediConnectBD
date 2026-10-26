@@ -50,6 +50,7 @@ export const requestExamples = {
   CreateTimeOff: { date: "2026-10-25", reason: "Unavailable for the day" },
   CreateHold: { slotId: "00000000-0000-4000-8000-000000000001" },
   BookAppointment: { holdId: "00000000-0000-4000-8000-000000000002" },
+  CancelAppointment: { reason: "Schedule conflict" },
   PaymentCustomer: { name: "Test Patient", email: "patient@example.com", phone: "01700000000", address: "Test Road", city: "Dhaka", postcode: "1200" },
   PaymentCallback: { tran_id: "MCexample_transaction", val_id: "provider_validation_reference" },
 } satisfies Record<string, unknown>;
@@ -101,6 +102,10 @@ export const openApiSchemas: Record<string, Schema> = {
   GeneratedSlots: object({ generated: { type: "integer", minimum: 0 } }),
   CreateHold: object({ slotId: uuid }),
   BookAppointment: object({ holdId: uuid }),
+  CancelAppointment: object({ reason: { type: "string", minLength: 3, maxLength: 500 } }),
+  CancellationOutcome: object({ appointment: schemaRef("Appointment"),
+    refundPercent: { type: "integer", enum: [0, 50, 100] }, refundAmount: money,
+    refundId: nullable(uuid) }),
   Hold: object({ id: uuid, patientProfileId: uuid, status: { type: "string", enum: ["ACTIVE", "CONVERTED", "EXPIRED", "RELEASED"] }, expiresAt: timestamp, createdAt: timestamp, slot: schemaRef("Slot") }),
   Appointment: object({ id: uuid, patientProfileId: uuid, doctorId: uuid, holdId: uuid,
     status: { type: "string", enum: ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "PAYMENT_EXPIRED", "COMPLETED", "NO_SHOW"] },

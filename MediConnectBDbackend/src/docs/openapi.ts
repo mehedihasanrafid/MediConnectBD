@@ -109,6 +109,10 @@ add("post", `${appointments}/holds`, "holdAppointmentSlot", "Appointments", "Hol
 add("delete", `${appointments}/holds/{holdId}`, "releaseAppointmentHold", "Appointments", "Release your hold and unpaid booking", null, 204, { ...patientAccess, parameters: [id("holdId")], errors: [404] });
 add("post", appointments, "bookAppointment", "Appointments", "Create an appointment from your active hold", "Appointment", 201, { ...patientAccess, body: "BookAppointment", errors: [404, 409], description: "PATIENT only. Chamber visits confirm immediately. Video visits remain PENDING_PAYMENT with the original hold expiry; proceed to payment before it expires." });
 add("get", `${appointments}/me`, "listMyAppointments", "Appointments", "List your appointments", "Appointments", 200, patientAccess);
+add("post", `${appointments}/{appointmentId}/cancel`, "cancelAppointment", "Appointments", "Cancel your appointment and request a refund", "CancellationOutcome", 200, {
+  ...patientAccess, body: "CancelAppointment", errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "PATIENT only. Refund depends on notice: more than 24 hours is full, 2 to 24 hours is half, under 2 hours is none. A doctor or admin cancellation always refunds in full. The refund is recorded as REQUESTED; no provider refund is executed yet. Repeating the call for an already-cancelled appointment returns its current state.",
+});
 
 add("post", `${appointments}/{appointmentId}/payments`, "initiatePayment", "Payments", "Create a sandbox hosted checkout", "Payment", 200, {
   ...patientAccess, body: "PaymentCustomer", errors: [404, 409, 502, 503], parameters: [id("appointmentId"), {

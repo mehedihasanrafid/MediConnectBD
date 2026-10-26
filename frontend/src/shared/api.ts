@@ -5,6 +5,8 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
 
+import type { CancellationOutcome } from "./types";
+
 export interface ApiError {
   code: string;
   message: string;
@@ -74,4 +76,9 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  cancelAppointment: (appointmentId: string, reason: string) =>
+    request<CancellationOutcome>(`/appointments/${appointmentId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
 };

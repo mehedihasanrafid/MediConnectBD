@@ -16,6 +16,7 @@ import { SlotHold, SlotHoldStatus } from "../appointments/slot-hold.entity";
 import type { PaymentRepository } from "./payment.repository";
 import {
   decimalAmount,
+  splitCommission,
   type PaymentView,
   type UnpaidHoldExpirationSummary,
   type VerifiedTransaction,
@@ -130,6 +131,10 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
         payment.bankTransactionId = transaction.bankTransactionId;
         if (active && transaction.riskLevel === "0" && (payment.status === "INITIATED" || payment.status === "PENDING")) {
           payment.status = "SUCCEEDED";
+          // Commission is derived from the server-verified amount, never a client value.
+          const split = splitCommission(payment.amount);
+          payment.commissionAmount = split.commissionAmount;
+          payment.netAmount = split.netAmount;
           appointment.status = AppointmentStatus.CONFIRMED;
           appointment.paymentReference = payment.transactionId;
           hold.status = SlotHoldStatus.CONVERTED;
@@ -269,6 +274,7 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
   private view(payment: Payment): PaymentView {
     return { id: payment.id, appointmentId: payment.appointmentId, patientProfileId: payment.patientProfileId,
       transactionId: payment.transactionId, amount: payment.amount, currency: payment.currency,
+      commissionAmount: payment.commissionAmount, netAmount: payment.netAmount,
       status: payment.status, gatewayUrl: payment.status === "PENDING" && payment.expiresAt > new Date() ? payment.gatewayUrl : null,
       expiresAt: payment.expiresAt };
   }

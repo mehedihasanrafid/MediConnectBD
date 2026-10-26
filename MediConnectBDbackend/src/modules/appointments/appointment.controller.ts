@@ -7,7 +7,7 @@ import type { RequestHandler as HttpHandler } from "express";
 import { type RequestHandler } from "express";
 import { AppError } from "../../utils/app-error";
 import { type AuthenticatedLocals } from "../auth/auth.middleware";
-import { bookAppointmentSchema, createHoldSchema, holdIdSchema } from "./appointment.schema";
+import { appointmentIdSchema, bookAppointmentSchema, cancelAppointmentSchema, createHoldSchema, holdIdSchema } from "./appointment.schema";
 import type { AppointmentService } from "./appointment.service";
 /**
  * HTTP handlers: validate input, call services, and format responses.
@@ -42,6 +42,19 @@ export function createAppointmentController(options: {
             response.status(200).json({
                 items: await options.appointmentService.listMyAppointments(patientProfileId),
             });
+        },
+        cancelAppointment: async (request, response) => {
+            const patientProfileId = getPatientProfileId(response.locals as AuthenticatedLocals);
+            const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
+            const input = cancelAppointmentSchema.parse(request.body);
+            response.status(200).json(
+                await options.appointmentService.cancelAppointment(
+                    "PATIENT",
+                    patientProfileId,
+                    appointmentId,
+                    input.reason,
+                ),
+            );
         },
     } satisfies Record<string, HttpHandler>;
 }

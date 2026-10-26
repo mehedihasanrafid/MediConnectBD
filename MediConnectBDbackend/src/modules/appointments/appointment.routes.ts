@@ -18,5 +18,6 @@ export function createAppointmentRouter(options: {
     router.delete("/holds/:holdId", controller.releaseHold);
     router.post("/", controller.bookAppointment);
     router.get("/me", controller.listMyAppointments);
+    router.post("/:appointmentId/cancel", controller.cancelAppointment);
     return router;
 }

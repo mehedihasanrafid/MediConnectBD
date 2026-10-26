@@ -20,6 +20,8 @@ export class Payment {
   @Column({ name: "idempotency_key", type: "varchar", length: 100 }) idempotencyKey!: string;
   @Column({ name: "request_hash", type: "char", length: 64 }) requestHash!: string;
   @Column({ type: "decimal", precision: 10, scale: 2 }) amount!: string;
+  @Column({ name: "commission_amount", type: "decimal", precision: 10, scale: 2, nullable: true }) commissionAmount!: string | null;
+  @Column({ name: "net_amount", type: "decimal", precision: 10, scale: 2, nullable: true }) netAmount!: string | null;
   @Column({ type: "char", length: 3, default: "BDT" }) currency!: "BDT";
   @Column({ type: "varchar", length: 30 }) status!: PaymentStatus;
   @Column({ name: "session_id", type: "varchar", length: 100, nullable: true }) sessionId!: string | null;

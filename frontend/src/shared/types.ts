@@ -131,3 +131,86 @@ export interface FamilyMember {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DoctorAppointmentPatient {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  gender: string | null;
+  dateOfBirth: string | null;
+}
+
+export interface DoctorAppointment extends Appointment {
+  patient: DoctorAppointmentPatient | null;
+}
+
+export interface Medicine {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface Prescription {
+  id: string;
+  appointmentId: string;
+  patientProfileId: string;
+  doctorProfileId: string;
+  diagnosis: string;
+  medicines: Medicine[];
+  tests: string[];
+  advice: string | null;
+  verificationCode: string;
+  isEditable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VerifiedPrescriptionSummary {
+  id: string;
+  verificationCode: string;
+  doctorProfileId: string;
+  doctorName: string | null;
+  issuedAt: string;
+}
+
+export interface VerifyPrescriptionResponse {
+  valid: boolean;
+  prescription: VerifiedPrescriptionSummary | null;
+}
+
+export interface Review {
+  id: string;
+  appointmentId: string;
+  patientProfileId: string;
+  doctorProfileId: string;
+  rating: number;
+  comment: string | null;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payment {
+  id: string;
+  appointmentId: string;
+  patientProfileId: string;
+  transactionId: string;
+  amount: string;
+  currency: "BDT";
+  status: string;
+  gatewayUrl: string | null;
+  expiresAt: string;
+}
+
+export interface AdminOverview {
+  users: { total: number; active: number; suspended: number; pending: number };
+  doctors: { total: number; approved: number; pendingReview: number };
+  appointments: { total: number; confirmed: number; cancelled: number; completed: number };
+  payments: { succeeded: number; grossAmount: number; commissionAmount: number; netAmount: number };
+  refunds: { requested: number; totalAmount: number };
+}
+

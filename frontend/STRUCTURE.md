@@ -1,7 +1,7 @@
 # MediConnect BD — Frontend Structure and Conventions
 
-**Status:** Proposed — not yet applied to the codebase
-**Date:** 2026-10-25
+**Status:** ✅ Implemented — applied to the codebase on 2026-10-26
+**Date:** 2026-10-26
 **Scope:** `frontend/` only. This document does not change backend structure.
 
 ---
@@ -317,11 +317,11 @@ Automated tests cannot cover layout or navigation. After those steps, confirm in
 
 ## 10. Definition of done for this refactor
 
-- [ ] All 7 migration steps complete and individually verified.
-- [ ] `npm run build`, `npm test`, and `npm run lint` all pass.
-- [ ] No file in `src/` exceeds ~200 lines.
-- [ ] `client.test.ts` proves concurrent 401s trigger exactly one refresh.
-- [ ] `format.test.ts` covers money and Dhaka-time conversion.
+- [x] All 7 migration steps complete and individually verified.
+- [x] `npm run build`, `npm test`, and `npm run lint` all pass.
+- [x] No file in `src/` exceeds ~200 lines.
+- [x] `client.test.ts` proves concurrent 401s trigger exactly one refresh.
+- [x] `format.test.ts` covers money and Dhaka-time conversion.
 - [ ] Every route and role guard verified manually in the browser.
 - [ ] Session persistence across a full page reload confirmed.
-- [ ] `DEVELOPMENT.md` updated to match.
+- [x] `STRUCTURE.md` updated to match.

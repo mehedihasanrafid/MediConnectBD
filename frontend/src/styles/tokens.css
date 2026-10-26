@@ -1,0 +1,16 @@
+/* Design tokens (CSS custom properties) for MediConnect BD */
+
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --muted: #64748b;
+  --primary: #0d7a6f;
+  --primary-dark: #0a5f57;
+  --danger: #c53030;
+  --success: #2f855a;
+  --warning: #b7791f;
+  --info: #2b6cb0;
+  --radius: 10px;
+}

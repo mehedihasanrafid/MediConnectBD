@@ -1,20 +1,27 @@
 /**
- * Patient appointment list showing upcoming and past visits with status and fee. Cancellable
- * appointments expose an inline confirm panel that previews the refund before committing;
- * rescheduling is still not implemented in the backend.
+ * Patient appointment list showing upcoming and past visits with status, fee, online payment
+ * checkout, inline cancellation with refund preview, and post-visit reviews.
  */
 
-import { useEffect, useState } from "react";
-import { api } from "../../shared/api";
-import type { Appointment, CancellationOutcome } from "../../shared/types";
-import { formatDhakaDateTime, formatMoney, formatStatus } from "../../shared/format";
-import { hasRefundablePayment, previewPatientRefund, refundAmountFor, type RefundPreview } from "../../shared/refund";
+import { useCallback, useEffect, useState } from "react";
+import { appointmentsApi } from "../../api/appointments";
+import { reviewsApi } from "../../api/reviews";
 import { Alert, Badge, Button, Card, EmptyState, Field, Spinner } from "../../components/ui";
+import {
+  hasRefundablePayment,
+  previewPatientRefund,
+  refundAmountFor,
+  type RefundPreview,
+} from "../../shared/refund";
+import type { Appointment, CancellationOutcome, Review } from "../../shared/types";
+import { formatDhakaDateTime, formatMoney, formatStatus } from "../../shared/utils/format";
+import { PaymentPanel } from "./PaymentPanel";
+import { ReviewFormPanel } from "./ReviewFormPanel";
 
 function statusTone(status: string): string {
   if (status === "CONFIRMED" || status === "COMPLETED") return "success";
   if (status === "PENDING_PAYMENT") return "warning";
-  if (status === "CANCELLED" || status === "PAYMENT_EXPIRED") return "danger";
+  if (status === "CANCELLED" || status === "PAYMENT_EXPIRED" || status === "NO_SHOW") return "danger";
   return "neutral";
 }
 
@@ -24,17 +31,33 @@ function isCancellable(appointment: Appointment): boolean {
 
 export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [reviewsByAppointment, setReviewsByAppointment] = useState<Record<string, Review>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    void api
-      .get<{ items: Appointment[] }>("/appointments/me")
-      .then((result) => setAppointments(result.items))
-      .catch(() => setError("Could not load your appointments."))
-      .finally(() => setLoading(false));
+  const loadAll = useCallback(async () => {
+    try {
+      const [appointmentsRes, reviewsRes] = await Promise.all([
+        appointmentsApi.listMyAppointments(),
+        reviewsApi.listMyReviews().catch(() => ({ items: [] as Review[] })),
+      ]);
+      setAppointments(appointmentsRes.items);
+      const map: Record<string, Review> = {};
+      for (const rev of reviewsRes.items) {
+        map[rev.appointmentId] = rev;
+      }
+      setReviewsByAppointment(map);
+    } catch {
+      setError("Could not load your appointments.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadAll();
+  }, [loadAll]);
 
   function replaceAppointment(updated: Appointment) {
     setAppointments((current) =>
@@ -44,26 +67,30 @@ export function AppointmentsPage() {
 
   if (loading) return <Spinner label="Loading appointments…" />;
 
-  const now = Date.now();
-  const upcoming = appointments.filter((a) => new Date(a.scheduledStartAt).getTime() >= now);
-  const past = appointments.filter((a) => new Date(a.scheduledStartAt).getTime() < now);
+  const upcoming = appointments.filter(
+    (a) => a.status === "CONFIRMED" || a.status === "PENDING_PAYMENT",
+  );
+  const past = appointments.filter(
+    (a) => a.status !== "CONFIRMED" && a.status !== "PENDING_PAYMENT",
+  );
 
   return (
     <div className="page">
       <header className="page-header">
         <h1>My appointments</h1>
-        <p className="muted">All times are shown in Bangladesh time.</p>
+        <p className="muted">All times are shown in Bangladesh time (Asia/Dhaka).</p>
       </header>
 
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
 
-      <h2>Upcoming ({upcoming.length})</h2>
-      {upcoming.length === 0 && <EmptyState>No upcoming appointments.</EmptyState>}
+      <h2>Active & Upcoming ({upcoming.length})</h2>
+      {upcoming.length === 0 && <EmptyState>No active or upcoming appointments.</EmptyState>}
       {upcoming.map((appointment) => (
         <AppointmentCard
           key={appointment.id}
           appointment={appointment}
+          onPaymentUpdated={() => void loadAll()}
           onCancelled={(outcome) => {
             replaceAppointment(outcome.appointment);
             setNotice(
@@ -75,10 +102,18 @@ export function AppointmentsPage() {
         />
       ))}
 
-      <h2>Past ({past.length})</h2>
+      <h2>Completed & Past ({past.length})</h2>
       {past.length === 0 && <EmptyState>No past appointments.</EmptyState>}
       {past.map((appointment) => (
-        <AppointmentCard key={appointment.id} appointment={appointment} />
+        <AppointmentCard
+          key={appointment.id}
+          appointment={appointment}
+          existingReview={reviewsByAppointment[appointment.id]}
+          onReviewCreated={(review) => {
+            setReviewsByAppointment((prev) => ({ ...prev, [review.appointmentId]: review }));
+            setNotice("Thank you! Your review has been published.");
+          }}
+        />
       ))}
     </div>
   );
@@ -86,10 +121,16 @@ export function AppointmentsPage() {
 
 function AppointmentCard({
   appointment,
+  existingReview,
   onCancelled,
+  onPaymentUpdated,
+  onReviewCreated,
 }: {
   appointment: Appointment;
+  existingReview?: Review;
   onCancelled?: (outcome: CancellationOutcome) => void;
+  onPaymentUpdated?: () => void;
+  onReviewCreated?: (review: Review) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
@@ -112,7 +153,7 @@ function AppointmentCard({
     setBusy(true);
     setError(null);
     try {
-      const outcome = await api.cancelAppointment(appointment.id, reason.trim());
+      const outcome = await appointmentsApi.cancelAppointment(appointment.id, reason.trim());
       setConfirming(false);
       onCancelled?.(outcome);
     } catch {
@@ -133,17 +174,27 @@ function AppointmentCard({
         </div>
         <Badge tone={statusTone(appointment.status)}>{formatStatus(appointment.status)}</Badge>
       </div>
-      {appointment.paymentRequired && appointment.status === "PENDING_PAYMENT" && (
-        <Alert kind="info">Payment is required to confirm this video consultation.</Alert>
+
+      {appointment.paymentRequired && appointment.status === "PENDING_PAYMENT" && onPaymentUpdated && (
+        <PaymentPanel appointment={appointment} onPaymentUpdated={onPaymentUpdated} />
       )}
+
       {appointment.cancellationReason && (
         <p className="muted small">Reason: {appointment.cancellationReason}</p>
+      )}
+
+      {appointment.status === "COMPLETED" && onReviewCreated && (
+        <ReviewFormPanel
+          appointmentId={appointment.id}
+          existingReview={existingReview}
+          onReviewCreated={onReviewCreated}
+        />
       )}
 
       {error && <Alert kind="error">{error}</Alert>}
 
       {onCancelled && isCancellable(appointment) && (
-        <>
+        <div style={{ marginTop: "0.5rem" }}>
           {confirming ? (
             <div className="filters">
               <p className="muted small">
@@ -171,7 +222,7 @@ function AppointmentCard({
               </Button>
             </div>
           )}
-        </>
+        </div>
       )}
     </Card>
   );

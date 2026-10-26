@@ -1,0 +1,43 @@
+/* Application shell, navigation, page container, and responsive layout */
+
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-admin {
+  border-bottom: 2px solid var(--primary);
+}
+
+.brand { font-weight: 700; color: var(--primary); text-decoration: none; font-size: 1.05rem; }
+.nav-links { display: flex; flex-wrap: wrap; gap: 0.75rem; flex: 1; }
+.nav-links a { color: var(--text); text-decoration: none; font-size: 0.9rem; }
+.nav-links a:hover, .nav-links a.active { color: var(--primary); font-weight: 600; }
+.nav-user { display: flex; align-items: center; gap: 0.5rem; }
+
+.main { flex: 1; padding: 1rem; max-width: 1100px; width: 100%; margin: 0 auto; }
+.page { display: flex; flex-direction: column; gap: 1rem; }
+.page-header { margin-bottom: 0.25rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.row.space-between { justify-content: space-between; }
+
+@media (max-width: 640px) {
+  .nav { flex-direction: column; align-items: stretch; }
+  .nav-user { justify-content: space-between; }
+  .main { padding: 0.75rem; }
+  h1 { font-size: 1.3rem; }
+}

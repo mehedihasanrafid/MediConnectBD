@@ -4,10 +4,11 @@
  */
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { Alert, Button, Card, Field } from "../../components/ui";
 import { ApiRequestError } from "../../shared/api";
+import { defaultHomePathFor } from "../../shared/utils/roles";
 
 const DEMO_ACCOUNTS = [
   { label: "Patient", email: "patient.demo@mediconnect.example" },
@@ -29,7 +30,7 @@ export function LoginPage() {
     setBusy(true);
     try {
       const user = await login(email, password);
-      navigate(user.roles.includes("DOCTOR") ? "/doctor" : "/doctors");
+      navigate(defaultHomePathFor(user));
     } catch (caught) {
       setError(
         caught instanceof ApiRequestError ? caught.message : "Login failed. Is the API running?",
@@ -55,6 +56,9 @@ export function LoginPage() {
         </form>
 
         <div className="demo-accounts">
+          <p className="muted small" style={{ marginBottom: "0.75rem" }}>
+            New to MediConnect BD? <Link to="/register">Create a patient or doctor account</Link>
+          </p>
           <p className="muted">Demo accounts (password: #king123)</p>
           <div className="demo-buttons">
             {DEMO_ACCOUNTS.map((account) => (

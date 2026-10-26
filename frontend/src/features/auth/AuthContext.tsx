@@ -1,9 +1,6 @@
 /**
- * Authentication context: holds the current user and access token in memory, exposes login and
- * logout, and restores the session on reload using the HTTP-only refresh cookie.
- *
- * Refresh tokens are single-use and rotate on every call, so concurrent refreshes would trip
- * reuse detection and revoke the session. A module-level in-flight promise serializes them.
+ * Authentication context: holds the current user and access token in memory, exposes login,
+ * registration, and logout, and restores the session on reload using the HTTP-only refresh cookie.
  */
 
 import {
@@ -15,32 +12,24 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, setAccessToken } from "../../shared/api";
-import type { AuthResponse, PublicUser } from "../../shared/types";
+import {
+  authApi,
+  type RegisterDoctorInput,
+  type RegisterPatientInput,
+} from "../../api/auth";
+import { setAccessToken } from "../../api/client";
+import type { PublicUser } from "../../shared/types";
 
 interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<PublicUser>;
+  registerPatient: (input: RegisterPatientInput) => Promise<PublicUser>;
+  registerDoctor: (input: RegisterDoctorInput) => Promise<PublicUser>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-let refreshInFlight: Promise<AuthResponse> | null = null;
-
-/**
- * Shares one refresh request across concurrent callers. Without this, React StrictMode's double
- * effect invocation rotates the token twice and the second call is treated as token reuse.
- */
-function refreshSession(): Promise<AuthResponse> {
-  refreshInFlight ??= api
-    .post<AuthResponse>("/auth/refresh")
-    .finally(() => {
-      refreshInFlight = null;
-    });
-  return refreshInFlight;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -50,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void (async () => {
       try {
-        const result = await refreshSession();
+        const result = await authApi.refresh();
         if (cancelled) return;
         setAccessToken(result.accessToken);
         setUser(result.user);
@@ -66,7 +55,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const result = await api.post<AuthResponse>("/auth/login", { email, password });
+    const result = await authApi.login(email, password);
+    setAccessToken(result.accessToken);
+    setUser(result.user);
+    return result.user;
+  }, []);
+
+  const registerPatient = useCallback(async (input: RegisterPatientInput) => {
+    const result = await authApi.registerPatient(input);
+    setAccessToken(result.accessToken);
+    setUser(result.user);
+    return result.user;
+  }, []);
+
+  const registerDoctor = useCallback(async (input: RegisterDoctorInput) => {
+    const result = await authApi.registerDoctor(input);
     setAccessToken(result.accessToken);
     setUser(result.user);
     return result.user;
@@ -74,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await api.post("/auth/logout");
+      await authApi.logout();
     } finally {
       setAccessToken(null);
       setUser(null);
@@ -82,8 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout }),
-    [user, loading, login, logout],
+    () => ({ user, loading, login, registerPatient, registerDoctor, logout }),
+    [user, loading, login, registerPatient, registerDoctor, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

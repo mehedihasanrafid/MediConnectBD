@@ -1,21 +1,30 @@
 /**
- * Doctor profile with the next seven days of availability. Selecting a slot creates a ten-minute
- * hold; the patient then confirms the booking. Video bookings require payment afterwards.
+ * Doctor profile with the next seven days of availability and public patient reviews.
+ * Selecting a slot creates a ten-minute hold; the patient then confirms the booking.
  */
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, ApiRequestError } from "../../shared/api";
+import { appointmentsApi } from "../../api/appointments";
+import { doctorsApi } from "../../api/doctors";
+import { reviewsApi } from "../../api/reviews";
+import { Alert, Badge, Button, Card, EmptyState, Spinner } from "../../components/ui";
 import type {
   Appointment,
   AvailabilityResponse,
   AvailabilitySlot,
   PublicDoctor,
+  Review,
   SlotHold,
 } from "../../shared/types";
-import { formatDhakaDate, formatDhakaTime, formatMoney } from "../../shared/format";
-import { Alert, Badge, Button, Card, EmptyState, Spinner } from "../../components/ui";
+import { getErrorMessage } from "../../shared/utils/apiError";
+import { formatDhakaDate, formatDhakaTime, formatMoney } from "../../shared/utils/format";
+import { isAdmin } from "../../shared/utils/roles";
 import { useAuth } from "../auth/AuthContext";
+
+function renderStars(rating: number): string {
+  return "★".repeat(rating) + "☆".repeat(Math.max(0, 5 - rating));
+}
 
 export function DoctorDetailPage() {
   const { doctorId = "" } = useParams();
@@ -24,6 +33,7 @@ export function DoctorDetailPage() {
 
   const [doctor, setDoctor] = useState<PublicDoctor | null>(null);
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hold, setHold] = useState<SlotHold | null>(null);
@@ -31,18 +41,27 @@ export function DoctorDetailPage() {
   const [busySlotId, setBusySlotId] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
     void Promise.all([
-      api.get<PublicDoctor>(`/doctors/${doctorId}`),
-      api.get<AvailabilityResponse>(`/doctors/${doctorId}/availability?days=7`),
+      doctorsApi.getPublicProfile(doctorId),
+      doctorsApi.getAvailability(doctorId, 7),
+      reviewsApi.listDoctorReviews(doctorId).catch(() => ({ items: [] as Review[] })),
     ])
-      .then(([profile, slots]) => {
+      .then(([profile, slots, reviewsRes]) => {
+        if (cancelled) return;
         setDoctor(profile);
         setAvailability(slots);
+        setReviews(reviewsRes.items);
       })
-      .catch(() => setError("Could not load this doctor's availability."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setError("Could not load this doctor's availability.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [doctorId]);
 
   async function handleHold(slot: AvailabilitySlot) {
@@ -53,11 +72,11 @@ export function DoctorDetailPage() {
     setBusySlotId(slot.id);
     setError(null);
     try {
-      const created = await api.post<SlotHold>("/appointments/holds", { slotId: slot.id });
+      const created = await appointmentsApi.holdSlot(slot.id);
       setHold(created);
       setBooking(null);
     } catch (caught) {
-      setError(caught instanceof ApiRequestError ? caught.message : "Could not hold this slot.");
+      setError(getErrorMessage(caught, "Could not hold this slot."));
     } finally {
       setBusySlotId(null);
     }
@@ -67,18 +86,18 @@ export function DoctorDetailPage() {
     if (!hold) return;
     setError(null);
     try {
-      const appointment = await api.post<Appointment>("/appointments", { holdId: hold.id });
+      const appointment = await appointmentsApi.bookAppointment(hold.id);
       setBooking(appointment);
       setHold(null);
     } catch (caught) {
-      setError(caught instanceof ApiRequestError ? caught.message : "Could not confirm booking.");
+      setError(getErrorMessage(caught, "Could not confirm booking."));
     }
   }
 
   async function handleRelease() {
     if (!hold) return;
     try {
-      await api.delete(`/appointments/holds/${hold.id}`);
+      await appointmentsApi.releaseHold(hold.id);
     } finally {
       setHold(null);
     }
@@ -92,6 +111,11 @@ export function DoctorDetailPage() {
     const day = slot.startAt.slice(0, 10);
     grouped.set(day, [...(grouped.get(day) ?? []), slot]);
   }
+
+  const avgRating =
+    reviews.length > 0
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      : null;
 
   return (
     <div className="page">
@@ -108,6 +132,7 @@ export function DoctorDetailPage() {
             <p className="muted">{doctor.specialties.map((s) => s.name).join(", ")}</p>
             <p className="muted small">
               {doctor.degrees ?? "—"} · {doctor.experienceYears} years experience
+              {avgRating ? ` · ★ ${avgRating} (${reviews.length} reviews)` : ""}
             </p>
           </div>
         </div>
@@ -138,8 +163,8 @@ export function DoctorDetailPage() {
             expires.
           </Alert>
           <div className="row">
-            <Button onClick={handleBook}>Confirm booking</Button>
-            <Button variant="secondary" onClick={handleRelease}>
+            <Button onClick={() => void handleBook()}>Confirm booking</Button>
+            <Button variant="secondary" onClick={() => void handleRelease()}>
               Release hold
             </Button>
           </div>
@@ -150,7 +175,7 @@ export function DoctorDetailPage() {
         <Card>
           <Alert kind="success">
             Appointment created — status {booking.status.replaceAll("_", " ")}.
-            {booking.paymentRequired && " Payment is required to confirm this video consultation."}
+            {booking.paymentRequired && " Proceed to My Appointments to complete online payment."}
           </Alert>
           <Button variant="secondary" onClick={() => navigate("/appointments")}>
             View my appointments
@@ -180,6 +205,42 @@ export function DoctorDetailPage() {
           </div>
         </Card>
       ))}
+
+      <h2>Patient reviews ({reviews.length})</h2>
+      {reviews.length === 0 ? (
+        <EmptyState>No reviews yet for this doctor.</EmptyState>
+      ) : (
+        reviews.map((rev) => (
+          <Card key={rev.id}>
+            <div className="row space-between">
+              <Badge tone="success">
+                {renderStars(rev.rating)} ({rev.rating}/5)
+              </Badge>
+              <div className="row">
+                <span className="muted small">{formatDhakaDate(rev.createdAt)}</span>
+                {isAdmin(user) && (
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      void reviewsApi
+                        .removeAsAdmin(rev.id)
+                        .then(() =>
+                          setReviews((current) => current.filter((item) => item.id !== rev.id)),
+                        )
+                        .catch((caught) =>
+                          setError(getErrorMessage(caught, "Could not remove review.")),
+                        );
+                    }}
+                  >
+                    Hide review
+                  </Button>
+                )}
+              </div>
+            </div>
+            {rev.comment && <p style={{ margin: "0.5rem 0 0" }}>{rev.comment}</p>}
+          </Card>
+        ))
+      )}
     </div>
   );
 }

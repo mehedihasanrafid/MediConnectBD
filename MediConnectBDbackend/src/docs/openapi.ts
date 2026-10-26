@@ -128,6 +128,57 @@ add("delete", "/reviews/{reviewId}", "deleteReview", "Reviews", "Admin: remove a
   description: "ADMIN only. Soft-deletes by setting isVisible=false.",
 });
 
+const prescriptions = "/prescriptions";
+const prescriptionDoctorAccess = { access: "bearer" as const, roles: ["DOCTOR"] };
+add("post", `${prescriptions}/me/prescriptions`, "createPrescription", "Prescriptions", "Doctor creates a prescription for a completed appointment", "Prescription", 201, {
+  ...prescriptionDoctorAccess, body: "CreatePrescription", errors: [403, 404, 409],
+  description: "DOCTOR only. One prescription per completed appointment. Requires at least one medicine. Editable within 24h of creation.",
+});
+add("get", `${prescriptions}/me/prescriptions`, "listDoctorPrescriptions", "Prescriptions", "List prescriptions issued by the doctor", "PrescriptionsList", 200, prescriptionDoctorAccess);
+add("put", `${prescriptions}/{prescriptionId}`, "updatePrescription", "Prescriptions", "Update a prescription within 24h edit window", "Prescription", 200, {
+  ...prescriptionDoctorAccess, body: "UpdatePrescription", errors: [403, 404, 409], parameters: [id("prescriptionId")],
+  description: "DOCTOR only. Only the prescribing doctor can update. Edit window is 24 hours from creation. Updates are versioned.",
+});
+add("delete", `${prescriptions}/{prescriptionId}`, "deletePrescription", "Prescriptions", "Delete a prescription (permanent)", null, 204, {
+  ...prescriptionDoctorAccess, parameters: [id("prescriptionId")], errors: [404],
+  description: "DOCTOR only. Permanent deletion. Cannot be undone.",
+});
+add("get", `${prescriptions}/patients/me/prescriptions`, "listPatientPrescriptions", "Prescriptions", "List prescriptions received by the patient", "PrescriptionsList", 200, patientAccess);
+add("get", `${prescriptions}/verify/{verificationCode}`, "verifyPrescription", "Prescriptions", "Verify a prescription by its unique code", "VerifyPrescription", 200, {
+  access: "public", parameters: [{ name: "verificationCode", in: "path", required: true, description: "16-character verification code.", schema: { type: "string", minLength: 16, maxLength: 16 } }],
+  description: "Public endpoint. Returns prescription details if the verification code is valid.",
+});
+
+const adminOps = "/api/v1/admin";
+add("get", `${adminOps}/overview`, "getAdminOverview", "Admin operations", "Read platform-wide operational totals", "AdminOverview", 200, adminAccess);
+add("get", `${adminOps}/users`, "listAdminUsers", "Admin operations", "List and filter user accounts", "AdminUsers", 200, {
+  ...adminAccess, parameters: [query("status", { type: "string", enum: ["ACTIVE", "PENDING", "SUSPENDED"] }), query("role", { type: "string", enum: ["PATIENT", "DOCTOR", "ADMIN"] }), query("search", { type: "string", maxLength: 120 }), ...pagination(20)],
+  description: "ADMIN only. Filters combine with AND. Search matches email, first name, or last name.",
+});
+add("patch", `${adminOps}/users/{userId}/status`, "updateAdminUserStatus", "Admin operations", "Activate, pend, or suspend an account", "AdminUser", 200, {
+  ...adminAccess, body: "UpdateUserStatus", parameters: [id("userId")], errors: [404, 409],
+  description: "ADMIN only. Suspending your own account is rejected with 409 SELF_SUSPENSION_FORBIDDEN.",
+});
+add("get", `${adminOps}/specialties`, "listAdminSpecialties", "Admin operations", "List all specialties including inactive", "AdminSpecialties", 200, adminAccess);
+add("post", `${adminOps}/specialties`, "createAdminSpecialty", "Admin operations", "Create a specialty", "AdminSpecialty", 201, { ...adminAccess, body: "CreateSpecialty", errors: [409] });
+add("put", `${adminOps}/specialties/{specialtyId}`, "updateAdminSpecialty", "Admin operations", "Update a specialty", "AdminSpecialty", 200, { ...adminAccess, body: "UpdateSpecialty", parameters: [id("specialtyId")], errors: [404, 409] });
+add("delete", `${adminOps}/specialties/{specialtyId}`, "deleteAdminSpecialty", "Admin operations", "Deactivate a specialty", null, 204, { ...adminAccess, parameters: [id("specialtyId")], errors: [404], description: "ADMIN only. Soft delete: sets isActive=false because doctors reference specialties." });
+add("get", `${adminOps}/hospitals`, "listAdminHospitals", "Admin operations", "List all hospitals including inactive", "AdminHospitals", 200, adminAccess);
+add("post", `${adminOps}/hospitals`, "createAdminHospital", "Admin operations", "Create a hospital", "AdminHospital", 201, { ...adminAccess, body: "CreateHospital", errors: [409] });
+add("put", `${adminOps}/hospitals/{hospitalId}`, "updateAdminHospital", "Admin operations", "Update a hospital", "AdminHospital", 200, { ...adminAccess, body: "UpdateHospital", parameters: [id("hospitalId")], errors: [404, 409] });
+add("delete", `${adminOps}/hospitals/{hospitalId}`, "deleteAdminHospital", "Admin operations", "Deactivate a hospital", null, 204, { ...adminAccess, parameters: [id("hospitalId")], errors: [404], description: "ADMIN only. Soft delete: sets isActive=false because chambers reference hospitals." });
+add("get", `${adminOps}/appointments`, "listAdminAppointments", "Admin operations", "List and filter all appointments", "AdminAppointments", 200, {
+  ...adminAccess, parameters: [query("status", { type: "string", enum: ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "PAYMENT_EXPIRED", "COMPLETED", "NO_SHOW"] }), query("doctorId", { type: "string", format: "uuid" }), query("patientProfileId", { type: "string", format: "uuid" }), query("from", { type: "string", format: "date" }), query("to", { type: "string", format: "date" }), ...pagination(20)],
+});
+add("get", `${adminOps}/payments`, "listAdminPayments", "Admin operations", "List and filter all payments", "AdminPayments", 200, {
+  ...adminAccess, parameters: [query("status", { type: "string", enum: ["INITIATED", "PENDING", "SUCCEEDED", "FAILED", "CANCELLED", "EXPIRED", "REVIEW_REQUIRED"] }), query("from", { type: "string", format: "date" }), query("to", { type: "string", format: "date" }), ...pagination(20)],
+});
+add("get", `${adminOps}/refunds`, "listAdminRefunds", "Admin operations", "List refund requests", "AdminRefunds", 200, { ...adminAccess, parameters: pagination(20) });
+add("post", `${adminOps}/refunds/{refundId}/submit`, "submitAdminRefund", "Admin operations", "Mark a refund request as submitted", "AdminRefund", 200, {
+  ...adminAccess, parameters: [id("refundId")], errors: [404, 409],
+  description: "ADMIN only. Transitions REQUESTED to SUBMITTED. No provider refund is executed: PaymentProvider exposes no refund method, so settlement stays manual.",
+});
+
 add("post", `${appointments}/{appointmentId}/payments`, "initiatePayment", "Payments", "Create a sandbox hosted checkout", "Payment", 200, {
   ...patientAccess, body: "PaymentCustomer", errors: [404, 409, 502, 503], parameters: [id("appointmentId"), {
     name: "Idempotency-Key", in: "header", required: true, description: "Keep the same key and body when retrying the same checkout. A changed payload or key conflicts with the existing payment.",

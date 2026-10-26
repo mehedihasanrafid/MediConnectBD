@@ -23,6 +23,10 @@ import { createHoldSchema, bookAppointmentSchema } from "../src/modules/appointm
 import { paymentCustomerSchema, paymentCallbackSchema } from "../src/modules/payments/payment.schema";
 import { createReviewRouter } from "../src/modules/reviews/review.routes";
 import type { ReviewService } from "../src/modules/reviews/review.service";
+import { createPrescriptionRouter } from "../src/modules/prescriptions/prescription.routes";
+import type { PrescriptionService } from "../src/modules/prescriptions/prescription.service";
+import { createAdminRouter } from "../src/modules/admin/admin.routes";
+import type { AdminService } from "../src/modules/admin/admin.service";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -64,6 +68,8 @@ describe("OpenAPI and Swagger", () => {
     const appointmentService = {} as AppointmentService;
     const paymentService = {} as PaymentService;
     const reviewService = {} as ReviewService;
+    const prescriptionService = {} as PrescriptionService;
+    const adminService = {} as AdminService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -75,6 +81,8 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createPaymentRouter(paymentService, authenticate), "/api/v1"),
       ...collect(createUserRouter(authenticate), "/api/v1"),
       ...collect(createReviewRouter({ reviewService, authenticate }), "/reviews"),
+      ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/prescriptions"),
+      ...collect(createAdminRouter({ adminService, authenticate }), "/api/v1/admin"),
     ];
     const documented = Object.entries(openApiDocument.paths).flatMap(([path, item]) => methods.filter(method => item?.[method]).map(method => `${method.toUpperCase()} ${path}`));
     expect(documented.sort()).toEqual(actual.sort());

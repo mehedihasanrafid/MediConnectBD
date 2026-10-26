@@ -29,6 +29,10 @@ import type { FamilyMemberService } from "../modules/patients/family-member.serv
 import { TypeOrmFamilyMemberRepository } from "../modules/patients/typeorm-family-member.repository";
 import type { ReviewService } from "../modules/reviews/review.service";
 import { createReviewRouter } from "../modules/reviews/review.routes";
+import type { PrescriptionService } from "../modules/prescriptions/prescription.service";
+import { createPrescriptionRouter } from "../modules/prescriptions/prescription.routes";
+import type { AdminService } from "../modules/admin/admin.service";
+import { createAdminRouter } from "../modules/admin/admin.routes";
 
 export interface ApiRouterOptions {
   authService: AuthService;
@@ -40,6 +44,8 @@ export interface ApiRouterOptions {
   paymentService?: PaymentService;
   familyMemberService?: FamilyMemberService;
   reviewService?: ReviewService;
+  prescriptionService?: PrescriptionService;
+  adminService?: AdminService;
   secureCookies: boolean;
 }
 
@@ -93,6 +99,20 @@ export function createApiRouter(options: ApiRouterOptions): Router {
   if (options.reviewService) {
     router.use("/reviews", createReviewRouter({
       reviewService: options.reviewService,
+      authenticate,
+    }));
+  }
+
+  if (options.prescriptionService) {
+    router.use("/prescriptions", createPrescriptionRouter({
+      prescriptionService: options.prescriptionService,
+      authenticate,
+    }));
+  }
+
+  if (options.adminService) {
+    router.use("/admin", createAdminRouter({
+      adminService: options.adminService,
       authenticate,
     }));
   }

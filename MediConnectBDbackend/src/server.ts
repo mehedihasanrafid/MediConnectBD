@@ -31,6 +31,10 @@ import { ConsoleTransport } from "./modules/notifications/console-transport";
 import { NotificationService } from "./modules/notifications/notification-service";
 import { ReviewService } from "./modules/reviews/review.service";
 import { TypeOrmReviewRepository } from "./modules/reviews/typeorm-review.repository";
+import { PrescriptionService } from "./modules/prescriptions/prescription.service";
+import { TypeOrmPrescriptionRepository } from "./modules/prescriptions/typeorm-prescription.repository";
+import { AdminService } from "./modules/admin/admin.service";
+import { TypeOrmAdminRepository } from "./modules/admin/typeorm-admin.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -71,6 +75,12 @@ async function main(): Promise<void> {
   const reviewService = new ReviewService(
     new TypeOrmReviewRepository(AppDataSource),
   );
+  const prescriptionService = new PrescriptionService(
+    new TypeOrmPrescriptionRepository(AppDataSource),
+  );
+  const adminService = new AdminService(
+    new TypeOrmAdminRepository(AppDataSource),
+  );
 
   const apiRouter = createApiRouter({
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource),
@@ -79,6 +89,8 @@ async function main(): Promise<void> {
         : null),
     familyMemberService,
     reviewService,
+    prescriptionService,
+    adminService,
     authService,
     authRepository,
     accessTokens,

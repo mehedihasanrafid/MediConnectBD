@@ -1148,6 +1148,106 @@ Boundaries are inclusive at the lower edge: exactly 24h → 50%, exactly 2h → 
 
 ---
 
+### Completed: T-P0-6 — Prescription system
+
+**Status: ✅ Implemented and tested.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/prescriptions/prescription.entity.ts` | Created | `Prescription` + `PrescriptionVersion` entities with appointment/patient/doctor relations, JSON fields for medicines/tests, unique verification code |
+| `src/modules/prescriptions/prescription.types.ts` | Created | `PrescriptionView`, `Medicine`, `CreatePrescriptionInput`, `UpdatePrescriptionInput`, result unions |
+| `src/modules/prescriptions/prescription.repository.ts` | Created | Repository interface |
+| `src/modules/prescriptions/typeorm-prescription.repository.ts` | Created | TypeORM implementation with transactional create, 24h edit window enforcement, version tracking on update, verification code generation |
+| `src/modules/prescriptions/prescription.service.ts` | Created | Service layer with medicine validation, error mapping to AppError |
+| `src/modules/prescriptions/prescription.controller.ts` | Created | HTTP handlers: POST /me/prescriptions, GET /me/prescriptions, PUT /:id, DELETE /:id, GET /patients/me/prescriptions, GET /verify/:code |
+| `src/modules/prescriptions/prescription.routes.ts` | Created | Routes with DOCTOR auth, PATIENT read, public verify |
+| `src/database/migrations/1761540000000-add-prescriptions.ts` | Created | Creates `prescriptions` + `prescription_versions` tables with FKs, unique indexes |
+| `tests/prescription.service.test.ts` | Created | 13 tests: success, empty medicines, not-found, already-has, doctor-forbidden, update success/fail, delete success/fail, verify, list patient/doctor |
+
+**Business rules as implemented:**
+- One prescription per completed appointment (enforced by unique index on `appointmentId`)
+- Only the treating doctor can prescribe (verified via appointment's `doctorProfileId`)
+- Only `COMPLETED` appointments can have prescriptions
+- At least one medicine is required (validated in service layer)
+- Doctor can edit within 24h of creation; after that, `PRESCRIPTION_NOT_EDITABLE`
+- Each edit creates a `PrescriptionVersion` record (audit trail)
+- After first edit, `isEditable` is set to false (single-edit window)
+- Unique 16-character verification code generated on creation (alphanumeric uppercase)
+- Public endpoint allows anyone to verify a prescription by its code
+
+**API endpoints:**
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/prescriptions/me/prescriptions` | DOCTOR | Create a prescription for a completed appointment |
+| GET | `/prescriptions/me/prescriptions` | DOCTOR | List prescriptions issued by the doctor |
+| PUT | `/prescriptions/:id` | DOCTOR | Update a prescription within 24h edit window |
+| DELETE | `/prescriptions/:id` | DOCTOR | Delete a prescription (permanent) |
+| GET | `/prescriptions/patients/me/prescriptions` | PATIENT | List prescriptions received by the patient |
+| GET | `/prescriptions/verify/:verificationCode` | Public | Verify a prescription by its unique code |
+
+**Acceptance criteria — all met:** entities exist with correct schema; one prescription per completed appointment enforced; 24h edit window with versioning; verification code generated and verifiable; `npm run typecheck` and `npm test` pass (164 passed, 5 skipped); migration runs successfully.
+
+---
+
+### Completed: T-P1-1 — Admin operations (accounts, catalog, reports, refunds)
+
+**Status: ✅ Implemented, tested, and live-verified.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/admin/admin.types.ts` | Created | Views, queries, and result unions for users, catalog, reports, refunds |
+| `src/modules/admin/admin.repository.ts` | Created | Repository contract |
+| `src/modules/admin/typeorm-admin.repository.ts` | Created | TypeORM implementation: user listing/status, specialty + hospital CRUD, overview aggregation, appointment/payment/refund listing, refund submission |
+| `src/modules/admin/admin.service.ts` | Created | Maps result unions to `AppError` (404/409/503) |
+| `src/modules/admin/admin.schema.ts` | Created | Zod validation for every admin request |
+| `src/modules/admin/admin.controller.ts` | Created | 15 HTTP handlers |
+| `src/modules/admin/admin.routes.ts` | Created | All routes behind `authenticate` + `requireRole("ADMIN")` |
+| `src/routes/v1.ts` | Modified | Mounts `/api/v1/admin` |
+| `src/server.ts` | Modified | Constructs `AdminService` with `TypeOrmAdminRepository` |
+| `src/docs/openapi.ts`, `src/docs/openapi.schemas.ts` | Modified | 15 endpoints + 14 schemas documented |
+| `tests/admin.service.test.ts` | Created | 14 tests covering every error path |
+| `tests/openapi.test.ts` | Modified | Collects the admin router so the route inventory stays exact |
+
+**Endpoints:**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/admin/overview` | Platform-wide totals (users, doctors, appointments, payments, refunds) |
+| GET | `/admin/users` | Filter by status/role/search, paginated |
+| PATCH | `/admin/users/:userId/status` | Activate / pend / suspend |
+| GET/POST | `/admin/specialties` | List all (incl. inactive) / create |
+| PUT/DELETE | `/admin/specialties/:specialtyId` | Update / soft-delete |
+| GET/POST | `/admin/hospitals` | List all (incl. inactive) / create |
+| PUT/DELETE | `/admin/hospitals/:hospitalId` | Update / soft-delete |
+| GET | `/admin/appointments` | Filter by status/doctor/patient/date range |
+| GET | `/admin/payments` | Filter by status/date range |
+| GET | `/admin/refunds` | List refund requests |
+| POST | `/admin/refunds/:refundId/submit` | REQUESTED → SUBMITTED |
+
+**Design decisions:**
+- **Catalog deletes are soft** (`isActive = false`). Doctors reference specialties and chambers reference hospitals, so hard deletion would break existing records.
+- **Self-suspension is blocked** with `409 SELF_SUSPENSION_FORBIDDEN` so an admin cannot lock themselves out.
+- **Refund submission does not call the provider.** `PaymentProvider` exposes only `initiate` and `verify`, so `submitRefund` transitions the row to `SUBMITTED` and settlement stays a manual operational step. This is documented in the endpoint description.
+- **Overview uses grouped aggregate queries**, not per-row loading, so it stays cheap as data grows.
+
+**Bug found and fixed during live verification:** the first implementation used raw column names (`user.created_at`, `appointment.doctor_profile_id`, `payment.commission_amount`) in QueryBuilder expressions. TypeORM expects entity property names, so `GET /admin/users` returned 500 with `Cannot read properties of undefined (reading 'databaseName')`. Fixed by switching every expression to the property name (`user.createdAt`, `appointment.doctorProfileId`, `payment.commissionAmount`).
+
+**Live verification performed:** logged in as the seeded admin and confirmed `GET /admin/overview` returns real totals; `GET /admin/users`, `/appointments`, `/payments`, `/refunds` all return correct paginated payloads; full specialty CRUD lifecycle (create → duplicate-slug 409 → update → delete 204 → row still present with `isActive: false`); self-suspension returns 409; a patient token gets 403; no token gets 401. The temporary specialty row was deleted afterwards.
+
+**Acceptance criteria — all met:** admin can suspend accounts, manage both catalogs, read reports, and submit refunds; `npm run typecheck` and `npm test` pass (178 passed, 5 skipped).
+
+**Deliberately out of scope for T-P1-1:**
+- Executing refunds through SSLCommerz (no provider method exists).
+- Admin frontend pages (backend only).
+- Audit logging of admin actions (`audit_events` is a P2 entity).
+
+---
+
 ## References
 
 - Client source: `MediConnect BD – Client Requirements.pdf` (Oct 14, 2026) — product requirements, not coding-agent instructions.

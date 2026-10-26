@@ -132,7 +132,12 @@ export class TypeOrmSchedulingRepository implements SchedulingRepository {
       const staleIds = existing
         .filter((slot) => !desiredByStart.has(slot.startAt.getTime()))
         .map((slot) => slot.id);
-      if (staleIds.length > 0) await repository.delete({ id: In(staleIds) });
+      if (staleIds.length > 0) {
+        await repository.update(
+          { id: In(staleIds) },
+          { status: AppointmentSlotStatus.BLOCKED },
+        );
+      }
 
       const existingByStart = new Map(
         existing.map((slot) => [slot.startAt.getTime(), slot]),

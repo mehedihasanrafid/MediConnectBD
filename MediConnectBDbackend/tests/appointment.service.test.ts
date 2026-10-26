@@ -96,12 +96,20 @@ class FakeAppointmentRepository implements AppointmentRepository {
   async cancelAppointment(): Promise<CancelAppointmentResult> {
     return this.cancelResult;
   }
+
+  async markRemindersSent(
+    _appointmentId: string,
+    _reminder24hSent: boolean,
+    _reminder30minSent: boolean,
+  ): Promise<void> {
+    // No-op for tests
+  }
 }
 
 describe("AppointmentService", () => {
   it("creates a ten-minute hold with a one-hour booking boundary", async () => {
     const repository = new FakeAppointmentRepository();
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     const result = await service.holdSlot(patientProfileId, slotId);
 
@@ -117,7 +125,7 @@ describe("AppointmentService", () => {
   it("reports a conflict when another patient already holds the slot", async () => {
     const repository = new FakeAppointmentRepository();
     repository.createResult = { kind: "SLOT_UNAVAILABLE" };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     await expect(service.holdSlot(patientProfileId, slotId)).rejects.toMatchObject({
       statusCode: 409,
@@ -128,7 +136,7 @@ describe("AppointmentService", () => {
   it("reports an expired hold instead of creating an appointment", async () => {
     const repository = new FakeAppointmentRepository();
     repository.bookResult = { kind: "HOLD_EXPIRED" };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     await expect(service.bookAppointment(patientProfileId, holdId)).rejects.toMatchObject({
       statusCode: 409,
@@ -138,7 +146,7 @@ describe("AppointmentService", () => {
 
   it("returns the patient's own appointment history", async () => {
     const repository = new FakeAppointmentRepository();
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     const items = await service.listMyAppointments(patientProfileId);
 
@@ -148,7 +156,7 @@ describe("AppointmentService", () => {
 
   it("returns the refund decision when a patient cancels", async () => {
     const repository = new FakeAppointmentRepository();
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     const outcome = await service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict");
 
@@ -160,7 +168,7 @@ describe("AppointmentService", () => {
   it("refuses to cancel another patient's appointment", async () => {
     const repository = new FakeAppointmentRepository();
     repository.cancelResult = { kind: "APPOINTMENT_FORBIDDEN" };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     await expect(
       service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
@@ -170,7 +178,7 @@ describe("AppointmentService", () => {
   it("reports a missing appointment", async () => {
     const repository = new FakeAppointmentRepository();
     repository.cancelResult = { kind: "APPOINTMENT_NOT_FOUND" };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     await expect(
       service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
@@ -180,7 +188,7 @@ describe("AppointmentService", () => {
   it("refuses to cancel a completed appointment", async () => {
     const repository = new FakeAppointmentRepository();
     repository.cancelResult = { kind: "APPOINTMENT_NOT_CANCELLABLE" };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     await expect(
       service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict"),
@@ -198,7 +206,7 @@ describe("AppointmentService", () => {
         refundId: null,
       },
     };
-    const service = new AppointmentService(repository, () => now);
+    const service = new AppointmentService(repository, null, () => now);
 
     const outcome = await service.cancelAppointment("PATIENT", patientProfileId, randomUUID(), "Schedule conflict");
 

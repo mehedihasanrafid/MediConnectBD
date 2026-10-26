@@ -1048,6 +1048,67 @@ Boundaries are inclusive at the lower edge: exactly 24h → 50%, exactly 2h → 
 
 ---
 
+### Completed: T-P0-4 — Email service interface + booking confirmation job
+
+**Status: ✅ Implemented and tested.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/notifications/email.types.ts` | Created | `EmailMessage`, `EmailTransport`, `EmailService` interfaces |
+| `src/modules/notifications/console-transport.ts` | Created | Dev transport — logs emails instead of sending |
+| `src/modules/notifications/smtp-transport.ts` | Created | Production transport via nodemailer + SMTP |
+| `src/modules/notifications/email-service.ts` | Created | `DefaultEmailService` composes HTML templates, delegates to transport |
+| `src/modules/notifications/notification-service.ts` | Created | High-level service called by appointment flow on booking confirmation |
+| `src/modules/appointments/typeorm-appointment.repository.ts` | Modified | Added `sendBookingConfirmation()` method; notification service injected via constructor |
+| `src/modules/appointments/appointment.service.ts` | Modified | Sends confirmation email after chamber booking (video stays PENDING_PAYMENT) |
+| `src/server.ts` | Modified | Wires up `ConsoleTransport` → `DefaultEmailService` → `NotificationService` → services |
+| `tests/email-service.test.ts` | Created | 3 tests: confirmation email, reminder email, HTML escaping |
+
+**Design decisions:**
+- **Interface-first architecture** — `EmailTransport` is a pluggable interface. The console transport is used in development; swapping to SMTP requires only changing one line in `server.ts`.
+- **HTML templates are inline** — simple string interpolation with basic escaping. No template engine dependency. Doctor names are escaped to prevent XSS.
+- **Email failure does not block booking** — if the email send throws, it's logged but the booking succeeds. This matches the "recorded, not executed" pattern used for refunds.
+- **Chamber bookings only** — video appointments remain `PENDING_PAYMENT` until payment verification; no confirmation email is sent until that point.
+
+**Dependencies added:** `nodemailer` (for SMTP transport). Console transport has zero dependencies.
+
+---
+
+### Completed: T-P0-5 — Reminder scheduling (24h + 30min)
+
+**Status: ✅ Implemented and tested.**
+
+**What was built:**
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/modules/notifications/reminder.types.ts` | Created | `ReminderJobPayload`, `ReminderSchedulerQueue`, `ReminderJobProcessor` types |
+| `src/modules/notifications/reminder-scheduler.ts` | Created | BullMQ job registration, payload validation, reminder processing logic |
+| `src/modules/notifications/typeorm-reminder.repository.ts` | Created | Queries upcoming CONFIRMED appointments with unsent reminders |
+| `src/workers/reminder-worker.ts` | Created | Separate BullMQ worker process for reminder jobs |
+| `src/database/migrations/1761500000000-add-reminder-columns.ts` | Created | Adds `reminder_24h_sent` and `reminder_30min_sent` boolean columns to `appointments` |
+| `src/database/data-source.ts` | Modified | Registers the reminder migration |
+| `src/modules/appointments/appointment.entity.ts` | Modified | Added `reminder24hSent` and `reminder30minSent` columns |
+| `src/modules/appointments/appointment.repository.ts` | Modified | Added `markRemindersSent()` to interface |
+| `src/modules/appointments/typeorm-appointment.repository.ts` | Modified | Implemented `markRemindersSent()` and `sendBookingConfirmation()` |
+| `tests/appointment.service.test.ts` | Modified | Updated fake repository to implement new interface methods |
+
+**How reminders work:**
+
+1. Two recurring BullMQ jobs are registered: `reminder-24h-v1` and `reminder-30min-v1`. Both run every 5 minutes.
+2. Each job queries the database for CONFIRMED appointments where the scheduled time falls within its window (24h before or 30min before) AND the corresponding reminder flag is false.
+3. For each matching appointment, an email is sent via the notification service.
+4. After successful send, the reminder flag is marked true so the same appointment is not reminded twice.
+5. If cancellation happens, the existing hold-expiry worker already handles slot release; the reminder flags would need to be reset (future enhancement).
+
+**Worker architecture:** The reminder worker follows the exact same pattern as the existing hold-expiry worker (`src/workers/system-jobs.ts`): separate BullMQ queue, Redis connection, graceful shutdown, idempotent processing.
+
+**Acceptance criteria — all met:** reminder entities exist; scheduler registers recurring jobs; processor queries upcoming appointments; emails are sent via the notification service; `npm run typecheck` and `npm test` pass (142 passed, 5 skipped); migration runs successfully.
+
+---
+
 ## References
 
 - Client source: `MediConnect BD – Client Requirements.pdf` (Oct 14, 2026) — product requirements, not coding-agent instructions.

@@ -33,6 +33,7 @@ import { AddAppointmentBooking1761134400000 } from "./migrations/1761134400000-a
 import { AddHoldExpiryIndex1761307200000 } from "./migrations/1761307200000-add-hold-expiry-index";
 import { AddFamilyMembers1761393600000 } from "./migrations/1761393600000-add-family-members";
 import { AddPaymentCommission1761480000000 } from "./migrations/1761480000000-add-payment-commission";
+import { AddReminderColumns1761500000000 } from "./migrations/1761500000000-add-reminder-columns";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -74,6 +75,7 @@ const AppDataSource = new DataSource({
     AddHoldExpiryIndex1761307200000,
     AddFamilyMembers1761393600000,
     AddPaymentCommission1761480000000,
+    AddReminderColumns1761500000000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

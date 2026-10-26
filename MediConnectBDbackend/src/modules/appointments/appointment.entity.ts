@@ -72,6 +72,12 @@ export class Appointment {
   @Column({ name: "cancellation_reason", type: "varchar", length: 500, nullable: true })
   cancellationReason!: string | null;
 
+  @Column({ name: "reminder_24h_sent", type: "boolean", default: false })
+  reminder24hSent!: boolean;
+
+  @Column({ name: "reminder_30min_sent", type: "boolean", default: false })
+  reminder30minSent!: boolean;
+
   @CreateDateColumn({ name: "created_at", type: "datetime", precision: 3 })
   createdAt!: Date;
 

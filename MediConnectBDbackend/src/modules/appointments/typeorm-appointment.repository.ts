@@ -27,9 +27,13 @@ import type { AppointmentRepository } from "./appointment.repository";import typ
 import { decideRefund, refundAmountFor, type CancellationActor } from "./cancellation-policy";
 import { Payment } from "../payments/payment.entity";
 import { Refund } from "../payments/refund.entity";
+import type { NotificationService } from "../notifications/notification-service";
 
 export class TypeOrmAppointmentRepository implements AppointmentRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly notificationService?: NotificationService | null,
+  ) {}
 
   /**
    * Locks the selected slot before checking its state. A retry by the same patient can reuse an
@@ -173,6 +177,40 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       appointment.slot = slot;
       return { kind: "BOOKED", appointment: this.toAppointment(appointment) };
     });
+  }
+
+  /**
+   * Sends a booking confirmation email after a chamber appointment is confirmed.
+   */
+  async sendBookingConfirmation(
+    patientEmail: string,
+    appointmentId: string,
+    doctorName: string,
+    scheduledAt: Date,
+    feeAmount: number,
+  ): Promise<void> {
+    if (!this.notificationService) return;
+    await this.notificationService.sendBookingConfirmation(
+      patientEmail,
+      appointmentId,
+      doctorName,
+      scheduledAt,
+      feeAmount,
+    );
+  }
+
+  /**
+   * Marks reminder flags on an appointment after sending notifications.
+   */
+  async markRemindersSent(
+    appointmentId: string,
+    reminder24hSent: boolean,
+    reminder30minSent: boolean,
+  ): Promise<void> {
+    await this.dataSource.getRepository(Appointment).update(
+      { id: appointmentId },
+      { reminder24hSent, reminder30minSent },
+    );
   }
 
   /**

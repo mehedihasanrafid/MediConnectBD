@@ -1,12 +1,14 @@
 /**
  * Applies the ten-minute hold and one-hour booking lead-time policies and maps repository outcomes
  * to stable API errors. The injected clock supports exact expiry tests; the repository owns
- * concurrency decisions.
+ * concurrency decisions. Optionally sends booking confirmation emails via NotificationService.
  */
 
 import { AppError } from "../../utils/app-error";
+import { AppointmentStatus } from "./appointment.entity";
 import type { AppointmentRepository } from "./appointment.repository";
 import type { CancellationActor } from "./cancellation-policy";
+import type { NotificationService } from "../notifications/notification-service";
 
 const HOLD_DURATION_MILLISECONDS = 10 * 60 * 1000;
 const MINIMUM_BOOKING_LEAD_MILLISECONDS = 60 * 60 * 1000;
@@ -14,6 +16,7 @@ const MINIMUM_BOOKING_LEAD_MILLISECONDS = 60 * 60 * 1000;
 export class AppointmentService {
   constructor(
     private readonly repository: AppointmentRepository,
+    private readonly notificationService?: NotificationService | null,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -48,9 +51,15 @@ export class AppointmentService {
 
   /**
    * Maps explicit repository outcomes into the booking API while preserving the distinction
-   * between chamber confirmation and video payment pending.
+   * between chamber confirmation and video payment pending. Sends a confirmation email for
+   * chamber bookings (video payments remain PENDING_PAYMENT until verified).
    */
-  async bookAppointment(patientProfileId: string, holdId: string) {
+  async bookAppointment(
+    patientProfileId: string,
+    holdId: string,
+    patientEmail?: string,
+    doctorName?: string,
+  ) {
     const result = await this.repository.bookHold({
       holdId,
       patientProfileId,
@@ -68,6 +77,28 @@ export class AppointmentService {
     if (result.kind === "HOLD_NOT_ACTIVE") {
       throw new AppError(409, "HOLD_NOT_ACTIVE", "The appointment hold is no longer active");
     }
+
+    // Send confirmation email for chamber bookings only (video stays PENDING_PAYMENT)
+    if (
+      this.notificationService &&
+      result.appointment.status === AppointmentStatus.CONFIRMED &&
+      patientEmail &&
+      doctorName
+    ) {
+      try {
+        await this.notificationService.sendBookingConfirmation(
+          patientEmail,
+          result.appointment.id,
+          doctorName,
+          result.appointment.scheduledStartAt,
+          result.appointment.feeAmount,
+        );
+      } catch (error) {
+        // Log but don't fail the booking if email fails
+        console.error({ error }, "Failed to send booking confirmation email");
+      }
+    }
+
     return result.appointment;
   }
 

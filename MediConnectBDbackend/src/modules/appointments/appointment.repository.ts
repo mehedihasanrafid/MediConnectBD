@@ -39,4 +39,9 @@ export interface AppointmentRepository {
     now: Date;
   }): Promise<CancelAppointmentResult>;
   listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]>;
+  markRemindersSent(
+    appointmentId: string,
+    reminder24hSent: boolean,
+    reminder30minSent: boolean,
+  ): Promise<void>;
 }

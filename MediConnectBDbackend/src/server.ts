@@ -26,6 +26,9 @@ import { TypeOrmPaymentRepository } from "./modules/payments/typeorm-payment.rep
 import { SslcommerzPaymentProvider } from "./modules/payments/sslcommerz-payment-provider";
 import { FamilyMemberService } from "./modules/patients/family-member.service";
 import { TypeOrmFamilyMemberRepository } from "./modules/patients/typeorm-family-member.repository";
+import { DefaultEmailService } from "./modules/notifications/email-service";
+import { ConsoleTransport } from "./modules/notifications/console-transport";
+import { NotificationService } from "./modules/notifications/notification-service";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -54,8 +57,11 @@ async function main(): Promise<void> {
     new TypeOrmSchedulingRepository(AppDataSource),
     doctorRepository,
   );
+  const emailService = new DefaultEmailService(new ConsoleTransport());
+  const notificationService = new NotificationService(emailService);
   const appointmentService = new AppointmentService(
-    new TypeOrmAppointmentRepository(AppDataSource),
+    new TypeOrmAppointmentRepository(AppDataSource, notificationService),
+    notificationService,
   );
   const familyMemberService = new FamilyMemberService(
     new TypeOrmFamilyMemberRepository(),

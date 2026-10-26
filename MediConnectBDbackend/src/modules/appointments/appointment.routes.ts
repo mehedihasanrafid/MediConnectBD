@@ -1,6 +1,7 @@
 /**
- * All hold/booking/history routes share authentication and the PATIENT role gate. Resource
- * ownership and expiry still belong to the service/repository workflow.
+ * Appointment hold/booking/history routes and status transitions. Hold, booking, and history
+ * require PATIENT; cancellation supports PATIENT, DOCTOR, or ADMIN; completion and no-show
+ * require DOCTOR. Resource ownership and expiry belong to the service/repository workflow.
  */
 
 import { createAppointmentController } from './appointment.controller';
@@ -13,11 +14,12 @@ export function createAppointmentRouter(options: {
 }): Router {
     const controller = createAppointmentController(options);
     const router = Router();
-    router.use(options.authenticate, requireRole("PATIENT"));
-    router.post("/holds", controller.holdSlot);
-    router.delete("/holds/:holdId", controller.releaseHold);
-    router.post("/", controller.bookAppointment);
-    router.get("/me", controller.listMyAppointments);
-    router.post("/:appointmentId/cancel", controller.cancelAppointment);
+    router.post("/holds", options.authenticate, requireRole("PATIENT"), controller.holdSlot);
+    router.delete("/holds/:holdId", options.authenticate, requireRole("PATIENT"), controller.releaseHold);
+    router.post("/", options.authenticate, requireRole("PATIENT"), controller.bookAppointment);
+    router.get("/me", options.authenticate, requireRole("PATIENT"), controller.listMyAppointments);
+    router.post("/:appointmentId/cancel", options.authenticate, requireRole("PATIENT", "DOCTOR", "ADMIN"), controller.cancelAppointment);
+    router.post("/:appointmentId/complete", options.authenticate, requireRole("DOCTOR"), controller.completeAppointment);
+    router.post("/:appointmentId/no-show", options.authenticate, requireRole("DOCTOR"), controller.markNoShow);
     return router;
 }

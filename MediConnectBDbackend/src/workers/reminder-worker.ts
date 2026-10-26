@@ -48,7 +48,6 @@ async function main(): Promise<void> {
   const reminderRepo = new TypeOrmReminderRepository(AppDataSource);
 
   const redisConnection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-  await redisConnection.connect();
   connection = redisConnection;
   queue = new Queue(REMINDERS_QUEUE, { connection });
 

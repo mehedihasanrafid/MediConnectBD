@@ -83,6 +83,7 @@ const doctorAccess = { access: "bearer" as const, roles: ["DOCTOR"], errors: [40
 add("get", `${doctors}/me`, "getMyDoctorProfile", "Doctor profile", "Read your private doctor profile", "DoctorDetails", 200, doctorAccess);
 add("patch", `${doctors}/me`, "updateMyDoctorProfile", "Doctor profile", "Update your doctor profile", "DoctorDetails", 200, { ...doctorAccess, body: "DoctorProfilePatch", description: "DOCTOR only. Add actual specialty IDs from Catalog. Pending applications cannot be edited; changes to an approved profile reset it to draft." });
 add("post", `${doctors}/me/submit`, "submitDoctorApplication", "Doctor profile", "Submit your application for review", "DoctorDetails", 200, { ...doctorAccess, description: "No body. Requires degrees, at least one specialty, and a video fee or active chamber. Only draft/rejected applications can be submitted." });
+add("get", `${doctors}/me/appointments`, "listDoctorAppointments", "Doctor profile", "List appointments assigned to the authenticated doctor", "DoctorAppointments", 200, doctorAccess);
 
 add("get", `${doctors}/me/schedule`, "getMySchedule", "Scheduling", "Read your weekly rules and time off", "Schedule", 200, doctorAccess);
 add("put", `${doctors}/me/schedule`, "replaceMySchedule", "Scheduling", "Replace your weekly schedule", "Schedule", 200, { ...doctorAccess, body: "ReplaceSchedule", description: "Approved DOCTOR only. Replaces the full rule collection and regenerates availability. Times are Dhaka local values; use a chamber ID from your profile for CHAMBER rules." });
@@ -109,26 +110,42 @@ add("post", `${appointments}/holds`, "holdAppointmentSlot", "Appointments", "Hol
 add("delete", `${appointments}/holds/{holdId}`, "releaseAppointmentHold", "Appointments", "Release your hold and unpaid booking", null, 204, { ...patientAccess, parameters: [id("holdId")], errors: [404] });
 add("post", appointments, "bookAppointment", "Appointments", "Create an appointment from your active hold", "Appointment", 201, { ...patientAccess, body: "BookAppointment", errors: [404, 409], description: "PATIENT only. Chamber visits confirm immediately. Video visits remain PENDING_PAYMENT with the original hold expiry; proceed to payment before it expires." });
 add("get", `${appointments}/me`, "listMyAppointments", "Appointments", "List your appointments", "Appointments", 200, patientAccess);
-add("post", `${appointments}/{appointmentId}/cancel`, "cancelAppointment", "Appointments", "Cancel your appointment and request a refund", "CancellationOutcome", 200, {
-  ...patientAccess, body: "CancelAppointment", errors: [403, 404, 409], parameters: [id("appointmentId")],
-  description: "PATIENT only. Refund depends on notice: more than 24 hours is full, 2 to 24 hours is half, under 2 hours is none. A doctor or admin cancellation always refunds in full. The refund is recorded as REQUESTED; no provider refund is executed yet. Repeating the call for an already-cancelled appointment returns its current state.",
+add("post", `${appointments}/{appointmentId}/cancel`, "cancelAppointment", "Appointments", "Cancel an appointment and request a refund", "CancellationOutcome", 200, {
+  access: "bearer", roles: ["PATIENT", "DOCTOR", "ADMIN"], body: "CancelAppointment", errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "PATIENT, DOCTOR, or ADMIN. Refund depends on notice for patients: more than 24 hours is full, 2 to 24 hours is half, under 2 hours is none. A doctor or admin cancellation always refunds in full. The refund is recorded as REQUESTED; no provider refund is executed yet. Repeating the call for an already-cancelled appointment returns its current state.",
+});
+add("post", `${appointments}/{appointmentId}/complete`, "completeAppointment", "Appointments", "Mark a confirmed appointment as completed", "Appointment", 200, {
+  access: "bearer", roles: ["DOCTOR"], errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "DOCTOR only. Transitions a confirmed appointment owned by the doctor to COMPLETED so prescriptions and reviews can be created. Repeating the call on an already-completed appointment is idempotent.",
+});
+add("post", `${appointments}/{appointmentId}/no-show`, "markAppointmentNoShow", "Appointments", "Mark a confirmed appointment as no-show", "Appointment", 200, {
+  access: "bearer", roles: ["DOCTOR"], errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "DOCTOR only. Transitions a confirmed appointment owned by the doctor to NO_SHOW when the patient does not attend. Repeating the call on an already-marked no-show appointment is idempotent.",
 });
 
-add("post", "/reviews/me/reviews", "createReview", "Reviews", "Submit a review for a completed appointment", "Review", 201, {
+const familyMembers = "/api/v1/patients/me/family-members";
+add("get", familyMembers, "listFamilyMembers", "Family members", "List your family members", "FamilyMembersList", 200, patientAccess);
+add("get", `${familyMembers}/{id}`, "getFamilyMember", "Family members", "Read a single family member", "FamilyMember", 200, { ...patientAccess, parameters: [id("id")], errors: [404] });
+add("post", familyMembers, "createFamilyMember", "Family members", "Add a family member (max 10 per patient)", "FamilyMember", 201, { ...patientAccess, body: "CreateFamilyMember", errors: [409] });
+add("patch", `${familyMembers}/{id}`, "updateFamilyMember", "Family members", "Update a family member", "FamilyMember", 200, { ...patientAccess, body: "UpdateFamilyMember", parameters: [id("id")], errors: [404] });
+add("delete", `${familyMembers}/{id}`, "deleteFamilyMember", "Family members", "Remove a family member", null, 204, { ...patientAccess, parameters: [id("id")], errors: [404] });
+
+const reviews = "/api/v1/reviews";
+add("post", `${reviews}/me/reviews`, "createReview", "Reviews", "Submit a review for a completed appointment", "Review", 201, {
   ...patientAccess, body: "CreateReview", errors: [404, 409], parameters: [],
   description: "PATIENT only. One review per completed appointment. Rating must be 1-5. Only COMPLETED appointments can be reviewed.",
 });
-add("get", "/reviews/me/reviews", "listMyReviews", "Reviews", "List your reviews", "ReviewsList", 200, patientAccess);
-add("get", "/reviews/doctors/{doctorId}/reviews", "listDoctorReviews", "Reviews", "View all public reviews for a doctor", "ReviewsList", 200, {
+add("get", `${reviews}/me/reviews`, "listMyReviews", "Reviews", "List your reviews", "ReviewsList", 200, patientAccess);
+add("get", `${reviews}/doctors/{doctorId}/reviews`, "listDoctorReviews", "Reviews", "View all public reviews for a doctor", "ReviewsList", 200, {
   access: "public", parameters: [id("doctorId")],
   description: "Public endpoint. Returns visible reviews sorted by newest first.",
 });
-add("delete", "/reviews/{reviewId}", "deleteReview", "Reviews", "Admin: remove a review (soft delete)", null, 204, {
+add("delete", `${reviews}/{reviewId}`, "deleteReview", "Reviews", "Admin: remove a review (soft delete)", null, 204, {
   ...adminAccess, parameters: [id("reviewId")], errors: [404],
   description: "ADMIN only. Soft-deletes by setting isVisible=false.",
 });
 
-const prescriptions = "/prescriptions";
+const prescriptions = "/api/v1/prescriptions";
 const prescriptionDoctorAccess = { access: "bearer" as const, roles: ["DOCTOR"] };
 add("post", `${prescriptions}/me/prescriptions`, "createPrescription", "Prescriptions", "Doctor creates a prescription for a completed appointment", "Prescription", 201, {
   ...prescriptionDoctorAccess, body: "CreatePrescription", errors: [403, 404, 409],
@@ -139,14 +156,14 @@ add("put", `${prescriptions}/{prescriptionId}`, "updatePrescription", "Prescript
   ...prescriptionDoctorAccess, body: "UpdatePrescription", errors: [403, 404, 409], parameters: [id("prescriptionId")],
   description: "DOCTOR only. Only the prescribing doctor can update. Edit window is 24 hours from creation. Updates are versioned.",
 });
-add("delete", `${prescriptions}/{prescriptionId}`, "deletePrescription", "Prescriptions", "Delete a prescription (permanent)", null, 204, {
-  ...prescriptionDoctorAccess, parameters: [id("prescriptionId")], errors: [404],
-  description: "DOCTOR only. Permanent deletion. Cannot be undone.",
+add("delete", `${prescriptions}/{prescriptionId}`, "deletePrescription", "Prescriptions", "Delete a prescription within 24h edit window", null, 204, {
+  ...prescriptionDoctorAccess, parameters: [id("prescriptionId")], errors: [404, 409],
+  description: "DOCTOR only. Permanent deletion within the 24-hour edit window.",
 });
 add("get", `${prescriptions}/patients/me/prescriptions`, "listPatientPrescriptions", "Prescriptions", "List prescriptions received by the patient", "PrescriptionsList", 200, patientAccess);
 add("get", `${prescriptions}/verify/{verificationCode}`, "verifyPrescription", "Prescriptions", "Verify a prescription by its unique code", "VerifyPrescription", 200, {
   access: "public", parameters: [{ name: "verificationCode", in: "path", required: true, description: "16-character verification code.", schema: { type: "string", minLength: 16, maxLength: 16 } }],
-  description: "Public endpoint. Returns prescription details if the verification code is valid.",
+  description: "Public endpoint. Returns minimal verification metadata (doctor name and issue date) without clinical content.",
 });
 
 const adminOps = "/api/v1/admin";

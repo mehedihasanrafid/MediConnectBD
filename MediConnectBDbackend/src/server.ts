@@ -83,7 +83,7 @@ async function main(): Promise<void> {
   );
 
   const apiRouter = createApiRouter({
-    paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource),
+    paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource, notificationService),
       env.SSLCOMMERZ_STORE_ID && env.SSLCOMMERZ_STORE_PASSWORD && env.PUBLIC_API_URL
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
         : null),

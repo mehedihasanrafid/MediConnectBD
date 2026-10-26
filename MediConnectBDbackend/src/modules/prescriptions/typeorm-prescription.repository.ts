@@ -137,18 +137,13 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
         }),
       );
 
-      // Update prescription
+      // Update prescription (remains editable within the 24-hour window)
       Object.assign(prescription, {
         diagnosis: input.diagnosis ?? prescription.diagnosis,
         medicines: input.medicines ?? prescription.medicines,
         tests: input.tests ?? prescription.tests,
-        advice: input.advice ?? prescription.advice,
+        advice: input.advice !== undefined ? input.advice : prescription.advice,
       });
-
-      // Mark as not editable after first edit
-      if (input.diagnosis !== undefined || input.medicines !== undefined || input.tests !== undefined || input.advice !== undefined) {
-        prescription.isEditable = false;
-      }
 
       const updated = await prescriptionRepo.save(prescription);
       return { kind: "UPDATED", prescription: this.toView(updated) };
@@ -159,10 +154,25 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
     prescriptionId: string,
     doctorProfileId: string,
   ): Promise<DeletePrescriptionResult> {
-    const result = await this.dataSource
-      .getRepository(Prescription)
-      .delete({ id: prescriptionId, doctorProfileId });
-    return { success: result.affected !== 0 };
+    return this.dataSource.transaction(async (manager) => {
+      const prescriptionRepo = manager.getRepository(Prescription);
+      const prescription = await prescriptionRepo.findOne({
+        where: { id: prescriptionId, doctorProfileId },
+      });
+
+      if (!prescription) {
+        return { success: false, reason: "NOT_FOUND" };
+      }
+
+      const hoursSinceCreation =
+        (Date.now() - new Date(prescription.createdAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceCreation > 24 || !prescription.isEditable) {
+        return { success: false, reason: "NOT_EDITABLE" };
+      }
+
+      await prescriptionRepo.delete({ id: prescriptionId, doctorProfileId });
+      return { success: true };
+    });
   }
 
   async verifyByCode(verificationCode: string): Promise<VerifyPrescriptionResult> {
@@ -170,13 +180,28 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
       .getRepository(Prescription)
       .findOne({
         where: { verificationCode },
+        relations: { doctorProfile: { user: true } },
       });
 
     if (!prescription) {
       return { valid: false, prescription: null };
     }
 
-    return { valid: true, prescription: this.toView(prescription) };
+    const doctorUser = prescription.doctorProfile?.user;
+    const doctorName = doctorUser
+      ? `${doctorUser.firstName} ${doctorUser.lastName}`.trim()
+      : null;
+
+    return {
+      valid: true,
+      prescription: {
+        id: prescription.id,
+        verificationCode: prescription.verificationCode,
+        doctorProfileId: prescription.doctorProfileId,
+        doctorName,
+        issuedAt: prescription.createdAt,
+      },
+    };
   }
 
   private generateVerificationCode(): string {
@@ -189,6 +214,8 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
   }
 
   private toView(prescription: Prescription): PrescriptionView {
+    const withinWindow =
+      (Date.now() - new Date(prescription.createdAt).getTime()) / (1000 * 60 * 60) <= 24;
     return {
       id: prescription.id,
       appointmentId: prescription.appointmentId,
@@ -199,7 +226,7 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
       tests: prescription.tests,
       advice: prescription.advice,
       verificationCode: prescription.verificationCode,
-      isEditable: prescription.isEditable,
+      isEditable: prescription.isEditable && withinWindow,
       createdAt: prescription.createdAt,
       updatedAt: prescription.updatedAt,
     };

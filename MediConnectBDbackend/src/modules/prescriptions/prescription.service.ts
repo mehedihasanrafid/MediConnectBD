@@ -78,6 +78,9 @@ export class PrescriptionService {
   ): Promise<DeletePrescriptionResult> {
     const result = await this.repository.deletePrescription(prescriptionId, doctorProfileId);
     if (!result.success) {
+      if (result.reason === "NOT_EDITABLE") {
+        throw new AppError(409, "PRESCRIPTION_NOT_EDITABLE", "Prescription cannot be deleted after the 24h edit window");
+      }
       throw new AppError(404, "PRESCRIPTION_NOT_FOUND", "Prescription was not found");
     }
     return result;

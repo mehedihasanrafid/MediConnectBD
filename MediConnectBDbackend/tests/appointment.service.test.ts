@@ -10,8 +10,10 @@ import type {
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
+  DoctorAppointmentView,
   ReleaseHoldResult,
   SlotHoldView,
+  TransitionAppointmentStatusResult,
 } from "../src/modules/appointments/appointment.types";
 
 const now = new Date("2026-10-18T06:00:00.000Z");
@@ -91,6 +93,33 @@ class FakeAppointmentRepository implements AppointmentRepository {
 
   async listPatientAppointments(): Promise<AppointmentView[]> {
     return [appointment()];
+  }
+
+  async listDoctorAppointments(): Promise<DoctorAppointmentView[]> {
+    return [
+      {
+        ...appointment(),
+        patient: {
+          id: patientProfileId,
+          userId: randomUUID(),
+          firstName: "Test",
+          lastName: "Patient",
+          email: "patient@example.com",
+          phone: "01700000000",
+          gender: null,
+          dateOfBirth: null,
+        },
+      },
+    ];
+  }
+
+  transitionResult: TransitionAppointmentStatusResult = {
+    kind: "TRANSITIONED",
+    appointment: { ...appointment(), status: AppointmentStatus.COMPLETED },
+  };
+
+  async transitionAppointmentStatus(): Promise<TransitionAppointmentStatusResult> {
+    return this.transitionResult;
   }
 
   async cancelAppointment(): Promise<CancelAppointmentResult> {
@@ -212,5 +241,47 @@ describe("AppointmentService", () => {
 
     expect(outcome.refundId).toBeNull();
     expect(outcome.refundAmount).toBe("0.00");
+  });
+
+  it("lists appointments assigned to a doctor with patient details", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, null, () => now);
+
+    const items = await service.listDoctorAppointments(randomUUID());
+
+    expect(items).toHaveLength(1);
+    expect(items[0]?.patient?.email).toBe("patient@example.com");
+  });
+
+  it("marks a confirmed appointment as completed", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, null, () => now);
+
+    const updated = await service.completeAppointment(randomUUID(), randomUUID());
+
+    expect(updated.status).toBe(AppointmentStatus.COMPLETED);
+  });
+
+  it("rejects completing an appointment that is not confirmed", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.transitionResult = { kind: "APPOINTMENT_INVALID_STATE" };
+    const service = new AppointmentService(repository, null, () => now);
+
+    await expect(
+      service.completeAppointment(randomUUID(), randomUUID()),
+    ).rejects.toMatchObject({ statusCode: 409, code: "APPOINTMENT_NOT_CONFIRMED" });
+  });
+
+  it("marks a confirmed appointment as no-show", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.transitionResult = {
+      kind: "TRANSITIONED",
+      appointment: { ...appointment(), status: AppointmentStatus.NO_SHOW },
+    };
+    const service = new AppointmentService(repository, null, () => now);
+
+    const updated = await service.markNoShow(randomUUID(), randomUUID());
+
+    expect(updated.status).toBe(AppointmentStatus.NO_SHOW);
   });
 });

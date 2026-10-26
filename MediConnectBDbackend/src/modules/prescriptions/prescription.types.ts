@@ -54,9 +54,18 @@ export type UpdatePrescriptionResult =
 
 export interface DeletePrescriptionResult {
   success: boolean;
+  reason?: "NOT_FOUND" | "NOT_EDITABLE" | undefined;
+}
+
+export interface VerifiedPrescriptionSummary {
+  id: string;
+  verificationCode: string;
+  doctorProfileId: string;
+  doctorName: string | null;
+  issuedAt: Date;
 }
 
 export interface VerifyPrescriptionResult {
   valid: boolean;
-  prescription: PrescriptionView | null;
+  prescription: VerifiedPrescriptionSummary | null;
 }

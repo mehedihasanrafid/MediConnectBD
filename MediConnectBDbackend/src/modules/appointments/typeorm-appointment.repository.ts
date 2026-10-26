@@ -21,12 +21,16 @@ import type { AppointmentRepository } from "./appointment.repository";import typ
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
+  DoctorAppointmentView,
   ReleaseHoldResult,
   SlotHoldView,
+  TransitionAppointmentStatusResult,
 } from "./appointment.types";
 import { decideRefund, refundAmountFor, type CancellationActor } from "./cancellation-policy";
 import { Payment } from "../payments/payment.entity";
 import { Refund } from "../payments/refund.entity";
+import { PatientProfile } from "../patients/patient-profile.entity";
+import { DoctorProfile } from "../doctors/doctor-profile.entity";
 import type { NotificationService } from "../notifications/notification-service";
 
 export class TypeOrmAppointmentRepository implements AppointmentRepository {
@@ -105,7 +109,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     patientProfileId: string;
     now: Date;
   }): Promise<BookHoldResult> {
-    return this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction<BookHoldResult>(async (manager) => {
       const holds = manager.getRepository(SlotHold);
       const hold = await holds.findOne({
         where: { id: input.holdId },
@@ -177,6 +181,41 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       appointment.slot = slot;
       return { kind: "BOOKED", appointment: this.toAppointment(appointment) };
     });
+
+    if (
+      result.kind === "BOOKED" &&
+      result.appointment.status === AppointmentStatus.CONFIRMED &&
+      this.notificationService
+    ) {
+      await this.notifyConfirmedBooking(result.appointment).catch((error: unknown) => {
+        console.error({ error }, "Failed to send booking confirmation email");
+      });
+    }
+
+    return result;
+  }
+
+  private async notifyConfirmedBooking(appointment: AppointmentView): Promise<void> {
+    if (!this.notificationService) return;
+    const [patient, doctor] = await Promise.all([
+      this.dataSource.getRepository(PatientProfile).findOne({
+        where: { id: appointment.patientProfileId },
+        relations: { user: true },
+      }),
+      this.dataSource.getRepository(DoctorProfile).findOne({
+        where: { id: appointment.doctorId },
+        relations: { user: true },
+      }),
+    ]);
+    if (!patient?.user?.email || !doctor?.user) return;
+    const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`.trim();
+    await this.notificationService.sendBookingConfirmation(
+      patient.user.email,
+      appointment.id,
+      doctorName,
+      appointment.scheduledStartAt,
+      appointment.feeAmount,
+    );
   }
 
   /**
@@ -277,8 +316,11 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       });
       if (!appointment) return { kind: "APPOINTMENT_NOT_FOUND" };
 
-      // A patient may only cancel their own booking; staff act on any booking.
+      // A patient may only cancel their own booking; a doctor may only cancel their assigned booking; admins act on any booking.
       if (input.actor === "PATIENT" && appointment.patientProfileId !== input.actorId) {
+        return { kind: "APPOINTMENT_FORBIDDEN" };
+      }
+      if (input.actor === "DOCTOR" && appointment.doctorProfileId !== input.actorId) {
         return { kind: "APPOINTMENT_FORBIDDEN" };
       }
 
@@ -357,6 +399,40 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     });
   }
 
+  async transitionAppointmentStatus(input: {
+    appointmentId: string;
+    doctorProfileId: string;
+    targetStatus: AppointmentStatus.COMPLETED | AppointmentStatus.NO_SHOW;
+    now: Date;
+  }): Promise<TransitionAppointmentStatusResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const appointments = manager.getRepository(Appointment);
+      const appointment = await appointments.findOne({
+        where: { id: input.appointmentId },
+        relations: { slot: { chamber: { hospital: true } } },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!appointment) return { kind: "APPOINTMENT_NOT_FOUND" };
+      if (appointment.doctorProfileId !== input.doctorProfileId) {
+        return { kind: "APPOINTMENT_FORBIDDEN" };
+      }
+      if (appointment.status === input.targetStatus) {
+        return {
+          kind: "ALREADY_IN_STATUS",
+          appointment: this.toAppointment(appointment),
+        };
+      }
+      if (appointment.status !== AppointmentStatus.CONFIRMED) {
+        return { kind: "APPOINTMENT_INVALID_STATE" };
+      }
+
+      appointment.status = input.targetStatus;
+      const saved = await appointments.save(appointment);
+      saved.slot = appointment.slot;
+      return { kind: "UPDATED", appointment: this.toAppointment(saved) };
+    });
+  }
+
   async listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]> {
     const appointments = await this.dataSource.getRepository(Appointment).find({
       where: { patientProfileId },
@@ -364,6 +440,29 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       order: { scheduledStartAt: "ASC", id: "ASC" },
     });
     return appointments.map((appointment) => this.toAppointment(appointment));
+  }
+
+  async listDoctorAppointments(doctorProfileId: string): Promise<DoctorAppointmentView[]> {
+    const appointments = await this.dataSource.getRepository(Appointment).find({
+      where: { doctorProfileId },
+      relations: {
+        slot: { chamber: { hospital: true } },
+        patientProfile: { user: true },
+      },
+      order: { scheduledStartAt: "ASC", id: "ASC" },
+    });
+    return appointments.map((appointment) => ({
+      ...this.toAppointment(appointment),
+      patient: appointment.patientProfile?.user
+        ? {
+            id: appointment.patientProfile.id,
+            firstName: appointment.patientProfile.user.firstName,
+            lastName: appointment.patientProfile.user.lastName,
+            email: appointment.patientProfile.user.email,
+            phone: appointment.patientProfile.phone,
+          }
+        : null,
+    }));
   }
 
   /**

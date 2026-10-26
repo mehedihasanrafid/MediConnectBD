@@ -67,6 +67,7 @@ export function createApiRouter(options: ApiRouterOptions): Router {
     createDoctorRouter({
       doctorService: options.doctorService,
       schedulingService: options.schedulingService,
+      appointmentService: options.appointmentService,
       authenticate,
     }),
   );

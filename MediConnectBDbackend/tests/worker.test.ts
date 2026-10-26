@@ -7,6 +7,11 @@ import {
   createSystemJobProcessor,
   registerSystemJobSchedules,
 } from "../src/workers/system-jobs";
+import {
+  REMINDER_24H_JOB,
+  createReminderProcessor,
+  registerReminderSchedules,
+} from "../src/modules/notifications/reminder-scheduler";
 
 describe("system background jobs", () => {
   it("registers one stable, retryable unpaid-hold expiry schedule", async () => {
@@ -55,5 +60,45 @@ describe("system background jobs", () => {
       process({ name: EXPIRE_UNPAID_HOLDS_JOB, data: { version: 2 } } as Job<unknown>),
     ).rejects.toBeDefined();
     expect(expiryService.expireUnpaidHolds).not.toHaveBeenCalled();
+  });
+
+  it("processes recurring reminder jobs with { version: 1 } payload and marks reminders sent", async () => {
+    const queue = { upsertJobScheduler: vi.fn().mockResolvedValue(undefined) };
+    await registerReminderSchedules(queue);
+    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(2);
+
+    const emailService = {
+      sendBookingConfirmation: vi.fn().mockResolvedValue(undefined),
+      sendReminder: vi.fn().mockResolvedValue(undefined),
+    };
+    const reminderRepo = {
+      findUpcomingReminders: vi.fn().mockResolvedValue([
+        {
+          id: "00000000-0000-4000-8000-000000000010",
+          scheduledAt: "2026-10-27T10:00:00.000Z",
+          patientEmail: "patient@example.com",
+          doctorName: "Demo Doctor",
+        },
+      ]),
+      markReminderSent: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const processor = createReminderProcessor(emailService, reminderRepo);
+    const sent = await processor(
+      { name: REMINDER_24H_JOB, data: { version: 1 } } as Job<unknown>,
+      24,
+    );
+
+    expect(sent).toBe(1);
+    expect(emailService.sendReminder).toHaveBeenCalledWith(
+      "patient@example.com",
+      "00000000-0000-4000-8000-000000000010",
+      "Demo Doctor",
+      new Date("2026-10-27T10:00:00.000Z"),
+    );
+    expect(reminderRepo.markReminderSent).toHaveBeenCalledWith(
+      "00000000-0000-4000-8000-000000000010",
+      24,
+    );
   });
 });

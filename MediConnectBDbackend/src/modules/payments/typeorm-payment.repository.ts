@@ -13,6 +13,9 @@ import { ConsultationMode } from "../appointments/consultation-mode";
 import { Payment } from "./payment.entity";
 import { PaymentEvent } from "./payment-event.entity";
 import { SlotHold, SlotHoldStatus } from "../appointments/slot-hold.entity";
+import { PatientProfile } from "../patients/patient-profile.entity";
+import { DoctorProfile } from "../doctors/doctor-profile.entity";
+import type { NotificationService } from "../notifications/notification-service";
 import type { PaymentRepository } from "./payment.repository";
 import {
   decimalAmount,
@@ -23,7 +26,10 @@ import {
 } from "./payment.types";
 
 export class TypeOrmPaymentRepository implements PaymentRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly notificationService?: NotificationService | null,
+  ) {}
 
   /**
    * Locks the booking, validates the original hold, and reserves one payment per
@@ -100,7 +106,8 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
    * payment, then records evidence and applies one eligible booking transition.
    */
   async applyVerified(id: string, transaction: VerifiedTransaction, now: Date): Promise<PaymentView> {
-    return this.dataSource.transaction(async (manager) => {
+    let newlyConfirmedAppointment: Appointment | null = null;
+    const view = await this.dataSource.transaction(async (manager) => {
       const payments = manager.getRepository(Payment);
       const initial = await payments.findOneByOrFail({ id });
       const appointments = manager.getRepository(Appointment);
@@ -144,6 +151,7 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
           await appointments.save(appointment);
           await holds.save(hold);
           await slots.save(slot);
+          newlyConfirmedAppointment = appointment;
         } else {
           // A real charge after expiry or a risk flag requires reconciliation/refund.
           payment.status = "REVIEW_REQUIRED";
@@ -169,6 +177,38 @@ export class TypeOrmPaymentRepository implements PaymentRepository {
       }
       return this.view(await payments.save(payment));
     });
+
+    if (newlyConfirmedAppointment && this.notificationService) {
+      const confirmed: Appointment = newlyConfirmedAppointment;
+      await this.notifyVideoConfirmation(confirmed).catch((error: unknown) => {
+        console.error({ error }, "Failed to send video booking confirmation email");
+      });
+    }
+
+    return view;
+  }
+
+  private async notifyVideoConfirmation(appointment: Appointment): Promise<void> {
+    if (!this.notificationService) return;
+    const [patient, doctor] = await Promise.all([
+      this.dataSource.getRepository(PatientProfile).findOne({
+        where: { id: appointment.patientProfileId },
+        relations: { user: true },
+      }),
+      this.dataSource.getRepository(DoctorProfile).findOne({
+        where: { id: appointment.doctorProfileId },
+        relations: { user: true },
+      }),
+    ]);
+    if (!patient?.user?.email || !doctor?.user) return;
+    const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`.trim();
+    await this.notificationService.sendBookingConfirmation(
+      patient.user.email,
+      appointment.id,
+      doctorName,
+      appointment.scheduledStartAt,
+      Number(appointment.feeAmount),
+    );
   }
 
   /**

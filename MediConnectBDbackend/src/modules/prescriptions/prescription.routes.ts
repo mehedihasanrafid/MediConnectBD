@@ -16,15 +16,13 @@ export function createPrescriptionRouter(options: {
   const router = Router();
 
   // Doctor routes (authenticated)
-  router.use(options.authenticate, requireRole("DOCTOR"));
-  router.post("/me/prescriptions", controller.createPrescription.bind(controller));
-  router.get("/me/prescriptions", controller.listDoctorPrescriptions.bind(controller));
-  router.put("/:prescriptionId", controller.updatePrescription.bind(controller));
-  router.delete("/:prescriptionId", controller.deletePrescription.bind(controller));
+  router.post("/me/prescriptions", options.authenticate, requireRole("DOCTOR"), controller.createPrescription.bind(controller));
+  router.get("/me/prescriptions", options.authenticate, requireRole("DOCTOR"), controller.listDoctorPrescriptions.bind(controller));
+  router.put("/:prescriptionId", options.authenticate, requireRole("DOCTOR"), controller.updatePrescription.bind(controller));
+  router.delete("/:prescriptionId", options.authenticate, requireRole("DOCTOR"), controller.deletePrescription.bind(controller));
 
   // Patient route (authenticated)
-  router.use(options.authenticate, requireRole("PATIENT"));
-  router.get("/patients/me/prescriptions", controller.listPatientPrescriptions.bind(controller));
+  router.get("/patients/me/prescriptions", options.authenticate, requireRole("PATIENT"), controller.listPatientPrescriptions.bind(controller));
 
   // Public route — verify prescription by code
   router.get("/verify/:verificationCode", controller.verifyPrescription.bind(controller));

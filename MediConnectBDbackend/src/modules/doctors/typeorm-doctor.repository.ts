@@ -340,10 +340,32 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
     }
 
     const repository = manager.getRepository(DoctorChamber);
-    await repository.delete({ doctorProfileId: doctorId });
-    if (chambers.length > 0) {
-      await repository.save(
-        chambers.map((chamber) =>
+    const existing = await repository.find({ where: { doctorProfileId: doctorId } });
+    const existingByHospital = new Map(existing.map((item) => [item.hospitalId, item]));
+    const submittedHospitalIds = new Set(chambers.map((item) => item.hospitalId));
+
+    // Deactivate chambers omitted from the update instead of hard-deleting them,
+    // so fk_doctor_schedules_chamber ON DELETE CASCADE does not destroy schedule rules.
+    const toDeactivate = existing.filter(
+      (item) => !submittedHospitalIds.has(item.hospitalId) && item.isActive,
+    );
+    for (const item of toDeactivate) {
+      item.isActive = false;
+    }
+    if (toDeactivate.length > 0) {
+      await repository.save(toDeactivate);
+    }
+
+    const toSave: DoctorChamber[] = [];
+    for (const chamber of chambers) {
+      const current = existingByHospital.get(chamber.hospitalId);
+      if (current) {
+        current.roomOrUnit = chamber.roomOrUnit ?? null;
+        current.consultationFee = chamber.consultationFee.toFixed(2);
+        current.isActive = true;
+        toSave.push(current);
+      } else {
+        toSave.push(
           repository.create({
             doctorProfileId: doctorId,
             hospitalId: chamber.hospitalId,
@@ -351,8 +373,11 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
             consultationFee: chamber.consultationFee.toFixed(2),
             isActive: true,
           }),
-        ),
-      );
+        );
+      }
+    }
+    if (toSave.length > 0) {
+      await repository.save(toSave);
     }
   }
 

@@ -155,4 +155,62 @@ export class AppointmentService {
   listMyAppointments(patientProfileId: string) {
     return this.repository.listPatientAppointments(patientProfileId);
   }
+
+  listDoctorAppointments(doctorProfileId: string) {
+    return this.repository.listDoctorAppointments(doctorProfileId);
+  }
+
+  /**
+   * Transitions a doctor's own CONFIRMED appointment to COMPLETED so that prescriptions and
+   * patient reviews can be unlocked. Repeating the call on an already-completed appointment is idempotent.
+   */
+  async completeAppointment(doctorProfileId: string, appointmentId: string) {
+    const result = await this.repository.transitionAppointmentStatus({
+      appointmentId,
+      doctorProfileId,
+      targetStatus: AppointmentStatus.COMPLETED,
+      now: this.now(),
+    });
+    if (result.kind === "APPOINTMENT_NOT_FOUND") {
+      throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+    }
+    if (result.kind === "APPOINTMENT_FORBIDDEN") {
+      throw new AppError(403, "APPOINTMENT_FORBIDDEN", "This appointment belongs to another doctor");
+    }
+    if (result.kind === "APPOINTMENT_INVALID_STATE") {
+      throw new AppError(
+        409,
+        "APPOINTMENT_NOT_CONFIRMED",
+        "Only a confirmed appointment can be marked as completed",
+      );
+    }
+    return result.appointment;
+  }
+
+  /**
+   * Transitions a doctor's own CONFIRMED appointment to NO_SHOW when the patient does not attend.
+   * Repeating the call on an already-marked no-show appointment is idempotent.
+   */
+  async markNoShow(doctorProfileId: string, appointmentId: string) {
+    const result = await this.repository.transitionAppointmentStatus({
+      appointmentId,
+      doctorProfileId,
+      targetStatus: AppointmentStatus.NO_SHOW,
+      now: this.now(),
+    });
+    if (result.kind === "APPOINTMENT_NOT_FOUND") {
+      throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+    }
+    if (result.kind === "APPOINTMENT_FORBIDDEN") {
+      throw new AppError(403, "APPOINTMENT_FORBIDDEN", "This appointment belongs to another doctor");
+    }
+    if (result.kind === "APPOINTMENT_INVALID_STATE") {
+      throw new AppError(
+        409,
+        "APPOINTMENT_NOT_CONFIRMED",
+        "Only a confirmed appointment can be marked as no-show",
+      );
+    }
+    return result.appointment;
+  }
 }

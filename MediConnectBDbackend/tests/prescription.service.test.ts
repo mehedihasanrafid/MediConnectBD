@@ -36,7 +36,16 @@ class FakePrescriptionRepository implements PrescriptionRepository {
   createResult: CreatePrescriptionResult = { kind: "CREATED", prescription: makePrescription(randomUUID()) };
   updateResult: UpdatePrescriptionResult = { kind: "UPDATED", prescription: makePrescription(prescriptionId) };
   deleteResult: DeletePrescriptionResult = { success: true };
-  verifyResult: VerifyPrescriptionResult = { valid: true, prescription: makePrescription(prescriptionId) };
+  verifyResult: VerifyPrescriptionResult = {
+    valid: true,
+    prescription: {
+      id: prescriptionId,
+      verificationCode: "ABCDEF1234567890",
+      doctorProfileId: doctorId,
+      doctorName: "Demo Doctor",
+      issuedAt: new Date(),
+    },
+  };
   patientPrescriptions: PrescriptionView[] = [makePrescription(randomUUID())];
   doctorPrescriptions: PrescriptionView[] = [makePrescription(randomUUID())];
 
@@ -153,10 +162,18 @@ describe("PrescriptionService", () => {
   });
 
   it("throws PRESCRIPTION_NOT_FOUND on failed delete", async () => {
-    repo.deleteResult = { success: false };
+    repo.deleteResult = { success: false, reason: "NOT_FOUND" };
     await expect(service.deletePrescription(prescriptionId, doctorId)).rejects.toMatchObject({
       statusCode: 404,
       code: "PRESCRIPTION_NOT_FOUND",
+    });
+  });
+
+  it("throws PRESCRIPTION_NOT_EDITABLE on delete after 24h lock", async () => {
+    repo.deleteResult = { success: false, reason: "NOT_EDITABLE" };
+    await expect(service.deletePrescription(prescriptionId, doctorId)).rejects.toMatchObject({
+      statusCode: 409,
+      code: "PRESCRIPTION_NOT_EDITABLE",
     });
   });
 

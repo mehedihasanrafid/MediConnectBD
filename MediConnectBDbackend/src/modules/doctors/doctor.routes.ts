@@ -10,9 +10,11 @@ import { Router, type RequestHandler } from "express";
 import { requireRole } from "../auth/auth.middleware";
 import type { DoctorService } from "./doctor.service";
 import type { SchedulingService } from "../scheduling/scheduling.service";
+import type { AppointmentService } from "../appointments/appointment.service";
 interface ProtectedRouterOptions {
     doctorService: DoctorService;
     schedulingService: SchedulingService;
+    appointmentService?: AppointmentService;
     authenticate: RequestHandler;
 }
 export function createDoctorRouter(options: ProtectedRouterOptions): Router {
@@ -22,6 +24,7 @@ export function createDoctorRouter(options: ProtectedRouterOptions): Router {
     router.get("/me", options.authenticate, requireRole("DOCTOR"), controller.getMyProfile);
     router.patch("/me", options.authenticate, requireRole("DOCTOR"), controller.updateMyProfile);
     router.post("/me/submit", options.authenticate, requireRole("DOCTOR"), controller.submitApplication);
+    router.get("/me/appointments", options.authenticate, requireRole("DOCTOR"), controller.listMyAppointments);
     router.use(createSchedulingRouter(options));
     router.get("/:doctorId", controller.getPublicProfile);
     return router;

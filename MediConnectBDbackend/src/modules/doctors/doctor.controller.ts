@@ -6,13 +6,16 @@
 
 import type { RequestHandler as HttpHandler } from "express";
 import { type RequestHandler } from "express";
+import { AppError } from "../../utils/app-error";
 import type { AuthenticatedLocals } from "../auth/auth.middleware";
 import type { DoctorService } from "./doctor.service";
 import type { SchedulingService } from "../scheduling/scheduling.service";
+import type { AppointmentService } from "../appointments/appointment.service";
 import { doctorApplicationQuerySchema, doctorIdSchema, doctorReviewSchema, publicDoctorQuerySchema, updateDoctorProfileSchema } from "./doctor.schema";
 interface ProtectedRouterOptions {
     doctorService: DoctorService;
     schedulingService: SchedulingService;
+    appointmentService?: AppointmentService;
     authenticate: RequestHandler;
 }
 /**
@@ -36,6 +39,16 @@ updateMyProfile: async (request, response) => {
 submitApplication: async (_request, response) => {
             const user = (response.locals as AuthenticatedLocals).authUser;
             response.status(200).json(await options.doctorService.submitMyApplication(user.id));
+        },
+listMyAppointments: async (_request, response) => {
+            const doctorProfileId = (response.locals as AuthenticatedLocals).authUser.doctorProfile?.id;
+            if (!doctorProfileId) {
+                throw new AppError(403, "DOCTOR_PROFILE_REQUIRED", "A doctor profile is required");
+            }
+            const items = options.appointmentService
+                ? await options.appointmentService.listDoctorAppointments(doctorProfileId)
+                : [];
+            response.status(200).json({ items });
         },
 getPublicProfile: async (request, response) => {
             const doctorId = doctorIdSchema.parse(request.params.doctorId);

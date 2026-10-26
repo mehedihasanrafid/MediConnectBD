@@ -19,8 +19,10 @@ export interface UpcomingAppointmentInfo {
 export interface UpcomingAppointmentRepository {
   findUpcomingReminders(
     now: Date,
+    hoursBefore: number,
     batchSize: number,
   ): Promise<UpcomingAppointmentInfo[]>;
+  markReminderSent(appointmentId: string, hoursBefore: number): Promise<void>;
 }
 
 export class TypeOrmReminderRepository implements UpcomingAppointmentRepository {
@@ -28,24 +30,35 @@ export class TypeOrmReminderRepository implements UpcomingAppointmentRepository 
 
   async findUpcomingReminders(
     now: Date,
+    hoursBefore: number,
     batchSize: number,
   ): Promise<UpcomingAppointmentInfo[]> {
-    const results = await this.dataSource
+    const is24h = hoursBefore > 1;
+    const targetTime = new Date(now.getTime() + hoursBefore * 60 * 60 * 1000);
+    const builder = this.dataSource
       .createQueryBuilder()
       .select("a.id", "appointmentId")
       .addSelect("a.scheduled_start_at", "scheduledStartAt")
       .addSelect("u.email", "patientEmail")
-      .addSelect("dp.full_name", "doctorName")
+      .addSelect("CONCAT(du.first_name, ' ', du.last_name)", "doctorName")
       .from(Appointment, "a")
       .innerJoin(PatientProfile, "pp", "pp.id = a.patient_profile_id")
       .innerJoin(User, "u", "u.id = pp.user_id")
       .innerJoin(DoctorProfile, "dp", "dp.id = a.doctor_profile_id")
+      .innerJoin(User, "du", "du.id = dp.user_id")
       .where("a.status = :status", { status: "CONFIRMED" })
       .andWhere("a.scheduled_start_at >= :now AND a.scheduled_start_at <= :targetTime", {
         now,
-        targetTime: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 24h window
-      })
-      .andWhere("a.reminder_24h_sent = false")
+        targetTime,
+      });
+
+    if (is24h) {
+      builder.andWhere("a.reminder_24h_sent = false");
+    } else {
+      builder.andWhere("a.reminder_30min_sent = false");
+    }
+
+    const results = await builder
       .orderBy("a.scheduled_start_at", "ASC")
       .limit(batchSize)
       .getRawMany();
@@ -56,5 +69,15 @@ export class TypeOrmReminderRepository implements UpcomingAppointmentRepository 
       patientEmail: row.patientEmail,
       doctorName: row.doctorName,
     }));
+  }
+
+  async markReminderSent(appointmentId: string, hoursBefore: number): Promise<void> {
+    const is24h = hoursBefore > 1;
+    await this.dataSource
+      .getRepository(Appointment)
+      .update(
+        { id: appointmentId },
+        is24h ? { reminder24hSent: true } : { reminder30minSent: true },
+      );
   }
 }

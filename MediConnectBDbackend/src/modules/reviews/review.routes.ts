@@ -16,9 +16,8 @@ export function createReviewRouter(options: {
   const router = Router();
 
   // Patient routes (authenticated)
-  router.use(options.authenticate, requireRole("PATIENT"));
-  router.post("/me/reviews", controller.createReview.bind(controller));
-  router.get("/me/reviews", controller.listMyReviews.bind(controller));
+  router.post("/me/reviews", options.authenticate, requireRole("PATIENT"), controller.createReview.bind(controller));
+  router.get("/me/reviews", options.authenticate, requireRole("PATIENT"), controller.listMyReviews.bind(controller));
 
   // Public route — anyone can view doctor reviews
   router.get("/doctors/:doctorId/reviews", controller.listDoctorReviews.bind(controller));

@@ -11,6 +11,16 @@ import { env } from "../config/env";
 import AppDataSource from "../database/data-source";
 import { PaymentService } from "../modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "../modules/payments/typeorm-payment.repository";
+import { DefaultEmailService } from "../modules/notifications/email-service";
+import { ConsoleTransport } from "../modules/notifications/console-transport";
+import { TypeOrmReminderRepository } from "../modules/notifications/typeorm-reminder.repository";
+import {
+  REMINDERS_QUEUE,
+  REMINDER_24H_JOB,
+  REMINDER_30MIN_JOB,
+  createReminderProcessor,
+  registerReminderSchedules,
+} from "../modules/notifications/reminder-scheduler";
 import {
   SYSTEM_JOBS_QUEUE,
   createSystemJobProcessor,
@@ -21,9 +31,13 @@ const logger = pino({ level: env.LOG_LEVEL });
 let connection: Redis | null = null;
 let queue: Queue | null = null;
 let worker: Worker | null = null;
+let reminderQueue: Queue | null = null;
+let reminderWorker: Worker | null = null;
 let stopping = false;
 
 async function closeResources(): Promise<void> {
+  await reminderWorker?.close();
+  await reminderQueue?.close();
   await worker?.close();
   await queue?.close();
   if (connection?.status !== "end") await connection?.quit();
@@ -62,6 +76,30 @@ async function main(): Promise<void> {
 
   await Promise.all([worker.waitUntilReady(), queue.waitUntilReady()]);
   await registerSystemJobSchedules(queue);
+
+  const emailService = new DefaultEmailService(new ConsoleTransport());
+  const reminderRepo = new TypeOrmReminderRepository(AppDataSource);
+  const reminderProcessor = createReminderProcessor(emailService, reminderRepo);
+  reminderQueue = new Queue(REMINDERS_QUEUE, { connection });
+  reminderWorker = new Worker(
+    REMINDERS_QUEUE,
+    async (job) => {
+      if (job.name === REMINDER_24H_JOB) return reminderProcessor(job, 24);
+      if (job.name === REMINDER_30MIN_JOB) return reminderProcessor(job, 0.5);
+      throw new Error(`Unsupported reminder job type: ${job.name}`);
+    },
+    { connection, concurrency: 1 },
+  );
+  reminderWorker.on("completed", (job, result: unknown) =>
+    logger.info({ jobId: job.id, jobName: job.name, result }, "Reminder job completed"),
+  );
+  reminderWorker.on("failed", (job, error) =>
+    logger.error({ jobId: job?.id, jobName: job?.name, error }, "Reminder job failed"),
+  );
+  reminderWorker.on("error", (error) => logger.error({ error }, "Reminder worker error"));
+  await Promise.all([reminderWorker.waitUntilReady(), reminderQueue.waitUntilReady()]);
+  await registerReminderSchedules(reminderQueue);
+
   logger.info("Background worker is ready");
 
   for (const signal of ["SIGINT", "SIGTERM"] as const) {

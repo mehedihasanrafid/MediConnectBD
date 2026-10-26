@@ -27,6 +27,9 @@ import { createPrescriptionRouter } from "../src/modules/prescriptions/prescript
 import type { PrescriptionService } from "../src/modules/prescriptions/prescription.service";
 import { createAdminRouter } from "../src/modules/admin/admin.routes";
 import type { AdminService } from "../src/modules/admin/admin.service";
+import { createFamilyMemberRouter } from "../src/modules/patients/family-member.routes";
+import type { FamilyMemberService } from "../src/modules/patients/family-member.service";
+import { createFamilyMemberSchema, updateFamilyMemberSchema } from "../src/modules/patients/family-member.schema";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -70,6 +73,7 @@ describe("OpenAPI and Swagger", () => {
     const reviewService = {} as ReviewService;
     const prescriptionService = {} as PrescriptionService;
     const adminService = {} as AdminService;
+    const familyMemberService = {} as FamilyMemberService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -80,8 +84,9 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createAppointmentRouter({ appointmentService, authenticate }), "/api/v1/appointments"),
       ...collect(createPaymentRouter(paymentService, authenticate), "/api/v1"),
       ...collect(createUserRouter(authenticate), "/api/v1"),
-      ...collect(createReviewRouter({ reviewService, authenticate }), "/reviews"),
-      ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/prescriptions"),
+      ...collect(createFamilyMemberRouter(familyMemberService, authenticate), "/api/v1/patients/me/family-members"),
+      ...collect(createReviewRouter({ reviewService, authenticate }), "/api/v1/reviews"),
+      ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/api/v1/prescriptions"),
       ...collect(createAdminRouter({ adminService, authenticate }), "/api/v1/admin"),
     ];
     const documented = Object.entries(openApiDocument.paths).flatMap(([path, item]) => methods.filter(method => item?.[method]).map(method => `${method.toUpperCase()} ${path}`));
@@ -94,6 +99,7 @@ describe("OpenAPI and Swagger", () => {
     ["PatientRegistration", patientRegistrationSchema], ["DoctorRegistration", doctorRegistrationSchema], ["Login", loginSchema],
     ["DoctorProfilePatch", updateDoctorProfileSchema], ["DoctorReview", doctorReviewSchema], ["ReplaceSchedule", replaceScheduleSchema],
     ["CreateTimeOff", createTimeOffSchema], ["CreateHold", createHoldSchema], ["BookAppointment", bookAppointmentSchema],
+    ["CreateFamilyMember", createFamilyMemberSchema], ["UpdateFamilyMember", updateFamilyMemberSchema],
     ["PaymentCustomer", paymentCustomerSchema], ["PaymentCallback", paymentCallbackSchema],
   ] as const)("keeps the %s example valid against the real Zod request schema", (name, schema) => {
     expect(schema.safeParse(requestExamples[name]).success).toBe(true);

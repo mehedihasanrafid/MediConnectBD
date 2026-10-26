@@ -9,6 +9,10 @@ import type { SchedulingService } from "../src/modules/scheduling/scheduling.ser
 import { createUserRouter } from "../src/modules/users/user.routes";
 import { createAuthRouter } from "../src/modules/auth/auth.routes";
 import type { AuthService } from "../src/modules/auth/auth.service";
+import { createReviewRouter } from "../src/modules/reviews/review.routes";
+import type { ReviewService } from "../src/modules/reviews/review.service";
+import { createPrescriptionRouter } from "../src/modules/prescriptions/prescription.routes";
+import type { PrescriptionService } from "../src/modules/prescriptions/prescription.service";
 
 const userId = randomUUID();
 const doctorId = randomUUID();
@@ -91,5 +95,65 @@ describe("routes after the DokanBD-style reorganization", () => {
     expect(response.body).not.toHaveProperty("refreshToken");
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
     expect(registerPatient).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows public, patient, and admin access on review and prescription routes without role conflicts", async () => {
+    const reviewService = {
+      createReview: vi.fn().mockResolvedValue({ ok: true }),
+      getPatientReviews: vi.fn().mockResolvedValue([]),
+      getDoctorReviews: vi.fn().mockResolvedValue([]),
+      deleteReview: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as ReviewService;
+    const prescriptionService = {
+      createPrescription: vi.fn().mockResolvedValue({ ok: true }),
+      getPatientPrescriptions: vi.fn().mockResolvedValue([]),
+      getDoctorPrescriptions: vi.fn().mockResolvedValue([]),
+      updatePrescription: vi.fn().mockResolvedValue({ ok: true }),
+      deletePrescription: vi.fn().mockResolvedValue({ success: true }),
+      verifyByCode: vi.fn().mockResolvedValue({ valid: true, prescription: null }),
+    } as unknown as PrescriptionService;
+
+    let currentRole: string | null = null;
+    const authenticate: RequestHandler = (_req, res, next) => {
+      if (!currentRole) {
+        res.status(401).json({ code: "AUTHENTICATION_REQUIRED" });
+        return;
+      }
+      res.locals.authUser = {
+        id: userId,
+        email: "synthetic@example.com",
+        firstName: "Test",
+        lastName: "User",
+        status: "ACTIVE",
+        roles: [currentRole],
+        patientProfileId: currentRole === "PATIENT" ? randomUUID() : null,
+        doctorProfile: currentRole === "DOCTOR" ? { id: doctorId, applicationStatus: "APPROVED" } : null,
+        passwordHash: "hidden",
+      };
+      next();
+    };
+
+    const router = Router();
+    router.use("/reviews", createReviewRouter({ reviewService, authenticate }));
+    router.use("/prescriptions", createPrescriptionRouter({ prescriptionService, authenticate }));
+    const app = createApp({
+      appUrl: "http://localhost:5173",
+      logLevel: "silent",
+      apiRouter: router,
+      readiness: { database: async () => undefined, redis: async () => undefined },
+    });
+
+    // Public endpoints work with no auth token
+    currentRole = null;
+    expect((await request(app).get(`/api/v1/reviews/doctors/${doctorId}/reviews`)).status).toBe(200);
+    expect((await request(app).get("/api/v1/prescriptions/verify/ABCDEF1234567890")).status).toBe(200);
+
+    // Patient endpoint works for PATIENT role
+    currentRole = "PATIENT";
+    expect((await request(app).get("/api/v1/prescriptions/patients/me/prescriptions")).status).toBe(200);
+
+    // Admin endpoint works for ADMIN role
+    currentRole = "ADMIN";
+    expect((await request(app).delete(`/api/v1/reviews/${randomUUID()}`)).status).toBe(204);
   });
 });

@@ -84,3 +84,21 @@ export type CancelAppointmentResult =
   | { kind: "APPOINTMENT_NOT_FOUND" }
   | { kind: "APPOINTMENT_FORBIDDEN" }
   | { kind: "APPOINTMENT_NOT_CANCELLABLE" };
+
+export interface DoctorAppointmentPatientView {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+}
+
+export interface DoctorAppointmentView extends AppointmentView {
+  patient: DoctorAppointmentPatientView | null;
+}
+
+export type TransitionAppointmentStatusResult =
+  | { kind: "UPDATED" | "ALREADY_IN_STATUS"; appointment: AppointmentView }
+  | { kind: "APPOINTMENT_NOT_FOUND" }
+  | { kind: "APPOINTMENT_FORBIDDEN" }
+  | { kind: "APPOINTMENT_INVALID_STATE" };

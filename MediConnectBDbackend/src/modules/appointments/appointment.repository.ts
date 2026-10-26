@@ -4,12 +4,15 @@
  * on MySQL errors.
  */
 
+import type { AppointmentStatus } from "./appointment.entity";
 import type {
   AppointmentView,
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
+  DoctorAppointmentView,
   ReleaseHoldResult,
+  TransitionAppointmentStatusResult,
 } from "./appointment.types";
 import type { CancellationActor } from "./cancellation-policy";
 
@@ -38,7 +41,14 @@ export interface AppointmentRepository {
     reason: string;
     now: Date;
   }): Promise<CancelAppointmentResult>;
+  transitionAppointmentStatus(input: {
+    appointmentId: string;
+    doctorProfileId: string;
+    targetStatus: AppointmentStatus.COMPLETED | AppointmentStatus.NO_SHOW;
+    now: Date;
+  }): Promise<TransitionAppointmentStatusResult>;
   listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]>;
+  listDoctorAppointments(doctorProfileId: string): Promise<DoctorAppointmentView[]>;
   markRemindersSent(
     appointmentId: string,
     reminder24hSent: boolean,

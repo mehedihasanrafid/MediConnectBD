@@ -21,18 +21,15 @@ export const REMINDER_BATCH_SIZE = 100;
 
 const reminderPayloadSchema = z.object({
   version: z.literal(1),
-  appointmentId: z.string().uuid(),
-  patientEmail: z.string().email(),
-  doctorName: z.string().min(1),
-  scheduledAt: z.string().datetime(),
-  hoursBefore: z.number().positive(),
 }).strict();
 
 export interface UpcomingAppointmentRepository {
   findUpcomingReminders(
     now: Date,
+    hoursBefore: number,
     batchSize: number,
   ): Promise<UpcomingAppointmentInfo[]>;
+  markReminderSent(appointmentId: string, hoursBefore: number): Promise<void>;
 }
 
 /**
@@ -103,22 +100,21 @@ export async function processReminders(
   batchSize: number,
 ): Promise<number> {
   const now = new Date();
-  const targetTime = new Date(now.getTime() + hoursBefore * 60 * 60 * 1000);
-
-  const appointments = await repo.findUpcomingReminders(targetTime, batchSize);
+  const appointments = await repo.findUpcomingReminders(now, hoursBefore, batchSize);
 
   let sent = 0;
   for (const appt of appointments) {
     try {
       await emailService.sendReminder(
         appt.patientEmail,
-        "placeholder-id", // Will be replaced with actual ID
+        appt.id,
         appt.doctorName,
         new Date(appt.scheduledAt),
       );
+      await repo.markReminderSent(appt.id, hoursBefore);
       sent++;
     } catch (error) {
-      console.error({ error, apptId: "placeholder-id" }, "Failed to send reminder");
+      console.error({ error, apptId: appt.id }, "Failed to send reminder");
     }
   }
 

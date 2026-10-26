@@ -44,9 +44,34 @@ export function createAppointmentController(options: {
             });
         },
         cancelAppointment: async (request, response) => {
-            const patientProfileId = getPatientProfileId(response.locals as AuthenticatedLocals);
+            const locals = response.locals as AuthenticatedLocals;
             const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
             const input = cancelAppointmentSchema.parse(request.body);
+            const roles = locals.authUser.roles;
+            if (roles.includes("ADMIN")) {
+                response.status(200).json(
+                    await options.appointmentService.cancelAppointment(
+                        "ADMIN",
+                        locals.authUser.id,
+                        appointmentId,
+                        input.reason,
+                    ),
+                );
+                return;
+            }
+            if (roles.includes("DOCTOR")) {
+                const doctorProfileId = getDoctorProfileId(locals);
+                response.status(200).json(
+                    await options.appointmentService.cancelAppointment(
+                        "DOCTOR",
+                        doctorProfileId,
+                        appointmentId,
+                        input.reason,
+                    ),
+                );
+                return;
+            }
+            const patientProfileId = getPatientProfileId(locals);
             response.status(200).json(
                 await options.appointmentService.cancelAppointment(
                     "PATIENT",
@@ -54,6 +79,20 @@ export function createAppointmentController(options: {
                     appointmentId,
                     input.reason,
                 ),
+            );
+        },
+        completeAppointment: async (request, response) => {
+            const doctorProfileId = getDoctorProfileId(response.locals as AuthenticatedLocals);
+            const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
+            response.status(200).json(
+                await options.appointmentService.completeAppointment(doctorProfileId, appointmentId),
+            );
+        },
+        markNoShow: async (request, response) => {
+            const doctorProfileId = getDoctorProfileId(response.locals as AuthenticatedLocals);
+            const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
+            response.status(200).json(
+                await options.appointmentService.markNoShow(doctorProfileId, appointmentId),
             );
         },
     } satisfies Record<string, HttpHandler>;
@@ -64,4 +103,11 @@ function getPatientProfileId(locals: AuthenticatedLocals): string {
         throw new AppError(403, "PATIENT_PROFILE_REQUIRED", "A patient profile is required");
     }
     return patientProfileId;
+}
+function getDoctorProfileId(locals: AuthenticatedLocals): string {
+    const doctorProfileId = locals.authUser.doctorProfile?.id;
+    if (!doctorProfileId) {
+        throw new AppError(403, "DOCTOR_PROFILE_REQUIRED", "A doctor profile is required");
+    }
+    return doctorProfileId;
 }

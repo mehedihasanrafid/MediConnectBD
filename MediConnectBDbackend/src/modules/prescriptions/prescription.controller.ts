@@ -75,6 +75,24 @@ export function createPrescriptionController(options: {
       const result = await options.prescriptionService.verifyByCode(verificationCode);
       response.status(200).json(result);
     },
+
+    suggestMedicines: async (request: Parameters<HttpHandler>[0], response: Parameters<HttpHandler>[1]) => {
+      const q = typeof request.query.q === "string" ? request.query.q : "";
+      const items = options.prescriptionService.suggestMedicines(q);
+      response.status(200).json({ items });
+    },
+
+    downloadPrescriptionPdf: async (request: Parameters<HttpHandler>[0], response: Parameters<HttpHandler>[1]) => {
+      const prescriptionId = z.string().uuid().parse(request.params.prescriptionId);
+      const locals = response.locals as AuthenticatedLocals;
+      const result = await options.prescriptionService.getPrescriptionPdf(prescriptionId, {
+        patientProfileId: locals.authUser.patientProfileId ?? null,
+        doctorProfileId: locals.authUser.doctorProfile?.id ?? null,
+      });
+      response.setHeader("Content-Type", "application/pdf");
+      response.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      response.status(200).send(result.buffer);
+    },
   };
 }
 

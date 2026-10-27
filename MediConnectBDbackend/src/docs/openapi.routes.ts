@@ -14,7 +14,7 @@ export function createOpenApiRouter(): Router {
     response.setHeader("Cache-Control", "no-store");
     response.json(openApiDocument);
   });
-  router.use("/api-docs", helmet({
+  router.use(["/api-docs", "/api/docs"], helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"],

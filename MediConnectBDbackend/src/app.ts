@@ -12,6 +12,7 @@ import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { errorHandler } from "./middlewares/error-handler";
 import { notFound } from "./middlewares/not-found";
+import { createRateLimiter } from "./middlewares/rate-limit";
 import { requestId } from "./middlewares/request-id";
 import { createOpenApiRouter } from "./docs/openapi.routes";
 import { createHealthRouter, type ReadinessChecks } from "./modules/health/health.routes";
@@ -45,7 +46,7 @@ export function createApp(options: AppOptions): express.Express {
       credentials: true,
     }),
   );
-  app.use(express.json({ limit: "1mb" }));
+  app.use(express.json({ limit: "5mb" }));
   app.use(cookieParser());
 
   app.get("/", (_request, response) => {
@@ -57,7 +58,23 @@ export function createApp(options: AppOptions): express.Express {
   });
   app.use("/health", createHealthRouter(options.readiness));
   app.use(createOpenApiRouter());
-  if (options.apiRouter) app.use("/api/v1", options.apiRouter);
+  if (options.apiRouter) {
+    const authLimiter = createRateLimiter({
+      windowMs: 60_000,
+      maxRequests: 30,
+      keyPrefix: "auth",
+    });
+    const verifyLimiter = createRateLimiter({
+      windowMs: 60_000,
+      maxRequests: 60,
+      keyPrefix: "verify",
+    });
+    app.use("/api/v1/auth/login", authLimiter);
+    app.use("/api/v1/auth/patient/register", authLimiter);
+    app.use("/api/v1/auth/doctor/register", authLimiter);
+    app.use("/api/v1/prescriptions/verify", verifyLimiter);
+    app.use("/api/v1", options.apiRouter);
+  }
 
   app.use(notFound);
   app.use(errorHandler);

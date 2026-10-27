@@ -11,7 +11,9 @@ import type {
   CancelAppointmentResult,
   CreateHoldResult,
   DoctorAppointmentView,
+  GetVideoSessionResult,
   ReleaseHoldResult,
+  RescheduleAppointmentResult,
   TransitionAppointmentStatusResult,
 } from "./appointment.types";
 import type { CancellationActor } from "./cancellation-policy";
@@ -27,8 +29,16 @@ export interface AppointmentRepository {
   bookHold(input: {
     holdId: string;
     patientProfileId: string;
+    familyMemberId?: string | null | undefined;
     now: Date;
   }): Promise<BookHoldResult>;
+  rescheduleAppointment(input: {
+    appointmentId: string;
+    patientProfileId: string;
+    newSlotId: string;
+    now: Date;
+    minimumStartAt: Date;
+  }): Promise<RescheduleAppointmentResult>;
   releaseHold(input: {
     holdId: string;
     patientProfileId: string;
@@ -49,6 +59,14 @@ export interface AppointmentRepository {
   }): Promise<TransitionAppointmentStatusResult>;
   listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]>;
   listDoctorAppointments(doctorProfileId: string): Promise<DoctorAppointmentView[]>;
+  getVideoSession?(input: {
+    appointmentId: string;
+    actor: {
+      patientProfileId?: string | null | undefined;
+      doctorProfileId?: string | null | undefined;
+    };
+    now: Date;
+  }): Promise<GetVideoSessionResult>;
   markRemindersSent(
     appointmentId: string,
     reminder24hSent: boolean,

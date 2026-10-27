@@ -69,3 +69,13 @@ export interface VerifyPrescriptionResult {
   valid: boolean;
   prescription: VerifiedPrescriptionSummary | null;
 }
+
+export interface PrescriptionPdfData {
+  prescription: PrescriptionView;
+  doctorName: string;
+  doctorBmdc: string | null;
+  doctorSpecialty: string | null;
+  patientName: string;
+  consultationMode: string | null;
+}
+

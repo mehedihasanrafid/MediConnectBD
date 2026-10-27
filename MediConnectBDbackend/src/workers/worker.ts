@@ -13,6 +13,7 @@ import { PaymentService } from "../modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "../modules/payments/typeorm-payment.repository";
 import { DefaultEmailService } from "../modules/notifications/email-service";
 import { ConsoleTransport } from "../modules/notifications/console-transport";
+import { SmtpTransport } from "../modules/notifications/smtp-transport";
 import { TypeOrmReminderRepository } from "../modules/notifications/typeorm-reminder.repository";
 import {
   REMINDERS_QUEUE,
@@ -77,7 +78,16 @@ async function main(): Promise<void> {
   await Promise.all([worker.waitUntilReady(), queue.waitUntilReady()]);
   await registerSystemJobSchedules(queue);
 
-  const emailService = new DefaultEmailService(new ConsoleTransport());
+  const emailTransport = env.SMTP_HOST
+    ? new SmtpTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_SECURE,
+        auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+        fromAddress: env.SMTP_FROM,
+      })
+    : new ConsoleTransport();
+  const emailService = new DefaultEmailService(emailTransport);
   const reminderRepo = new TypeOrmReminderRepository(AppDataSource);
   const reminderProcessor = createReminderProcessor(emailService, reminderRepo);
   reminderQueue = new Queue(REMINDERS_QUEUE, { connection });

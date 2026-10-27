@@ -1,0 +1,1 @@
+export { PastAppointmentCard } from "./PastAppointmentCard";

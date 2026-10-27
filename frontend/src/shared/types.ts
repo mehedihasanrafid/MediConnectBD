@@ -57,8 +57,30 @@ export interface PublicDoctor {
   languages: string[] | null;
   videoConsultationFee: number | null;
   minimumFee: number | null;
+  averageRating: number | null;
+  reviewCount: number;
   specialties: Specialty[];
   chambers: DoctorChamber[];
+}
+
+export interface DoctorEarningsPeriod {
+  period: string;
+  appointmentsCount: number;
+  grossAmount: string;
+  commissionAmount: string;
+  netAmount: string;
+}
+
+export interface DoctorEarningsSummary {
+  totals: {
+    succeededPayments: number;
+    completedConsultations: number;
+    grossAmount: string;
+    commissionAmount: string;
+    netAmount: string;
+  };
+  byDay: DoctorEarningsPeriod[];
+  byMonth: DoctorEarningsPeriod[];
 }
 
 export interface DoctorListResponse {
@@ -96,9 +118,17 @@ export interface SlotHold {
   slot: AvailabilitySlot;
 }
 
+export interface AppointmentFamilyMember {
+  id: string;
+  name: string;
+  relationship: string;
+}
+
 export interface Appointment {
   id: string;
   patientProfileId: string;
+  familyMemberId?: string | null;
+  familyMember?: AppointmentFamilyMember | null;
   doctorId: string;
   holdId: string;
   status: string;
@@ -206,11 +236,106 @@ export interface Payment {
   expiresAt: string;
 }
 
+export interface AdminTopSpecialty {
+  specialtyId: string;
+  name: string;
+  slug: string;
+  appointmentsCount: number;
+}
+
+export interface AdminTopDoctor {
+  doctorId: string;
+  firstName: string;
+  lastName: string;
+  bmdcNumber: string;
+  appointmentsCount: number;
+  completedCount: number;
+}
+
 export interface AdminOverview {
   users: { total: number; active: number; suspended: number; pending: number };
   doctors: { total: number; approved: number; pendingReview: number };
-  appointments: { total: number; confirmed: number; cancelled: number; completed: number };
-  payments: { succeeded: number; grossAmount: number; commissionAmount: number; netAmount: number };
-  refunds: { requested: number; totalAmount: number };
+  patients: { newThisMonth: number };
+  appointments: {
+    total: number;
+    confirmed: number;
+    cancelled: number;
+    completed: number;
+    today: number;
+  };
+  payments: {
+    succeeded: number;
+    grossAmount: number | string;
+    commissionAmount: number | string;
+    netAmount: number | string;
+  };
+  refunds: { requested: number; totalAmount: number | string };
+  mostBookedSpecialties: AdminTopSpecialty[];
+  topDoctors: AdminTopDoctor[];
 }
+
+export interface MedicineSuggestion {
+  name: string;
+  genericName: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface MedicalReportSummary {
+  id: string;
+  patientProfileId: string;
+  title: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface MedicalReportDetail extends MedicalReportSummary {
+  contentBase64: string;
+}
+
+export interface DoctorPatientVisit {
+  id: string;
+  doctorId: string;
+  doctorName: string | null;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  mode: string;
+  status: string;
+  familyMember: AppointmentFamilyMember | null;
+}
+
+export interface DoctorPatientHistory {
+  patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    dateOfBirth: string | null;
+    sex: string;
+  };
+  visits: DoctorPatientVisit[];
+  prescriptions: Prescription[];
+  reports: MedicalReportSummary[];
+}
+
+export interface VideoSession {
+  appointmentId: string;
+  roomName: string;
+  roomUrl: string;
+  accessToken: string;
+  participantRole: "PATIENT" | "DOCTOR";
+  participantName: string;
+  doctorName: string;
+  patientName: string;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  opensAt: string;
+  closesAt: string;
+}
+
 

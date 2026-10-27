@@ -16,8 +16,10 @@ export function createPrescriptionRouter(options: {
   const router = Router();
 
   // Doctor routes (authenticated)
+  router.get("/medicines/suggest", options.authenticate, requireRole("DOCTOR"), controller.suggestMedicines.bind(controller));
   router.post("/me/prescriptions", options.authenticate, requireRole("DOCTOR"), controller.createPrescription.bind(controller));
   router.get("/me/prescriptions", options.authenticate, requireRole("DOCTOR"), controller.listDoctorPrescriptions.bind(controller));
+  router.get("/:prescriptionId/pdf", options.authenticate, requireRole("PATIENT", "DOCTOR"), controller.downloadPrescriptionPdf.bind(controller));
   router.put("/:prescriptionId", options.authenticate, requireRole("DOCTOR"), controller.updatePrescription.bind(controller));
   router.delete("/:prescriptionId", options.authenticate, requireRole("DOCTOR"), controller.deletePrescription.bind(controller));
 

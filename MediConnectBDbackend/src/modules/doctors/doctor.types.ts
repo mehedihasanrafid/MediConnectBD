@@ -62,8 +62,30 @@ export interface PublicDoctorProfile {
   languages: string[];
   videoConsultationFee: number | null;
   minimumFee: number | null;
+  averageRating: number | null;
+  reviewCount: number;
   specialties: DoctorSpecialtyView[];
   chambers: DoctorChamberView[];
+}
+
+export interface DoctorEarningsPeriodRow {
+  period: string;
+  appointmentsCount: number;
+  grossAmount: string;
+  commissionAmount: string;
+  netAmount: string;
+}
+
+export interface DoctorEarningsSummary {
+  totals: {
+    succeededPayments: number;
+    completedConsultations: number;
+    grossAmount: string;
+    commissionAmount: string;
+    netAmount: string;
+  };
+  byDay: DoctorEarningsPeriodRow[];
+  byMonth: DoctorEarningsPeriodRow[];
 }
 
 export interface ChamberInput {
@@ -119,3 +141,62 @@ export interface CatalogSpecialty {
 }
 
 export interface CatalogHospital extends DoctorHospitalView {}
+
+export interface DoctorPatientVisitView {
+  id: string;
+  doctorId: string;
+  doctorName: string | null;
+  scheduledStartAt: Date;
+  scheduledEndAt: Date;
+  mode: string;
+  status: string;
+  familyMember: {
+    id: string;
+    name: string;
+    relationship: string;
+  } | null;
+}
+
+export interface DoctorPatientPrescriptionView {
+  id: string;
+  appointmentId: string;
+  doctorProfileId: string;
+  diagnosis: string;
+  medicines: Array<{ name: string; dosage: string; frequency: string; duration: string }>;
+  tests: string[];
+  advice: string | null;
+  verificationCode: string;
+  createdAt: Date;
+}
+
+export interface DoctorPatientReportView {
+  id: string;
+  patientProfileId: string;
+  title: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface DoctorPatientHistory {
+  patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    dateOfBirth: string | null;
+    sex: string;
+  };
+  visits: DoctorPatientVisitView[];
+  prescriptions: DoctorPatientPrescriptionView[];
+  reports: DoctorPatientReportView[];
+}
+
+export type DoctorPatientHistoryResult =
+  | { kind: "OK"; history: DoctorPatientHistory }
+  | { kind: "PATIENT_NOT_FOUND" }
+  | { kind: "DOCTOR_FORBIDDEN" };
+

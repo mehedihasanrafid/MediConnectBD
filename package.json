@@ -1,0 +1,15 @@
+{
+  "name": "mediconnectbd-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MediConnect BD — Full-stack doctor appointment, teleconsultation, and digital prescription platform",
+  "scripts": {
+    "start": "npm --prefix MediConnectBDbackend run dev:start & npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173",
+    "dev": "npm start",
+    "build": "npm --prefix MediConnectBDbackend run build && npm --prefix frontend run build",
+    "test": "npm --prefix MediConnectBDbackend test && npm --prefix frontend test",
+    "db:migrate": "npm --prefix MediConnectBDbackend run db:migrate",
+    "db:seed": "npm --prefix MediConnectBDbackend run db:seed",
+    "docker:up": "docker compose up --build"
+  }
+}

@@ -30,6 +30,15 @@ const envSchema = z.object({
   SSLCOMMERZ_STORE_ID: z.string().min(1).optional(),
   SSLCOMMERZ_STORE_PASSWORD: z.string().min(1).optional(),
   PUBLIC_API_URL: z.string().url().max(180).optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  SMTP_USER: z.string().optional().default(""),
+  SMTP_PASS: z.string().optional().default(""),
+  SMTP_FROM: z.string().email().default("noreply@mediconnect.bd"),
 }).superRefine((values, context) => {
   if (values.SSLCOMMERZ_STORE_ID || values.SSLCOMMERZ_STORE_PASSWORD) {
     if (!values.SSLCOMMERZ_STORE_ID || !values.SSLCOMMERZ_STORE_PASSWORD || !values.PUBLIC_API_URL) {

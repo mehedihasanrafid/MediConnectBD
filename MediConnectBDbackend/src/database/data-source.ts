@@ -21,6 +21,7 @@ import { AddPayments1761220800000 } from "./migrations/1761220800000-add-payment
 import { Hospital } from "../modules/hospitals/hospital.entity";
 import { PatientProfile } from "../modules/patients/patient-profile.entity";
 import { FamilyMember } from "../modules/patients/family-member.entity";
+import { MedicalReport } from "../modules/patients/medical-report.entity";
 import { RefreshSession } from "../modules/auth/refresh-session.entity";
 import { Role } from "../modules/role/role.entity";
 import { Specialty } from "../modules/specialties/specialty.entity";
@@ -38,6 +39,8 @@ import { AddPaymentCommission1761480000000 } from "./migrations/1761480000000-ad
 import { AddReminderColumns1761500000000 } from "./migrations/1761500000000-add-reminder-columns";
 import { AddReviews1761520000000 } from "./migrations/1761520000000-add-reviews";
 import { AddPrescriptions1761540000000 } from "./migrations/1761540000000-add-prescriptions";
+import { AddAppointmentFamilyMember1761560000000 } from "./migrations/1761560000000-add-appointment-family-member";
+import { AddMedicalReports1761580000000 } from "./migrations/1761580000000-add-medical-reports";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -55,6 +58,7 @@ const AppDataSource = new DataSource({
     Role,
     PatientProfile,
     FamilyMember,
+    MedicalReport,
     DoctorProfile,
     DoctorChamber,
     DoctorSchedule,
@@ -85,6 +89,8 @@ const AppDataSource = new DataSource({
     AddReminderColumns1761500000000,
     AddReviews1761520000000,
     AddPrescriptions1761540000000,
+    AddAppointmentFamilyMember1761560000000,
+    AddMedicalReports1761580000000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

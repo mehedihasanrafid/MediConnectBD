@@ -12,6 +12,8 @@ import { Appointment, AppointmentStatus } from "../appointments/appointment.enti
 import { Payment } from "../payments/payment.entity";
 import { Refund } from "../payments/refund.entity";
 import { DoctorProfile } from "../doctors/doctor-profile.entity";
+import { PatientProfile } from "../patients/patient-profile.entity";
+import { dhakaDateRange, todayInDhaka } from "../scheduling/slot-generator";
 import type { AdminRepository } from "./admin.repository";
 import type {
   AdminAppointmentQuery,
@@ -264,7 +266,7 @@ export class TypeOrmAdminRepository implements AdminRepository {
       .groupBy("appointment.status")
       .getRawMany<{ status: string; count: string }>();
 
-    const appointmentCounts = { total: 0, confirmed: 0, cancelled: 0, completed: 0 };
+    const appointmentCounts = { total: 0, confirmed: 0, cancelled: 0, completed: 0, today: 0 };
     for (const row of appointments) {
       const count = Number(row.count);
       appointmentCounts.total += count;
@@ -272,6 +274,79 @@ export class TypeOrmAdminRepository implements AdminRepository {
       if (row.status === AppointmentStatus.CANCELLED) appointmentCounts.cancelled = count;
       if (row.status === AppointmentStatus.COMPLETED) appointmentCounts.completed = count;
     }
+
+    const now = new Date();
+    const todayStr = todayInDhaka(now);
+    const todayRange = dhakaDateRange(todayStr, 1);
+    const monthStartRange = dhakaDateRange(`${todayStr.slice(0, 7)}-01`, 1);
+
+    const [todayAppointmentsCount, newPatientsThisMonth, specialtyRows, topDoctorRows] =
+      await Promise.all([
+        this.dataSource
+          .getRepository(Appointment)
+          .createQueryBuilder("appointment")
+          .where("appointment.scheduledStartAt >= :todayStart", { todayStart: todayRange.start })
+          .andWhere("appointment.scheduledStartAt < :todayEnd", { todayEnd: todayRange.end })
+          .getCount(),
+        this.dataSource
+          .getRepository(PatientProfile)
+          .createQueryBuilder("patient")
+          .where("patient.createdAt >= :monthStart", { monthStart: monthStartRange.start })
+          .getCount(),
+        this.dataSource
+          .getRepository(Appointment)
+          .createQueryBuilder("appointment")
+          .innerJoin("doctor_specialties", "ds", "ds.doctor_id = appointment.doctorProfileId")
+          .innerJoin(Specialty, "specialty", "specialty.id = ds.specialty_id")
+          .select("specialty.id", "specialtyId")
+          .addSelect("specialty.name", "name")
+          .addSelect("specialty.slug", "slug")
+          .addSelect("COUNT(DISTINCT appointment.id)", "appointmentsCount")
+          .groupBy("specialty.id")
+          .addGroupBy("specialty.name")
+          .addGroupBy("specialty.slug")
+          .orderBy("COUNT(DISTINCT appointment.id)", "DESC")
+          .addOrderBy("specialty.name", "ASC")
+          .limit(5)
+          .getRawMany<{
+            specialtyId: string;
+            name: string;
+            slug: string;
+            appointmentsCount: string;
+          }>(),
+        this.dataSource
+          .getRepository(Appointment)
+          .createQueryBuilder("appointment")
+          .innerJoin("appointment.doctor", "doctor")
+          .innerJoin("doctor.user", "user")
+          .select("doctor.id", "doctorId")
+          .addSelect("user.firstName", "firstName")
+          .addSelect("user.lastName", "lastName")
+          .addSelect("doctor.bmdcNumber", "bmdcNumber")
+          .addSelect("COUNT(*)", "appointmentsCount")
+          .addSelect(
+            "SUM(CASE WHEN appointment.status = :completed THEN 1 ELSE 0 END)",
+            "completedCount",
+          )
+          .setParameter("completed", AppointmentStatus.COMPLETED)
+          .groupBy("doctor.id")
+          .addGroupBy("user.firstName")
+          .addGroupBy("user.lastName")
+          .addGroupBy("doctor.bmdcNumber")
+          .orderBy("COUNT(*)", "DESC")
+          .addOrderBy("user.lastName", "ASC")
+          .limit(5)
+          .getRawMany<{
+            doctorId: string;
+            firstName: string;
+            lastName: string;
+            bmdcNumber: string;
+            appointmentsCount: string;
+            completedCount: string;
+          }>(),
+      ]);
+
+    appointmentCounts.today = todayAppointmentsCount;
 
     const paymentTotals = await this.dataSource
       .getRepository(Payment)
@@ -294,6 +369,9 @@ export class TypeOrmAdminRepository implements AdminRepository {
     return {
       users: userCounts,
       doctors: doctorCounts,
+      patients: {
+        newThisMonth: newPatientsThisMonth,
+      },
       appointments: appointmentCounts,
       payments: {
         succeeded: Number(paymentTotals?.count ?? 0),
@@ -305,6 +383,20 @@ export class TypeOrmAdminRepository implements AdminRepository {
         requested: Number(refundTotals?.count ?? 0),
         totalAmount: Number(refundTotals?.total ?? 0).toFixed(2),
       },
+      mostBookedSpecialties: specialtyRows.map((row) => ({
+        specialtyId: row.specialtyId,
+        name: row.name,
+        slug: row.slug,
+        appointmentsCount: Number(row.appointmentsCount),
+      })),
+      topDoctors: topDoctorRows.map((row) => ({
+        doctorId: row.doctorId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        bmdcNumber: row.bmdcNumber,
+        appointmentsCount: Number(row.appointmentsCount),
+        completedCount: Number(row.completedCount ?? 0),
+      })),
     };
   }
 

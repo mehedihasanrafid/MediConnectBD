@@ -4,6 +4,8 @@
  */
 
 import { AppError } from "../../utils/app-error";
+import { suggestMedicines, type MedicineSuggestion } from "./medicine-catalog";
+import { buildPrescriptionPdfBuffer } from "./prescription-pdf";
 import type { PrescriptionRepository } from "./prescription.repository";
 import type {
   CreatePrescriptionInput,
@@ -16,6 +18,39 @@ import type {
 
 export class PrescriptionService {
   constructor(private readonly repository: PrescriptionRepository) {}
+
+  suggestMedicines(query: string): MedicineSuggestion[] {
+    return suggestMedicines(query);
+  }
+
+  async getPrescriptionPdf(
+    prescriptionId: string,
+    actor: { patientProfileId?: string | null; doctorProfileId?: string | null },
+  ): Promise<{ buffer: Buffer; fileName: string }> {
+    const data = await this.repository.getPrescriptionForPdf(prescriptionId);
+    if (!data) {
+      throw new AppError(404, "PRESCRIPTION_NOT_FOUND", "Prescription was not found");
+    }
+
+    const isOwningPatient =
+      Boolean(actor.patientProfileId) && actor.patientProfileId === data.prescription.patientProfileId;
+    const isPrescribingDoctor =
+      Boolean(actor.doctorProfileId) && actor.doctorProfileId === data.prescription.doctorProfileId;
+
+    if (!isOwningPatient && !isPrescribingDoctor) {
+      throw new AppError(
+        403,
+        "PRESCRIPTION_FORBIDDEN",
+        "Only the patient or prescribing doctor can download this prescription",
+      );
+    }
+
+    const buffer = buildPrescriptionPdfBuffer(data);
+    return {
+      buffer,
+      fileName: `prescription-${data.prescription.verificationCode}.pdf`,
+    };
+  }
 
   async createPrescription(
     doctorProfileId: string,

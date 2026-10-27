@@ -105,9 +105,12 @@ class FakeAdminRepository implements AdminRepository {
     return {
       users: { total: 0, active: 0, suspended: 0, pending: 0 },
       doctors: { total: 0, approved: 0, pendingReview: 0 },
-      appointments: { total: 0, confirmed: 0, cancelled: 0, completed: 0 },
+      patients: { newThisMonth: 0 },
+      appointments: { total: 0, confirmed: 0, cancelled: 0, completed: 0, today: 0 },
       payments: { succeeded: 0, grossAmount: "0.00", commissionAmount: "0.00", netAmount: "0.00" },
       refunds: { requested: 0, totalAmount: "0.00" },
+      mostBookedSpecialties: [],
+      topDoctors: [],
     };
   }
   async listAppointments(): Promise<AdminAppointmentsPage> {

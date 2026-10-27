@@ -5,7 +5,9 @@
 import type {
   AvailabilityResponse,
   DoctorAppointment,
+  DoctorEarningsSummary,
   DoctorListResponse,
+  DoctorPatientHistory,
   Hospital,
   PublicDoctor,
   Specialty,
@@ -22,6 +24,9 @@ export const doctorsApi = {
     return api.get<AvailabilityResponse>(`/doctors/${doctorId}/availability?${params.toString()}`);
   },
   getMyProfile: <T = unknown>() => api.get<T>("/doctors/me"),
+  getMyEarnings: () => api.get<DoctorEarningsSummary>("/doctors/me/earnings"),
+  getPatientHistory: (patientProfileId: string) =>
+    api.get<DoctorPatientHistory>(`/doctors/me/patients/${patientProfileId}/history`),
   updateMyProfile: <T = unknown>(patch: unknown) => api.patch<T>("/doctors/me", patch),
   submitApplication: <T = unknown>() => api.post<T>("/doctors/me/submit"),
   listMyAppointments: () =>

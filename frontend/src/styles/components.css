@@ -35,7 +35,10 @@
 .filters { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
 
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   padding: 0.55rem 1rem;
   border-radius: 8px;
   border: 1px solid transparent;
@@ -45,6 +48,7 @@
   cursor: pointer;
   text-decoration: none;
   text-align: center;
+  transition: all 0.18s ease;
 }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--primary); color: #fff; }
@@ -52,6 +56,29 @@
 .btn-secondary { background: #fff; color: var(--text); border-color: var(--border); }
 .btn-secondary:hover:not(:disabled) { background: var(--bg); }
 .btn-danger { background: var(--danger); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text-main); }
+.btn-ghost:hover:not(:disabled) { background: var(--bg-color); }
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.45rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+.btn-icon:hover { background: var(--bg-color); color: var(--error); }
+.eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
 
 .alert { padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.9rem; margin: 0.5rem 0; }
 .alert-error { background: #fff5f5; color: var(--danger); border: 1px solid #fed7d7; }

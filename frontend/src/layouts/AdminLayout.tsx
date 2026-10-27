@@ -1,51 +1,28 @@
 /**
- * Dedicated layout shell for the Admin console.
+ * Dedicated layout shell for the Admin console, aligned with DokanBD's AdminLayout.
  */
 
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import { Button } from "../components/ui";
-import { useAuth } from "../features/auth/AuthContext";
+import { Outlet } from "react-router-dom";
+
+import { AdminHeader } from "../admin/layout/AdminHeader";
+import {
+  AdminSidebar,
+  useAdminSidebarState,
+} from "../admin/navigation/AdminSidebar";
+import styles from "./AdminLayout.module.css";
 
 export function AdminLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { collapsed, toggle } = useAdminSidebarState();
 
   return (
     <div className="app">
-      <nav className="nav nav-admin">
-        <Link to="/admin/overview" className="brand">
-          MediConnect BD · Admin
-        </Link>
-        <div className="nav-links">
-          <Link to="/admin/overview">Overview</Link>
-          <Link to="/admin/applications">Doctor applications</Link>
-          <Link to="/admin/users">Users</Link>
-          <Link to="/admin/catalog">Catalog</Link>
-          <Link to="/admin/operations">Bookings & Refunds</Link>
-          <Link to="/doctors">Public directory</Link>
-        </div>
-        <div className="nav-user">
-          {user && (
-            <>
-              <span className="muted small">
-                {user.firstName} {user.lastName} · {user.roles.join(", ")}
-              </span>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  void logout().then(() => navigate("/login"));
-                }}
-              >
-                Sign out
-              </Button>
-            </>
-          )}
-        </div>
-      </nav>
-
-      <main className="main">
-        <Outlet />
-      </main>
+      <AdminHeader />
+      <div className={`${styles.shell}${collapsed ? ` ${styles.collapsed}` : ""}`}>
+        <AdminSidebar collapsed={collapsed} onToggle={toggle} />
+        <section className={styles.workspace}>
+          <Outlet />
+        </section>
+      </div>
     </div>
   );
 }

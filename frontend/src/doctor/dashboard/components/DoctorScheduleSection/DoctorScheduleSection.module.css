@@ -1,0 +1,48 @@
+.scheduleContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ruleForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background-color: var(--surface-hover, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.ruleActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.badgeMode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #ecfdf5;
+  color: #065f46;
+}

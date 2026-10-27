@@ -18,6 +18,8 @@ export function createAppointmentRouter(options: {
     router.delete("/holds/:holdId", options.authenticate, requireRole("PATIENT"), controller.releaseHold);
     router.post("/", options.authenticate, requireRole("PATIENT"), controller.bookAppointment);
     router.get("/me", options.authenticate, requireRole("PATIENT"), controller.listMyAppointments);
+    router.post("/:appointmentId/reschedule", options.authenticate, requireRole("PATIENT"), controller.rescheduleAppointment);
+    router.get("/:appointmentId/video-session", options.authenticate, requireRole("PATIENT", "DOCTOR"), controller.getVideoSession);
     router.post("/:appointmentId/cancel", options.authenticate, requireRole("PATIENT", "DOCTOR", "ADMIN"), controller.cancelAppointment);
     router.post("/:appointmentId/complete", options.authenticate, requireRole("DOCTOR"), controller.completeAppointment);
     router.post("/:appointmentId/no-show", options.authenticate, requireRole("DOCTOR"), controller.markNoShow);

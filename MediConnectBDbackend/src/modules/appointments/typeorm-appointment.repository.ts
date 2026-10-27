@@ -4,6 +4,7 @@
  * until verified payment confirms them.
  */
 
+import { createHmac } from "node:crypto";
 import type { DataSource, EntityManager } from "typeorm";
 import {
   Appointment,
@@ -15,20 +16,24 @@ import {
 } from "../scheduling/appointment-slot.entity";
 import { ConsultationMode } from "./consultation-mode";
 import { SlotHold, SlotHoldStatus } from "./slot-hold.entity";
-import type { AppointmentRepository } from "./appointment.repository";import type {
+import type { AppointmentRepository } from "./appointment.repository";
+import type {
   AppointmentView,
   BookingSlotView,
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
   DoctorAppointmentView,
+  GetVideoSessionResult,
   ReleaseHoldResult,
+  RescheduleAppointmentResult,
   SlotHoldView,
   TransitionAppointmentStatusResult,
 } from "./appointment.types";
 import { decideRefund, refundAmountFor, type CancellationActor } from "./cancellation-policy";
 import { Payment } from "../payments/payment.entity";
 import { Refund } from "../payments/refund.entity";
+import { FamilyMember } from "../patients/family-member.entity";
 import { PatientProfile } from "../patients/patient-profile.entity";
 import { DoctorProfile } from "../doctors/doctor-profile.entity";
 import type { NotificationService } from "../notifications/notification-service";
@@ -82,6 +87,18 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
         return { kind: "SLOT_UNAVAILABLE" };
       }
 
+      const hasOverlap = await this.hasOverlappingBookingOrHold(
+        manager,
+        input.patientProfileId,
+        slot.startAt,
+        slot.endAt,
+        input.now,
+        slot.id,
+      );
+      if (hasOverlap) {
+        return { kind: "PATIENT_OVERLAP" };
+      }
+
       slot.status = AppointmentSlotStatus.HELD;
       slot.heldUntil = input.expiresAt;
       await slots.save(slot);
@@ -107,6 +124,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
   async bookHold(input: {
     holdId: string;
     patientProfileId: string;
+    familyMemberId?: string | null | undefined;
     now: Date;
   }): Promise<BookHoldResult> {
     const result = await this.dataSource.transaction<BookHoldResult>(async (manager) => {
@@ -120,6 +138,16 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
         return { kind: "HOLD_FORBIDDEN" };
       }
 
+      let familyMember: FamilyMember | null = null;
+      if (input.familyMemberId) {
+        familyMember = await manager.getRepository(FamilyMember).findOne({
+          where: { id: input.familyMemberId, patientProfileId: input.patientProfileId },
+        });
+        if (!familyMember) {
+          return { kind: "FAMILY_MEMBER_NOT_FOUND" };
+        }
+      }
+
       const slots = manager.getRepository(AppointmentSlot);
       const slot = await slots.findOne({
         where: { id: hold.slotId },
@@ -131,7 +159,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       const appointments = manager.getRepository(Appointment);
       const existing = await appointments.findOne({
         where: { holdId: hold.id },
-        relations: { slot: { chamber: { hospital: true } } },
+        relations: { slot: { chamber: { hospital: true } }, familyMember: true },
       });
       if (hold.status === SlotHoldStatus.CONVERTED && existing) {
         return { kind: "EXISTING", appointment: this.toAppointment(existing) };
@@ -150,12 +178,25 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
         return { kind: "HOLD_NOT_ACTIVE" };
       }
 
+      const hasOverlap = await this.hasOverlappingBookingOrHold(
+        manager,
+        input.patientProfileId,
+        slot.startAt,
+        slot.endAt,
+        input.now,
+        slot.id,
+      );
+      if (hasOverlap) {
+        return { kind: "PATIENT_OVERLAP" };
+      }
+
       const isVideo = slot.mode === ConsultationMode.VIDEO;
       const appointment = await appointments.save(
         appointments.create({
           slotId: slot.id,
           holdId: hold.id,
           patientProfileId: input.patientProfileId,
+          familyMemberId: familyMember ? familyMember.id : null,
           doctorProfileId: slot.doctorProfileId,
           scheduledStartAt: slot.startAt,
           scheduledEndAt: slot.endAt,
@@ -179,6 +220,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       }
 
       appointment.slot = slot;
+      appointment.familyMember = familyMember;
       return { kind: "BOOKED", appointment: this.toAppointment(appointment) };
     });
 
@@ -433,10 +475,111 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     });
   }
 
+  async rescheduleAppointment(input: {
+    appointmentId: string;
+    patientProfileId: string;
+    newSlotId: string;
+    now: Date;
+    minimumStartAt: Date;
+  }): Promise<RescheduleAppointmentResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const appointments = manager.getRepository(Appointment);
+      const appointment = await appointments.findOne({
+        where: { id: input.appointmentId },
+        relations: { slot: { chamber: { hospital: true } }, familyMember: true },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!appointment) return { kind: "APPOINTMENT_NOT_FOUND" };
+      if (appointment.patientProfileId !== input.patientProfileId) {
+        return { kind: "APPOINTMENT_FORBIDDEN" };
+      }
+
+      if (
+        (appointment.status !== AppointmentStatus.CONFIRMED &&
+          appointment.status !== AppointmentStatus.PENDING_PAYMENT) ||
+        appointment.scheduledStartAt < input.minimumStartAt
+      ) {
+        return { kind: "APPOINTMENT_NOT_RESCHEDULABLE" };
+      }
+
+      if (appointment.slotId === input.newSlotId) {
+        return { kind: "RESCHEDULED", appointment: this.toAppointment(appointment) };
+      }
+
+      const slots = manager.getRepository(AppointmentSlot);
+      const newSlot = await slots.findOne({
+        where: { id: input.newSlotId },
+        relations: { chamber: { hospital: true } },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!newSlot) return { kind: "SLOT_NOT_FOUND" };
+      if (
+        newSlot.doctorProfileId !== appointment.doctorProfileId ||
+        newSlot.mode !== appointment.mode
+      ) {
+        return { kind: "SLOT_MISMATCH" };
+      }
+      if (newSlot.startAt < input.minimumStartAt) {
+        return { kind: "BOOKING_TOO_LATE" };
+      }
+
+      if (newSlot.status === AppointmentSlotStatus.HELD && newSlot.heldUntil && newSlot.heldUntil <= input.now) {
+        await this.expireSlot(manager, newSlot, input.now);
+      }
+
+      if (newSlot.status !== AppointmentSlotStatus.AVAILABLE) {
+        return { kind: "SLOT_UNAVAILABLE" };
+      }
+
+      const hasOverlap = await this.hasOverlappingBookingOrHold(
+        manager,
+        input.patientProfileId,
+        newSlot.startAt,
+        newSlot.endAt,
+        input.now,
+        newSlot.id,
+        appointment.id,
+      );
+      if (hasOverlap) {
+        return { kind: "PATIENT_OVERLAP" };
+      }
+
+      const oldSlot = await slots.findOne({
+        where: { id: appointment.slotId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (oldSlot && oldSlot.status !== AppointmentSlotStatus.BLOCKED) {
+        oldSlot.status = AppointmentSlotStatus.AVAILABLE;
+        oldSlot.heldUntil = null;
+        await slots.save(oldSlot);
+      }
+
+      if (appointment.status === AppointmentStatus.CONFIRMED) {
+        newSlot.status = AppointmentSlotStatus.BOOKED;
+        newSlot.heldUntil = null;
+      } else {
+        newSlot.status = AppointmentSlotStatus.HELD;
+        newSlot.heldUntil = oldSlot?.heldUntil ?? new Date(input.now.getTime() + 10 * 60 * 1000);
+      }
+      await slots.save(newSlot);
+
+      appointment.slotId = newSlot.id;
+      appointment.scheduledStartAt = newSlot.startAt;
+      appointment.scheduledEndAt = newSlot.endAt;
+      appointment.reminder24hSent = false;
+      appointment.reminder30minSent = false;
+      const saved = await appointments.save(appointment);
+      saved.slot = newSlot;
+      saved.familyMember = appointment.familyMember;
+
+      return { kind: "RESCHEDULED", appointment: this.toAppointment(saved) };
+    });
+  }
+
   async listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]> {
     const appointments = await this.dataSource.getRepository(Appointment).find({
       where: { patientProfileId },
-      relations: { slot: { chamber: { hospital: true } } },
+      relations: { slot: { chamber: { hospital: true } }, familyMember: true },
       order: { scheduledStartAt: "ASC", id: "ASC" },
     });
     return appointments.map((appointment) => this.toAppointment(appointment));
@@ -448,6 +591,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       relations: {
         slot: { chamber: { hospital: true } },
         patientProfile: { user: true },
+        familyMember: true,
       },
       order: { scheduledStartAt: "ASC", id: "ASC" },
     });
@@ -463,6 +607,97 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
           }
         : null,
     }));
+  }
+
+  async getVideoSession(input: {
+    appointmentId: string;
+    actor: {
+      patientProfileId?: string | null | undefined;
+      doctorProfileId?: string | null | undefined;
+    };
+    now: Date;
+  }): Promise<GetVideoSessionResult> {
+    const appointment = await this.dataSource.getRepository(Appointment).findOne({
+      where: { id: input.appointmentId },
+      relations: {
+        doctor: { user: true },
+        patientProfile: { user: true },
+      },
+    });
+    if (!appointment) {
+      return { kind: "APPOINTMENT_NOT_FOUND" };
+    }
+
+    const isPatient =
+      Boolean(input.actor.patientProfileId) &&
+      input.actor.patientProfileId === appointment.patientProfileId;
+    const isDoctor =
+      Boolean(input.actor.doctorProfileId) &&
+      input.actor.doctorProfileId === appointment.doctorProfileId;
+
+    if (!isPatient && !isDoctor) {
+      return { kind: "APPOINTMENT_FORBIDDEN" };
+    }
+
+    if (appointment.mode !== ConsultationMode.VIDEO) {
+      return { kind: "VIDEO_NOT_APPLICABLE" };
+    }
+
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      return { kind: "VIDEO_NOT_CONFIRMED" };
+    }
+
+    const opensAt = new Date(appointment.scheduledStartAt.getTime() - 5 * 60 * 1000);
+    const closesAt = new Date(appointment.scheduledEndAt.getTime());
+
+    if (input.now < opensAt || input.now > closesAt) {
+      return {
+        kind: "VIDEO_WINDOW_CLOSED",
+        opensAt,
+        closesAt,
+        scheduledStartAt: appointment.scheduledStartAt,
+        scheduledEndAt: appointment.scheduledEndAt,
+      };
+    }
+
+    const doctorName = appointment.doctor?.user
+      ? `Dr. ${appointment.doctor.user.firstName} ${appointment.doctor.user.lastName}`.trim()
+      : "Doctor";
+    const patientName = appointment.patientProfile?.user
+      ? `${appointment.patientProfile.user.firstName} ${appointment.patientProfile.user.lastName}`.trim()
+      : "Patient";
+    const participantRole = isDoctor ? "DOCTOR" : "PATIENT";
+    const participantName = isDoctor ? doctorName : patientName;
+    const roomName = `mediconnect-consult-${appointment.id}`;
+    const payload = Buffer.from(
+      JSON.stringify({
+        sub: isDoctor ? appointment.doctorProfileId : appointment.patientProfileId,
+        role: participantRole,
+        room: roomName,
+        exp: Math.floor(closesAt.getTime() / 1000),
+      }),
+    ).toString("base64url");
+    const signature = createHmac("sha256", "mediconnect-video-room")
+      .update(payload)
+      .digest("base64url");
+
+    return {
+      kind: "OK",
+      session: {
+        appointmentId: appointment.id,
+        roomName,
+        roomUrl: `https://meet.jit.si/${roomName}`,
+        accessToken: `${payload}.${signature}`,
+        participantRole,
+        participantName,
+        doctorName,
+        patientName,
+        scheduledStartAt: appointment.scheduledStartAt,
+        scheduledEndAt: appointment.scheduledEndAt,
+        opensAt,
+        closesAt,
+      },
+    };
   }
 
   /**
@@ -502,6 +737,47 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     await manager.getRepository(AppointmentSlot).save(slot);
   }
 
+  private async hasOverlappingBookingOrHold(
+    manager: EntityManager,
+    patientProfileId: string,
+    startAt: Date,
+    endAt: Date,
+    now: Date,
+    excludeSlotId?: string,
+    excludeAppointmentId?: string,
+  ): Promise<boolean> {
+    const apptQuery = manager
+      .getRepository(Appointment)
+      .createQueryBuilder("appointment")
+      .where("appointment.patientProfileId = :patientProfileId", { patientProfileId })
+      .andWhere("appointment.status IN (:...statuses)", {
+        statuses: [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING_PAYMENT],
+      })
+      .andWhere("appointment.scheduledStartAt < :endAt AND appointment.scheduledEndAt > :startAt", {
+        startAt,
+        endAt,
+      });
+    if (excludeAppointmentId) {
+      apptQuery.andWhere("appointment.id != :excludeAppointmentId", { excludeAppointmentId });
+    }
+    const overlappingAppointments = await apptQuery.getCount();
+    if (overlappingAppointments > 0) return true;
+
+    const holdQuery = manager
+      .getRepository(SlotHold)
+      .createQueryBuilder("hold")
+      .innerJoin("hold.slot", "heldSlot")
+      .where("hold.patientProfileId = :patientProfileId", { patientProfileId })
+      .andWhere("hold.status = :active", { active: SlotHoldStatus.ACTIVE })
+      .andWhere("hold.expiresAt > :now", { now })
+      .andWhere("heldSlot.startAt < :endAt AND heldSlot.endAt > :startAt", { startAt, endAt });
+    if (excludeSlotId) {
+      holdQuery.andWhere("hold.slotId != :excludeSlotId", { excludeSlotId });
+    }
+    const overlappingHolds = await holdQuery.getCount();
+    return overlappingHolds > 0;
+  }
+
   private toHold(hold: SlotHold, slot: AppointmentSlot): SlotHoldView {
     return {
       id: hold.id,
@@ -517,6 +793,14 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     return {
       id: appointment.id,
       patientProfileId: appointment.patientProfileId,
+      familyMemberId: appointment.familyMemberId ?? null,
+      familyMember: appointment.familyMember
+        ? {
+            id: appointment.familyMember.id,
+            name: appointment.familyMember.name,
+            relationship: appointment.familyMember.relationship,
+          }
+        : null,
       doctorId: appointment.doctorProfileId,
       holdId: appointment.holdId,
       status: appointment.status,

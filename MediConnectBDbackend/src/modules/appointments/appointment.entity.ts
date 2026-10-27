@@ -17,6 +17,7 @@ import {
 import { AppointmentSlot } from "../scheduling/appointment-slot.entity";
 import { ConsultationMode } from "./consultation-mode";
 import { DoctorProfile } from "../doctors/doctor-profile.entity";
+import { FamilyMember } from "../patients/family-member.entity";
 import { PatientProfile } from "../patients/patient-profile.entity";
 import { SlotHold } from "./slot-hold.entity";
 
@@ -47,6 +48,9 @@ export class Appointment {
 
   @Column({ name: "patient_profile_id", type: "char", length: 36 })
   patientProfileId!: string;
+
+  @Column({ name: "family_member_id", type: "char", length: 36, nullable: true })
+  familyMemberId!: string | null;
 
   @Column({ name: "doctor_profile_id", type: "char", length: 36 })
   doctorProfileId!: string;
@@ -95,6 +99,10 @@ export class Appointment {
   @ManyToOne(() => PatientProfile, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "patient_profile_id" })
   patientProfile!: PatientProfile;
+
+  @ManyToOne(() => FamilyMember, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "family_member_id" })
+  familyMember!: FamilyMember | null;
 
   @ManyToOne(() => DoctorProfile, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "doctor_profile_id" })

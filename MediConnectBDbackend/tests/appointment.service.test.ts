@@ -12,6 +12,7 @@ import type {
   CreateHoldResult,
   DoctorAppointmentView,
   ReleaseHoldResult,
+  RescheduleAppointmentResult,
   SlotHoldView,
   TransitionAppointmentStatusResult,
 } from "../src/modules/appointments/appointment.types";
@@ -75,6 +76,11 @@ class FakeAppointmentRepository implements AppointmentRepository {
     },
   };
   createInput: Parameters<AppointmentRepository["createHold"]>[0] | null = null;
+  bookInput: Parameters<AppointmentRepository["bookHold"]>[0] | null = null;
+  rescheduleResult: RescheduleAppointmentResult = {
+    kind: "RESCHEDULED",
+    appointment: { ...appointment(), status: AppointmentStatus.CONFIRMED },
+  };
 
   async createHold(
     input: Parameters<AppointmentRepository["createHold"]>[0],
@@ -83,8 +89,15 @@ class FakeAppointmentRepository implements AppointmentRepository {
     return this.createResult;
   }
 
-  async bookHold(): Promise<BookHoldResult> {
+  async bookHold(
+    input: Parameters<AppointmentRepository["bookHold"]>[0],
+  ): Promise<BookHoldResult> {
+    this.bookInput = input;
     return this.bookResult;
+  }
+
+  async rescheduleAppointment(): Promise<RescheduleAppointmentResult> {
+    return this.rescheduleResult;
   }
 
   async releaseHold(): Promise<ReleaseHoldResult> {
@@ -124,6 +137,28 @@ class FakeAppointmentRepository implements AppointmentRepository {
 
   async cancelAppointment(): Promise<CancelAppointmentResult> {
     return this.cancelResult;
+  }
+
+  videoSessionResult: Awaited<ReturnType<NonNullable<AppointmentRepository["getVideoSession"]>>> = {
+    kind: "OK",
+    session: {
+      appointmentId: randomUUID(),
+      roomName: "mediconnect-consult-demo",
+      roomUrl: "https://meet.jit.si/mediconnect-consult-demo",
+      accessToken: "demo.token",
+      participantRole: "PATIENT",
+      participantName: "Test Patient",
+      doctorName: "Dr. Demo Doctor",
+      patientName: "Test Patient",
+      scheduledStartAt: new Date("2026-10-18T12:00:00.000Z"),
+      scheduledEndAt: new Date("2026-10-18T12:20:00.000Z"),
+      opensAt: new Date("2026-10-18T11:55:00.000Z"),
+      closesAt: new Date("2026-10-18T12:20:00.000Z"),
+    },
+  };
+
+  async getVideoSession() {
+    return this.videoSessionResult;
   }
 
   async markRemindersSent(
@@ -283,5 +318,83 @@ describe("AppointmentService", () => {
     const updated = await service.markNoShow(randomUUID(), randomUUID());
 
     expect(updated.status).toBe(AppointmentStatus.NO_SHOW);
+  });
+
+  it("blocks overlapping appointments when holding or booking a slot", async () => {
+    const repository = new FakeAppointmentRepository();
+    repository.createResult = { kind: "PATIENT_OVERLAP" };
+    const service = new AppointmentService(repository, null, () => now);
+
+    await expect(service.holdSlot(patientProfileId, slotId)).rejects.toMatchObject({
+      statusCode: 409,
+      code: "PATIENT_APPOINTMENT_OVERLAP",
+    });
+
+    repository.bookResult = { kind: "PATIENT_OVERLAP" };
+    await expect(service.bookAppointment(patientProfileId, holdId)).rejects.toMatchObject({
+      statusCode: 409,
+      code: "PATIENT_APPOINTMENT_OVERLAP",
+    });
+  });
+
+  it("passes familyMemberId when booking for a relative and rejects unknown family members", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, null, () => now);
+    const familyMemberId = randomUUID();
+
+    await service.bookAppointment(patientProfileId, holdId, familyMemberId);
+    expect(repository.bookInput?.familyMemberId).toBe(familyMemberId);
+
+    repository.bookResult = { kind: "FAMILY_MEMBER_NOT_FOUND" };
+    await expect(
+      service.bookAppointment(patientProfileId, holdId, familyMemberId),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      code: "FAMILY_MEMBER_NOT_FOUND",
+    });
+  });
+
+  it("reschedules an upcoming appointment to a new slot", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, null, () => now);
+
+    const updated = await service.rescheduleAppointment(
+      patientProfileId,
+      randomUUID(),
+      randomUUID(),
+    );
+    expect(updated.status).toBe(AppointmentStatus.CONFIRMED);
+
+    repository.rescheduleResult = { kind: "APPOINTMENT_NOT_RESCHEDULABLE" };
+    await expect(
+      service.rescheduleAppointment(patientProfileId, randomUUID(), randomUUID()),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: "APPOINTMENT_NOT_RESCHEDULABLE",
+    });
+  });
+
+  it("returns video session inside the 5-minute window and rejects outside window or unauthorized", async () => {
+    const repository = new FakeAppointmentRepository();
+    const service = new AppointmentService(repository, null, () => now);
+
+    const session = await service.getVideoSession(randomUUID(), {
+      patientProfileId,
+    });
+    expect(session.roomName).toBe("mediconnect-consult-demo");
+
+    repository.videoSessionResult = {
+      kind: "VIDEO_WINDOW_CLOSED",
+      opensAt: new Date("2026-10-18T11:55:00.000Z"),
+      closesAt: new Date("2026-10-18T12:20:00.000Z"),
+      scheduledStartAt: new Date("2026-10-18T12:00:00.000Z"),
+      scheduledEndAt: new Date("2026-10-18T12:20:00.000Z"),
+    };
+    await expect(
+      service.getVideoSession(randomUUID(), { patientProfileId }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: "VIDEO_SESSION_WINDOW_CLOSED",
+    });
   });
 });

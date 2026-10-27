@@ -11,6 +11,11 @@ export const createHoldSchema = z.object({
 
 export const bookAppointmentSchema = z.object({
   holdId: z.string().uuid(),
+  familyMemberId: z.string().uuid().nullable().optional(),
+});
+
+export const rescheduleAppointmentSchema = z.object({
+  newSlotId: z.string().uuid(),
 });
 
 export const holdIdSchema = z.string().uuid();

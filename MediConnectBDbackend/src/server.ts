@@ -25,9 +25,12 @@ import { PaymentService } from "./modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "./modules/payments/typeorm-payment.repository";
 import { SslcommerzPaymentProvider } from "./modules/payments/sslcommerz-payment-provider";
 import { FamilyMemberService } from "./modules/patients/family-member.service";
+import { MedicalReportService } from "./modules/patients/medical-report.service";
 import { TypeOrmFamilyMemberRepository } from "./modules/patients/typeorm-family-member.repository";
+import { TypeOrmMedicalReportRepository } from "./modules/patients/typeorm-medical-report.repository";
 import { DefaultEmailService } from "./modules/notifications/email-service";
 import { ConsoleTransport } from "./modules/notifications/console-transport";
+import { SmtpTransport } from "./modules/notifications/smtp-transport";
 import { NotificationService } from "./modules/notifications/notification-service";
 import { ReviewService } from "./modules/reviews/review.service";
 import { TypeOrmReviewRepository } from "./modules/reviews/typeorm-review.repository";
@@ -59,18 +62,30 @@ async function main(): Promise<void> {
   );
   const doctorRepository = new TypeOrmDoctorRepository(AppDataSource);
   const doctorService = new DoctorService(doctorRepository);
+  const emailTransport = env.SMTP_HOST
+    ? new SmtpTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_SECURE,
+        auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+        fromAddress: env.SMTP_FROM,
+      })
+    : new ConsoleTransport();
+  const emailService = new DefaultEmailService(emailTransport);
+  const notificationService = new NotificationService(emailService);
   const schedulingService = new SchedulingService(
-    new TypeOrmSchedulingRepository(AppDataSource),
+    new TypeOrmSchedulingRepository(AppDataSource, emailTransport),
     doctorRepository,
   );
-  const emailService = new DefaultEmailService(new ConsoleTransport());
-  const notificationService = new NotificationService(emailService);
   const appointmentService = new AppointmentService(
     new TypeOrmAppointmentRepository(AppDataSource, notificationService),
     notificationService,
   );
   const familyMemberService = new FamilyMemberService(
     new TypeOrmFamilyMemberRepository(),
+  );
+  const medicalReportService = new MedicalReportService(
+    new TypeOrmMedicalReportRepository(AppDataSource),
   );
   const reviewService = new ReviewService(
     new TypeOrmReviewRepository(AppDataSource),
@@ -88,6 +103,7 @@ async function main(): Promise<void> {
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
         : null),
     familyMemberService,
+    medicalReportService,
     reviewService,
     prescriptionService,
     adminService,

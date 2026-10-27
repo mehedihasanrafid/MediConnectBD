@@ -36,9 +36,17 @@ export interface SlotHoldView {
   slot: BookingSlotView;
 }
 
+export interface AppointmentFamilyMemberView {
+  id: string;
+  name: string;
+  relationship: string;
+}
+
 export interface AppointmentView {
   id: string;
   patientProfileId: string;
+  familyMemberId?: string | null;
+  familyMember?: AppointmentFamilyMemberView | null;
   doctorId: string;
   holdId: string;
   status: AppointmentStatus;
@@ -58,14 +66,28 @@ export type CreateHoldResult =
   | { kind: "CREATED" | "EXISTING"; hold: SlotHoldView }
   | { kind: "SLOT_NOT_FOUND" }
   | { kind: "SLOT_UNAVAILABLE" }
-  | { kind: "BOOKING_TOO_LATE" };
+  | { kind: "BOOKING_TOO_LATE" }
+  | { kind: "PATIENT_OVERLAP" };
 
 export type BookHoldResult =
   | { kind: "BOOKED" | "EXISTING"; appointment: AppointmentView }
   | { kind: "HOLD_NOT_FOUND" }
   | { kind: "HOLD_FORBIDDEN" }
   | { kind: "HOLD_EXPIRED" }
-  | { kind: "HOLD_NOT_ACTIVE" };
+  | { kind: "HOLD_NOT_ACTIVE" }
+  | { kind: "FAMILY_MEMBER_NOT_FOUND" }
+  | { kind: "PATIENT_OVERLAP" };
+
+export type RescheduleAppointmentResult =
+  | { kind: "RESCHEDULED"; appointment: AppointmentView }
+  | { kind: "APPOINTMENT_NOT_FOUND" }
+  | { kind: "APPOINTMENT_FORBIDDEN" }
+  | { kind: "APPOINTMENT_NOT_RESCHEDULABLE" }
+  | { kind: "SLOT_NOT_FOUND" }
+  | { kind: "SLOT_UNAVAILABLE" }
+  | { kind: "SLOT_MISMATCH" }
+  | { kind: "BOOKING_TOO_LATE" }
+  | { kind: "PATIENT_OVERLAP" };
 
 export type ReleaseHoldResult =
   | { kind: "RELEASED" | "ALREADY_CLOSED" }
@@ -102,3 +124,33 @@ export type TransitionAppointmentStatusResult =
   | { kind: "APPOINTMENT_NOT_FOUND" }
   | { kind: "APPOINTMENT_FORBIDDEN" }
   | { kind: "APPOINTMENT_INVALID_STATE" };
+
+export interface VideoSessionView {
+  appointmentId: string;
+  roomName: string;
+  roomUrl: string;
+  accessToken: string;
+  participantRole: "PATIENT" | "DOCTOR";
+  participantName: string;
+  doctorName: string;
+  patientName: string;
+  scheduledStartAt: Date;
+  scheduledEndAt: Date;
+  opensAt: Date;
+  closesAt: Date;
+}
+
+export type GetVideoSessionResult =
+  | { kind: "OK"; session: VideoSessionView }
+  | { kind: "APPOINTMENT_NOT_FOUND" }
+  | { kind: "APPOINTMENT_FORBIDDEN" }
+  | { kind: "VIDEO_NOT_APPLICABLE" }
+  | { kind: "VIDEO_NOT_CONFIRMED" }
+  | {
+      kind: "VIDEO_WINDOW_CLOSED";
+      opensAt: Date;
+      closesAt: Date;
+      scheduledStartAt: Date;
+      scheduledEndAt: Date;
+    };
+

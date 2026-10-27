@@ -10,6 +10,7 @@ import type {
   CreatePrescriptionInput,
   CreatePrescriptionResult,
   DeletePrescriptionResult,
+  PrescriptionPdfData,
   PrescriptionView,
   UpdatePrescriptionInput,
   UpdatePrescriptionResult,
@@ -97,6 +98,40 @@ export class TypeOrmPrescriptionRepository implements PrescriptionRepository {
         order: { createdAt: "DESC" },
       });
     return prescriptions.map((p) => this.toView(p));
+  }
+
+  async getPrescriptionForPdf(prescriptionId: string): Promise<PrescriptionPdfData | null> {
+    const prescription = await this.dataSource
+      .getRepository(Prescription)
+      .findOne({
+        where: { id: prescriptionId },
+        relations: {
+          doctorProfile: { user: true, specialties: true },
+          patientProfile: { user: true },
+          appointment: true,
+        },
+      });
+    if (!prescription) return null;
+
+    const doctorUser = prescription.doctorProfile?.user;
+    const doctorName = doctorUser
+      ? `Dr. ${doctorUser.firstName} ${doctorUser.lastName}`.trim()
+      : "Doctor";
+    const patientUser = prescription.patientProfile?.user;
+    const patientName = patientUser
+      ? `${patientUser.firstName} ${patientUser.lastName}`.trim()
+      : "Patient";
+    const specialtyNames =
+      prescription.doctorProfile?.specialties?.map((s) => s.name).join(", ") || null;
+
+    return {
+      prescription: this.toView(prescription),
+      doctorName,
+      doctorBmdc: prescription.doctorProfile?.bmdcNumber ?? null,
+      doctorSpecialty: specialtyNames,
+      patientName,
+      consultationMode: prescription.appointment?.mode ?? null,
+    };
   }
 
   async updatePrescription(

@@ -19,7 +19,7 @@ import type { PaymentService } from "../src/modules/payments/payment.service";
 import { patientRegistrationSchema, doctorRegistrationSchema, loginSchema } from "../src/modules/auth/auth.schema";
 import { updateDoctorProfileSchema, doctorReviewSchema } from "../src/modules/doctors/doctor.schema";
 import { createTimeOffSchema, replaceScheduleSchema } from "../src/modules/scheduling/scheduling.schema";
-import { createHoldSchema, bookAppointmentSchema } from "../src/modules/appointments/appointment.schema";
+import { createHoldSchema, bookAppointmentSchema, rescheduleAppointmentSchema } from "../src/modules/appointments/appointment.schema";
 import { paymentCustomerSchema, paymentCallbackSchema } from "../src/modules/payments/payment.schema";
 import { createReviewRouter } from "../src/modules/reviews/review.routes";
 import type { ReviewService } from "../src/modules/reviews/review.service";
@@ -30,6 +30,9 @@ import type { AdminService } from "../src/modules/admin/admin.service";
 import { createFamilyMemberRouter } from "../src/modules/patients/family-member.routes";
 import type { FamilyMemberService } from "../src/modules/patients/family-member.service";
 import { createFamilyMemberSchema, updateFamilyMemberSchema } from "../src/modules/patients/family-member.schema";
+import { createMedicalReportRouter } from "../src/modules/patients/medical-report.routes";
+import type { MedicalReportService } from "../src/modules/patients/medical-report.service";
+import { createMedicalReportSchema } from "../src/modules/patients/medical-report.schema";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -74,6 +77,7 @@ describe("OpenAPI and Swagger", () => {
     const prescriptionService = {} as PrescriptionService;
     const adminService = {} as AdminService;
     const familyMemberService = {} as FamilyMemberService;
+    const medicalReportService = {} as MedicalReportService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -85,6 +89,7 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createPaymentRouter(paymentService, authenticate), "/api/v1"),
       ...collect(createUserRouter(authenticate), "/api/v1"),
       ...collect(createFamilyMemberRouter(familyMemberService, authenticate), "/api/v1/patients/me/family-members"),
+      ...collect(createMedicalReportRouter(medicalReportService, authenticate), "/api/v1/patients/me/reports"),
       ...collect(createReviewRouter({ reviewService, authenticate }), "/api/v1/reviews"),
       ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/api/v1/prescriptions"),
       ...collect(createAdminRouter({ adminService, authenticate }), "/api/v1/admin"),
@@ -99,7 +104,9 @@ describe("OpenAPI and Swagger", () => {
     ["PatientRegistration", patientRegistrationSchema], ["DoctorRegistration", doctorRegistrationSchema], ["Login", loginSchema],
     ["DoctorProfilePatch", updateDoctorProfileSchema], ["DoctorReview", doctorReviewSchema], ["ReplaceSchedule", replaceScheduleSchema],
     ["CreateTimeOff", createTimeOffSchema], ["CreateHold", createHoldSchema], ["BookAppointment", bookAppointmentSchema],
+    ["RescheduleAppointment", rescheduleAppointmentSchema],
     ["CreateFamilyMember", createFamilyMemberSchema], ["UpdateFamilyMember", updateFamilyMemberSchema],
+    ["CreateMedicalReport", createMedicalReportSchema],
     ["PaymentCustomer", paymentCustomerSchema], ["PaymentCallback", paymentCallbackSchema],
   ] as const)("keeps the %s example valid against the real Zod request schema", (name, schema) => {
     expect(schema.safeParse(requestExamples[name]).success).toBe(true);

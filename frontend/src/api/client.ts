@@ -103,6 +103,25 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   return parseResponse<T>(response);
 }
 
+export async function downloadBlob(path: string): Promise<Blob> {
+  let response = await rawFetch(path, { method: "GET" });
+  if (response.status === 401 && !isAuthEndpoint(path)) {
+    await refreshSession();
+    response = await rawFetch(path, { method: "GET" });
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    const error = text ? (JSON.parse(text) as ApiError) : null;
+    throw new ApiRequestError(
+      response.status,
+      error?.code ?? "REQUEST_FAILED",
+      error?.message ?? "Could not download file",
+      error?.fieldErrors,
+    );
+  }
+  return response.blob();
+}
+
 export const api = {
   get: <T>(path: string, headers?: Record<string, string>) =>
     request<T>(path, { method: "GET", headers }),

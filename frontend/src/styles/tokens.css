@@ -1,16 +1,41 @@
-/* Design tokens (CSS custom properties) for MediConnect BD */
+/* Design tokens (CSS custom properties) for MediConnect BD — aligned with DokanBD token conventions */
 
 :root {
-  --bg: #f5f7fa;
+  /* Core MediConnect BD medical teal palette */
+  --bg: #f4f7f7;
+  --bg-color: var(--bg);
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --text: #1a202c;
-  --muted: #64748b;
+  --border: #dce6e5;
+  --text: #152220;
+  --text-main: var(--text);
+  --muted: #546663;
+  --text-muted: var(--muted);
   --primary: #0d7a6f;
   --primary-dark: #0a5f57;
+  --primary-hover: var(--primary-dark);
+
+  /* Semantic feedback colors */
   --danger: #c53030;
-  --success: #2f855a;
-  --warning: #b7791f;
-  --info: #2b6cb0;
-  --radius: 10px;
+  --error: var(--danger);
+  --error-hover: #9b2c2c;
+  --error-bg: #fff5f5;
+  --success: #1e8e3e;
+  --success-bg: #e6f4ea;
+  --warning: #8a5b00;
+  --warning-bg: #fff4d5;
+  --info: #095d92;
+  --info-bg: #e1f3ff;
+  --accent: #0f766e;
+  --accent-bg: #ccfbf1;
+
+  /* Geometry & elevation */
+  --radius: 0.75rem;
+  --radius-lg: 1.25rem;
+  --app-shadow-lifted: 0 8px 25px rgba(13, 122, 111, 0.08);
+
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background: var(--bg-color);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }

@@ -4,6 +4,7 @@ import type { PrescriptionRepository } from "../src/modules/prescriptions/prescr
 import type {
   CreatePrescriptionResult,
   DeletePrescriptionResult,
+  PrescriptionPdfData,
   PrescriptionView,
   UpdatePrescriptionResult,
   VerifyPrescriptionResult,
@@ -48,6 +49,14 @@ class FakePrescriptionRepository implements PrescriptionRepository {
   };
   patientPrescriptions: PrescriptionView[] = [makePrescription(randomUUID())];
   doctorPrescriptions: PrescriptionView[] = [makePrescription(randomUUID())];
+  pdfData: PrescriptionPdfData | null = {
+    prescription: makePrescription(prescriptionId),
+    doctorName: "Dr. Demo Doctor",
+    doctorBmdc: "A-12345",
+    doctorSpecialty: "Medicine",
+    patientName: "Demo Patient",
+    consultationMode: "VIDEO",
+  };
 
   async createPrescription(_input: Parameters<PrescriptionRepository["createPrescription"]>[0], _doctorProfileId: string): Promise<CreatePrescriptionResult> {
     return this.createResult;
@@ -59,6 +68,10 @@ class FakePrescriptionRepository implements PrescriptionRepository {
 
   async getDoctorPrescriptions(_doctorProfileId: string): Promise<PrescriptionView[]> {
     return this.doctorPrescriptions;
+  }
+
+  async getPrescriptionForPdf(_prescriptionId: string): Promise<PrescriptionPdfData | null> {
+    return this.pdfData;
   }
 
   async updatePrescription(_prescriptionId: string, _input: Parameters<PrescriptionRepository["updatePrescription"]>[1], _doctorProfileId: string): Promise<UpdatePrescriptionResult> {
@@ -191,5 +204,30 @@ describe("PrescriptionService", () => {
   it("lists doctor prescriptions", async () => {
     const prescriptions = await service.getDoctorPrescriptions(doctorId);
     expect(prescriptions).toHaveLength(1);
+  });
+
+  it("suggests medicines matching brand or generic name", () => {
+    const matches = service.suggestMedicines("paracetamol");
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches.some((m) => m.name === "Napa")).toBe(true);
+  });
+
+  it("generates a PDF buffer for the owning patient or prescribing doctor and rejects others", async () => {
+    const patientPdf = await service.getPrescriptionPdf(prescriptionId, {
+      patientProfileId: patientId,
+    });
+    expect(patientPdf.fileName).toBe("prescription-ABCDEF1234567890.pdf");
+    expect(patientPdf.buffer.subarray(0, 8).toString("ascii")).toBe("%PDF-1.4");
+
+    const doctorPdf = await service.getPrescriptionPdf(prescriptionId, {
+      doctorProfileId: doctorId,
+    });
+    expect(doctorPdf.buffer.subarray(0, 8).toString("ascii")).toBe("%PDF-1.4");
+
+    await expect(
+      service.getPrescriptionPdf(prescriptionId, {
+        patientProfileId: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ statusCode: 403, code: "PRESCRIPTION_FORBIDDEN" });
   });
 });

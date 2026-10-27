@@ -2,13 +2,19 @@
  * Appointments and slot holds domain API functions.
  */
 
-import type { Appointment, CancellationOutcome, SlotHold } from "../shared/types";
+import type { Appointment, CancellationOutcome, SlotHold, VideoSession } from "../shared/types";
 import { api } from "./client";
 
 export const appointmentsApi = {
   holdSlot: (slotId: string) => api.post<SlotHold>("/appointments/holds", { slotId }),
   releaseHold: (holdId: string) => api.delete<void>(`/appointments/holds/${holdId}`),
-  bookAppointment: (holdId: string) => api.post<Appointment>("/appointments", { holdId }),
+  bookAppointment: (holdId: string, familyMemberId?: string | null) =>
+    api.post<Appointment>("/appointments", {
+      holdId,
+      ...(familyMemberId ? { familyMemberId } : {}),
+    }),
+  rescheduleAppointment: (appointmentId: string, newSlotId: string) =>
+    api.post<Appointment>(`/appointments/${appointmentId}/reschedule`, { newSlotId }),
   listMyAppointments: () => api.get<{ items: Appointment[] }>("/appointments/me"),
   cancelAppointment: (appointmentId: string, reason = "") =>
     api.post<CancellationOutcome>(`/appointments/${appointmentId}/cancel`, { reason }),
@@ -16,4 +22,6 @@ export const appointmentsApi = {
     api.post<Appointment>(`/appointments/${appointmentId}/complete`),
   markNoShow: (appointmentId: string) =>
     api.post<Appointment>(`/appointments/${appointmentId}/no-show`),
+  getVideoSession: (appointmentId: string) =>
+    api.get<VideoSession>(`/appointments/${appointmentId}/video-session`),
 };

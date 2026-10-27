@@ -6,12 +6,19 @@
 
 import { In, type DataSource, type EntityManager } from "typeorm";
 import { AppError } from "../../utils/app-error";
+import { Appointment, AppointmentStatus } from "../appointments/appointment.entity";
 import { DoctorChamber } from "./doctor-chamber.entity";
 import {
   DoctorApplicationStatus,
   DoctorProfile,
 } from "./doctor-profile.entity";
 import { Hospital } from "../hospitals/hospital.entity";
+import { MedicalReport } from "../patients/medical-report.entity";
+import { PatientProfile } from "../patients/patient-profile.entity";
+import { Payment } from "../payments/payment.entity";
+import { Prescription } from "../prescriptions/prescription.entity";
+import { Review } from "../reviews/review.entity";
+import { todayInDhaka } from "../scheduling/slot-generator";
 import { Specialty } from "../specialties/specialty.entity";
 import { UserStatus } from "../users/user.entity";
 import type { DoctorRepository } from "./doctor.repository";
@@ -19,6 +26,9 @@ import type {
   CatalogHospital,
   CatalogSpecialty,
   DoctorApplicationQuery,
+  DoctorEarningsPeriodRow,
+  DoctorEarningsSummary,
+  DoctorPatientHistoryResult,
   DoctorProfileDetails,
   DoctorReviewInput,
   Paginated,
@@ -43,6 +53,214 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
       relations: doctorRelations,
     });
     return doctor ? this.toDetails(doctor) : null;
+  }
+
+  async getEarnings(doctorId: string): Promise<DoctorEarningsSummary> {
+    const [payments, completedConsultations] = await Promise.all([
+      this.dataSource
+        .getRepository(Payment)
+        .createQueryBuilder("payment")
+        .innerJoin("payment.appointment", "appointment")
+        .where("appointment.doctorProfileId = :doctorId", { doctorId })
+        .andWhere("payment.status = :status", { status: "SUCCEEDED" })
+        .orderBy("payment.createdAt", "DESC")
+        .getMany(),
+      this.dataSource.getRepository(Appointment).count({
+        where: { doctorProfileId: doctorId, status: AppointmentStatus.COMPLETED },
+      }),
+    ]);
+
+    let totalGross = 0;
+    let totalCommission = 0;
+    let totalNet = 0;
+
+    const byDayMap = new Map<
+      string,
+      { count: number; gross: number; commission: number; net: number }
+    >();
+    const byMonthMap = new Map<
+      string,
+      { count: number; gross: number; commission: number; net: number }
+    >();
+
+    for (const payment of payments) {
+      const gross = Number(payment.amount);
+      const commission =
+        payment.commissionAmount !== null
+          ? Number(payment.commissionAmount)
+          : Number((gross * 0.15).toFixed(2));
+      const net =
+        payment.netAmount !== null
+          ? Number(payment.netAmount)
+          : Number((gross - commission).toFixed(2));
+
+      totalGross += gross;
+      totalCommission += commission;
+      totalNet += net;
+
+      const dayKey = todayInDhaka(payment.createdAt);
+      const monthKey = dayKey.slice(0, 7);
+
+      const dayBucket = byDayMap.get(dayKey) ?? {
+        count: 0,
+        gross: 0,
+        commission: 0,
+        net: 0,
+      };
+      dayBucket.count += 1;
+      dayBucket.gross += gross;
+      dayBucket.commission += commission;
+      dayBucket.net += net;
+      byDayMap.set(dayKey, dayBucket);
+
+      const monthBucket = byMonthMap.get(monthKey) ?? {
+        count: 0,
+        gross: 0,
+        commission: 0,
+        net: 0,
+      };
+      monthBucket.count += 1;
+      monthBucket.gross += gross;
+      monthBucket.commission += commission;
+      monthBucket.net += net;
+      byMonthMap.set(monthKey, monthBucket);
+    }
+
+    const toPeriodRows = (
+      map: Map<string, { count: number; gross: number; commission: number; net: number }>,
+    ): DoctorEarningsPeriodRow[] =>
+      [...map.entries()]
+        .sort(([left], [right]) => right.localeCompare(left))
+        .map(([period, bucket]) => ({
+          period,
+          appointmentsCount: bucket.count,
+          grossAmount: bucket.gross.toFixed(2),
+          commissionAmount: bucket.commission.toFixed(2),
+          netAmount: bucket.net.toFixed(2),
+        }));
+
+    return {
+      totals: {
+        succeededPayments: payments.length,
+        completedConsultations,
+        grossAmount: totalGross.toFixed(2),
+        commissionAmount: totalCommission.toFixed(2),
+        netAmount: totalNet.toFixed(2),
+      },
+      byDay: toPeriodRows(byDayMap),
+      byMonth: toPeriodRows(byMonthMap),
+    };
+  }
+
+  async getPatientHistory(
+    doctorId: string,
+    patientProfileId: string,
+  ): Promise<DoctorPatientHistoryResult> {
+    const patientProfile = await this.dataSource
+      .getRepository(PatientProfile)
+      .findOne({
+        where: { id: patientProfileId },
+        relations: { user: true },
+      });
+
+    if (!patientProfile || !patientProfile.user) {
+      return { kind: "PATIENT_NOT_FOUND" };
+    }
+
+    const relationshipCount = await this.dataSource.getRepository(Appointment).count({
+      where: {
+        doctorProfileId: doctorId,
+        patientProfileId,
+      },
+    });
+    if (relationshipCount === 0) {
+      return { kind: "DOCTOR_FORBIDDEN" };
+    }
+
+    const [appointments, prescriptions, reports] = await Promise.all([
+      this.dataSource.getRepository(Appointment).find({
+        where: { patientProfileId },
+        relations: {
+          doctor: { user: true },
+          familyMember: true,
+        },
+        order: { scheduledStartAt: "DESC" },
+      }),
+      this.dataSource.getRepository(Prescription).find({
+        where: { patientProfileId },
+        order: { createdAt: "DESC" },
+      }),
+      this.dataSource
+        .getRepository(MedicalReport)
+        .createQueryBuilder("report")
+        .select([
+          "report.id",
+          "report.patientProfileId",
+          "report.title",
+          "report.fileName",
+          "report.mimeType",
+          "report.sizeBytes",
+          "report.notes",
+          "report.createdAt",
+        ])
+        .where("report.patient_profile_id = :patientProfileId", { patientProfileId })
+        .orderBy("report.created_at", "DESC")
+        .getMany(),
+    ]);
+
+    return {
+      kind: "OK",
+      history: {
+        patient: {
+          id: patientProfile.id,
+          firstName: patientProfile.user.firstName,
+          lastName: patientProfile.user.lastName,
+          email: patientProfile.user.email,
+          phone: patientProfile.phone ?? null,
+          dateOfBirth: patientProfile.dateOfBirth,
+          sex: patientProfile.sex,
+        },
+        visits: appointments.map((appt) => ({
+          id: appt.id,
+          doctorId: appt.doctorProfileId,
+          doctorName: appt.doctor?.user
+            ? `Dr. ${appt.doctor.user.firstName} ${appt.doctor.user.lastName}`.trim()
+            : null,
+          scheduledStartAt: appt.scheduledStartAt,
+          scheduledEndAt: appt.scheduledEndAt,
+          mode: appt.mode,
+          status: appt.status,
+          familyMember: appt.familyMember
+            ? {
+                id: appt.familyMember.id,
+                name: appt.familyMember.name,
+                relationship: appt.familyMember.relationship,
+              }
+            : null,
+        })),
+        prescriptions: prescriptions.map((rx) => ({
+          id: rx.id,
+          appointmentId: rx.appointmentId,
+          doctorProfileId: rx.doctorProfileId,
+          diagnosis: rx.diagnosis,
+          medicines: rx.medicines,
+          tests: rx.tests,
+          advice: rx.advice,
+          verificationCode: rx.verificationCode,
+          createdAt: rx.createdAt,
+        })),
+        reports: reports.map((r) => ({
+          id: r.id,
+          patientProfileId: r.patientProfileId,
+          title: r.title,
+          fileName: r.fileName,
+          mimeType: r.mimeType,
+          sizeBytes: Number(r.sizeBytes),
+          notes: r.notes,
+          createdAt: r.createdAt,
+        })),
+      },
+    };
   }
 
   /**
@@ -253,12 +471,16 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
       .limit(query.limit)
       .getRawMany<{ id: string }>();
 
-    const doctors = await this.findDetailedByIds(rows.map((row) => row.id));
+    const doctorIds = rows.map((row) => row.id);
+    const [doctors, ratingMap] = await Promise.all([
+      this.findDetailedByIds(doctorIds),
+      this.fetchRatingAggregates(doctorIds),
+    ]);
     const byId = new Map(doctors.map((doctor) => [doctor.id, doctor]));
     const items = rows
       .map((row) => byId.get(row.id))
       .filter((doctor): doctor is DoctorProfile => doctor !== undefined)
-      .map((doctor) => this.toPublic(doctor));
+      .map((doctor) => this.toPublic(doctor, ratingMap.get(doctor.id)));
     return this.page(items, query, total);
   }
 
@@ -271,7 +493,9 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
       },
       relations: doctorRelations,
     });
-    return doctor ? this.toPublic(doctor) : null;
+    if (!doctor) return null;
+    const ratingMap = await this.fetchRatingAggregates([doctor.id]);
+    return this.toPublic(doctor, ratingMap.get(doctor.id));
   }
 
   async listSpecialties(): Promise<CatalogSpecialty[]> {
@@ -440,7 +664,42 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
     };
   }
 
-  private toPublic(doctor: DoctorProfile): PublicDoctorProfile {
+  private async fetchRatingAggregates(
+    doctorIds: string[],
+  ): Promise<Map<string, { averageRating: number | null; reviewCount: number }>> {
+    const result = new Map<string, { averageRating: number | null; reviewCount: number }>();
+    if (doctorIds.length === 0) return result;
+
+    const rows = await this.dataSource
+      .getRepository(Review)
+      .createQueryBuilder("review")
+      .select("review.doctorProfileId", "doctorProfileId")
+      .addSelect("COUNT(*)", "reviewCount")
+      .addSelect("AVG(review.rating)", "averageRating")
+      .where("review.doctorProfileId IN (:...doctorIds)", { doctorIds })
+      .andWhere("review.isVisible = :visible", { visible: true })
+      .groupBy("review.doctorProfileId")
+      .getRawMany<{
+        doctorProfileId: string;
+        reviewCount: string;
+        averageRating: string | null;
+      }>();
+
+    for (const row of rows) {
+      const reviewCount = Number(row.reviewCount);
+      const averageRating =
+        reviewCount > 0 && row.averageRating !== null
+          ? Number(Number(row.averageRating).toFixed(1))
+          : null;
+      result.set(row.doctorProfileId, { averageRating, reviewCount });
+    }
+    return result;
+  }
+
+  private toPublic(
+    doctor: DoctorProfile,
+    rating?: { averageRating: number | null; reviewCount: number },
+  ): PublicDoctorProfile {
     const details = this.toDetails(doctor);
     const fees = [
       details.videoConsultationFee,
@@ -459,6 +718,8 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
       languages: details.languages,
       videoConsultationFee: details.videoConsultationFee,
       minimumFee: fees.length === 0 ? null : Math.min(...fees),
+      averageRating: rating?.averageRating ?? null,
+      reviewCount: rating?.reviewCount ?? 0,
       specialties: details.specialties,
       chambers: details.chambers.filter((chamber) => chamber.isActive),
     };

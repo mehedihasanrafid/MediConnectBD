@@ -22,6 +22,8 @@ export function createDoctorRouter(options: ProtectedRouterOptions): Router {
     const router = Router();
     router.get("/", controller.listPublic);
     router.get("/me", options.authenticate, requireRole("DOCTOR"), controller.getMyProfile);
+    router.get("/me/earnings", options.authenticate, requireRole("DOCTOR"), controller.getMyEarnings);
+    router.get("/me/patients/:patientProfileId/history", options.authenticate, requireRole("DOCTOR"), controller.getPatientHistory);
     router.patch("/me", options.authenticate, requireRole("DOCTOR"), controller.updateMyProfile);
     router.post("/me/submit", options.authenticate, requireRole("DOCTOR"), controller.submitApplication);
     router.get("/me/appointments", options.authenticate, requireRole("DOCTOR"), controller.listMyAppointments);

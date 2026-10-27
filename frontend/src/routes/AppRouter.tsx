@@ -1,26 +1,27 @@
 /**
- * Central route table for MediConnect BD.
+ * Central route table for MediConnect BD, organized by role domain (admin, doctor, patient, public)
+ * following DokanBD's modular frontend structure.
  */
 
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AdminApplicationsPage } from "../features/admin/AdminApplicationsPage";
-import { AdminCatalogPage } from "../features/admin/AdminCatalogPage";
-import { AdminOperationsPage } from "../features/admin/AdminOperationsPage";
-import { AdminOverviewPage } from "../features/admin/AdminOverviewPage";
-import { AdminUsersPage } from "../features/admin/AdminUsersPage";
-import { AppointmentsPage } from "../features/appointments/AppointmentsPage";
+import { AdminApplicationsPage } from "../admin/applications";
+import { AdminCatalogPage } from "../admin/catalog";
+import { AdminOverviewPage } from "../admin/dashboard";
+import { AdminOperationsPage } from "../admin/operations";
+import { AdminUsersPage } from "../admin/users";
+import { DoctorAppointmentsPage } from "../doctor/appointments";
+import { DoctorDashboardPage } from "../doctor/dashboard";
+import { DoctorPrescriptionsPage } from "../doctor/prescriptions";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RegisterPage } from "../features/auth/RegisterPage";
-import { DoctorAppointmentsPage } from "../features/doctor/DoctorAppointmentsPage";
-import { DoctorDashboardPage } from "../features/doctor/DoctorDashboardPage";
-import { DoctorPrescriptionsPage } from "../features/doctor/DoctorPrescriptionsPage";
-import { DoctorDetailPage } from "../features/doctors/DoctorDetailPage";
-import { DoctorSearchPage } from "../features/doctors/DoctorSearchPage";
-import { FamilyMembersPage } from "../features/patient/FamilyMembersPage";
-import { PatientPrescriptionsPage } from "../features/prescriptions/PatientPrescriptionsPage";
-import { VerifyPrescriptionPage } from "../features/prescriptions/VerifyPrescriptionPage";
 import { AdminLayout } from "../layouts/AdminLayout";
 import { MainLayout } from "../layouts/MainLayout";
+import { AppointmentsPage } from "../patient/appointments";
+import { FamilyMembersPage } from "../patient/family-members";
+import { PatientPrescriptionsPage } from "../patient/prescriptions";
+import { MedicalReportsPage } from "../patient/reports";
+import { DoctorDetailPage, DoctorSearchPage } from "../public/doctors";
+import { VerifyPrescriptionPage } from "../public/verify-prescription";
 import { RoleRoute } from "./guards";
 
 export function AppRouter() {
@@ -37,6 +38,7 @@ export function AppRouter() {
         <Route element={<RoleRoute roles={["PATIENT"]} />}>
           <Route path="/appointments" element={<AppointmentsPage />} />
           <Route path="/prescriptions" element={<PatientPrescriptionsPage />} />
+          <Route path="/reports" element={<MedicalReportsPage />} />
           <Route path="/family-members" element={<FamilyMembersPage />} />
         </Route>
 

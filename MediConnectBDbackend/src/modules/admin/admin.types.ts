@@ -84,12 +84,37 @@ export type CatalogWriteResult<T> =
 
 export type CatalogDeleteResult = { kind: "DELETED" } | { kind: "NOT_FOUND" };
 
+export interface AdminTopSpecialty {
+  specialtyId: string;
+  name: string;
+  slug: string;
+  appointmentsCount: number;
+}
+
+export interface AdminTopDoctor {
+  doctorId: string;
+  firstName: string;
+  lastName: string;
+  bmdcNumber: string;
+  appointmentsCount: number;
+  completedCount: number;
+}
+
 export interface AdminOverview {
   users: { total: number; active: number; suspended: number; pending: number };
   doctors: { total: number; approved: number; pendingReview: number };
-  appointments: { total: number; confirmed: number; cancelled: number; completed: number };
+  patients: { newThisMonth: number };
+  appointments: {
+    total: number;
+    confirmed: number;
+    cancelled: number;
+    completed: number;
+    today: number;
+  };
   payments: { succeeded: number; grossAmount: string; commissionAmount: string; netAmount: string };
   refunds: { requested: number; totalAmount: string };
+  mostBookedSpecialties: AdminTopSpecialty[];
+  topDoctors: AdminTopDoctor[];
 }
 
 export interface AdminAppointmentQuery {

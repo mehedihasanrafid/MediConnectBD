@@ -1,0 +1,56 @@
+.shell {
+  /* Admin-only design tokens scoped to the Admin workspace. */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg-color: #f3f6fb;
+  --surface: #ffffff;
+  --text-main: #172033;
+  --text-muted: #667085;
+  --border: #e2e8f0;
+  --success: #15803d;
+  --success-bg: #ecfdf3;
+  --info: #175cd3;
+  --info-bg: #eff8ff;
+  --admin-accent: #3b82f6;
+  --admin-sidebar-width: 248px;
+  --admin-sidebar-collapsed-width: 76px;
+
+  width: 100%;
+  max-width: none;
+  height: calc(100dvh - 73px);
+  display: grid;
+  grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
+  align-items: stretch;
+  overflow: hidden;
+  color: var(--text-main);
+  background: var(--bg-color);
+  transition: grid-template-columns 0.22s ease;
+}
+
+.collapsed {
+  grid-template-columns: var(--admin-sidebar-collapsed-width) minmax(0, 1fr);
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+@media (max-width: 900px) {
+  .shell,
+  .collapsed {
+    height: auto;
+    min-height: calc(100dvh - 73px);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .workspace {
+    padding: 1rem;
+  }
+}

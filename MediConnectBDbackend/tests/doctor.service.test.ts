@@ -7,6 +7,8 @@ import type {
   CatalogHospital,
   CatalogSpecialty,
   DoctorApplicationQuery,
+  DoctorEarningsSummary,
+  DoctorPatientHistoryResult,
   DoctorProfileDetails,
   DoctorReviewInput,
   Paginated,
@@ -45,6 +47,23 @@ function profile(
 class FakeDoctorRepository implements DoctorRepository {
   current: DoctorProfileDetails | null;
   lastResetApproval = false;
+  historyResult: DoctorPatientHistoryResult = {
+    kind: "OK",
+    history: {
+      patient: {
+        id: randomUUID(),
+        firstName: "Amina",
+        lastName: "Begum",
+        email: "amina@example.com",
+        phone: "01700000000",
+        dateOfBirth: "1990-01-01",
+        sex: "FEMALE",
+      },
+      visits: [],
+      prescriptions: [],
+      reports: [],
+    },
+  };
 
   constructor(current: DoctorProfileDetails | null) {
     this.current = current;
@@ -52,6 +71,40 @@ class FakeDoctorRepository implements DoctorRepository {
 
   async findByUserId(): Promise<DoctorProfileDetails | null> {
     return this.current;
+  }
+
+  async getPatientHistory(): Promise<DoctorPatientHistoryResult> {
+    return this.historyResult;
+  }
+
+  async getEarnings(): Promise<DoctorEarningsSummary> {
+    return {
+      totals: {
+        succeededPayments: 2,
+        completedConsultations: 2,
+        grossAmount: "2000.00",
+        commissionAmount: "300.00",
+        netAmount: "1700.00",
+      },
+      byDay: [
+        {
+          period: "2026-10-26",
+          appointmentsCount: 2,
+          grossAmount: "2000.00",
+          commissionAmount: "300.00",
+          netAmount: "1700.00",
+        },
+      ],
+      byMonth: [
+        {
+          period: "2026-10",
+          appointmentsCount: 2,
+          grossAmount: "2000.00",
+          commissionAmount: "300.00",
+          netAmount: "1700.00",
+        },
+      ],
+    };
   }
 
   async updateProfile(
@@ -181,5 +234,31 @@ describe("DoctorService", () => {
         reason: "Invalid credentials",
       }),
     ).rejects.toMatchObject({ statusCode: 409, code: "APPLICATION_NOT_PENDING" });
+  });
+
+  it("returns doctor earnings summary by day and month", async () => {
+    const approved = profile(DoctorApplicationStatus.APPROVED);
+    const service = new DoctorService(new FakeDoctorRepository(approved));
+
+    const earnings = await service.getMyEarnings(approved.userId);
+    expect(earnings.totals.netAmount).toBe("1700.00");
+    expect(earnings.byDay).toHaveLength(1);
+    expect(earnings.byMonth).toHaveLength(1);
+  });
+
+  it("returns patient clinical history for treating doctors and blocks non-treating doctors", async () => {
+    const approved = profile(DoctorApplicationStatus.APPROVED);
+    const repo = new FakeDoctorRepository(approved);
+    const service = new DoctorService(repo);
+    const patientId = randomUUID();
+
+    const history = await service.getPatientHistory(approved.userId, patientId);
+    expect(history.patient.email).toBe("amina@example.com");
+
+    repo.historyResult = { kind: "DOCTOR_FORBIDDEN" };
+    await expect(service.getPatientHistory(approved.userId, patientId)).rejects.toMatchObject({
+      statusCode: 403,
+      code: "DOCTOR_PATIENT_RELATIONSHIP_REQUIRED",
+    });
   });
 });

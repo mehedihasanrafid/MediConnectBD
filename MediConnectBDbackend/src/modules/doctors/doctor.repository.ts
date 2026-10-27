@@ -8,6 +8,8 @@ import type {
   CatalogHospital,
   CatalogSpecialty,
   DoctorApplicationQuery,
+  DoctorEarningsSummary,
+  DoctorPatientHistoryResult,
   DoctorProfileDetails,
   DoctorReviewInput,
   Paginated,
@@ -18,6 +20,8 @@ import type {
 
 export interface DoctorRepository {
   findByUserId(userId: string): Promise<DoctorProfileDetails | null>;
+  getEarnings(doctorId: string): Promise<DoctorEarningsSummary>;
+  getPatientHistory(doctorId: string, patientProfileId: string): Promise<DoctorPatientHistoryResult>;
   updateProfile(
     doctorId: string,
     input: UpdateDoctorProfileInput,

@@ -1,0 +1,1 @@
+export { DoctorProfileHeader } from "./DoctorProfileHeader";

@@ -81,6 +81,11 @@ add("get", doctors, "listDoctors", "Doctors", "Search approved, active doctors",
 add("get", `${doctors}/{doctorId}`, "getDoctor", "Doctors", "Read an approved doctor's public profile", "PublicDoctor", 200, { parameters: [id("doctorId")], errors: [404] });
 const doctorAccess = { access: "bearer" as const, roles: ["DOCTOR"], errors: [404, 409] };
 add("get", `${doctors}/me`, "getMyDoctorProfile", "Doctor profile", "Read your private doctor profile", "DoctorDetails", 200, doctorAccess);
+add("get", `${doctors}/me/earnings`, "getMyDoctorEarnings", "Doctor profile", "Read your earnings summary by day and month", "DoctorEarnings", 200, doctorAccess);
+add("get", `${doctors}/me/patients/{patientProfileId}/history`, "getDoctorPatientHistory", "Doctor profile", "Read clinical history, prescriptions, and reports for a patient you treat", "DoctorPatientHistory", 200, {
+  ...doctorAccess, parameters: [id("patientProfileId")],
+  description: "DOCTOR only. Requires at least one appointment between the doctor and the patient. Returns past visits, prescriptions, and uploaded medical reports.",
+});
 add("patch", `${doctors}/me`, "updateMyDoctorProfile", "Doctor profile", "Update your doctor profile", "DoctorDetails", 200, { ...doctorAccess, body: "DoctorProfilePatch", description: "DOCTOR only. Add actual specialty IDs from Catalog. Pending applications cannot be edited; changes to an approved profile reset it to draft." });
 add("post", `${doctors}/me/submit`, "submitDoctorApplication", "Doctor profile", "Submit your application for review", "DoctorDetails", 200, { ...doctorAccess, description: "No body. Requires degrees, at least one specialty, and a video fee or active chamber. Only draft/rejected applications can be submitted." });
 add("get", `${doctors}/me/appointments`, "listDoctorAppointments", "Doctor profile", "List appointments assigned to the authenticated doctor", "DoctorAppointments", 200, doctorAccess);
@@ -110,6 +115,14 @@ add("post", `${appointments}/holds`, "holdAppointmentSlot", "Appointments", "Hol
 add("delete", `${appointments}/holds/{holdId}`, "releaseAppointmentHold", "Appointments", "Release your hold and unpaid booking", null, 204, { ...patientAccess, parameters: [id("holdId")], errors: [404] });
 add("post", appointments, "bookAppointment", "Appointments", "Create an appointment from your active hold", "Appointment", 201, { ...patientAccess, body: "BookAppointment", errors: [404, 409], description: "PATIENT only. Chamber visits confirm immediately. Video visits remain PENDING_PAYMENT with the original hold expiry; proceed to payment before it expires." });
 add("get", `${appointments}/me`, "listMyAppointments", "Appointments", "List your appointments", "Appointments", 200, patientAccess);
+add("post", `${appointments}/{appointmentId}/reschedule`, "rescheduleAppointment", "Appointments", "Reschedule an upcoming appointment to a new slot", "Appointment", 200, {
+  ...patientAccess, body: "RescheduleAppointment", errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "PATIENT only. Atomically moves an upcoming confirmed or pending-payment appointment (at least 1 hour before start) to another available slot with the same doctor and consultation mode.",
+});
+add("get", `${appointments}/{appointmentId}/video-session`, "getAppointmentVideoSession", "Appointments", "Join the video consultation room for a confirmed video appointment", "VideoSession", 200, {
+  access: "bearer", roles: ["PATIENT", "DOCTOR"], errors: [403, 404, 409], parameters: [id("appointmentId")],
+  description: "PATIENT or DOCTOR only (never ADMIN). Room opens 5 minutes before scheduledStartAt and closes at scheduledEndAt.",
+});
 add("post", `${appointments}/{appointmentId}/cancel`, "cancelAppointment", "Appointments", "Cancel an appointment and request a refund", "CancellationOutcome", 200, {
   access: "bearer", roles: ["PATIENT", "DOCTOR", "ADMIN"], body: "CancelAppointment", errors: [403, 404, 409], parameters: [id("appointmentId")],
   description: "PATIENT, DOCTOR, or ADMIN. Refund depends on notice for patients: more than 24 hours is full, 2 to 24 hours is half, under 2 hours is none. A doctor or admin cancellation always refunds in full. The refund is recorded as REQUESTED; no provider refund is executed yet. Repeating the call for an already-cancelled appointment returns its current state.",
@@ -130,6 +143,20 @@ add("post", familyMembers, "createFamilyMember", "Family members", "Add a family
 add("patch", `${familyMembers}/{id}`, "updateFamilyMember", "Family members", "Update a family member", "FamilyMember", 200, { ...patientAccess, body: "UpdateFamilyMember", parameters: [id("id")], errors: [404] });
 add("delete", `${familyMembers}/{id}`, "deleteFamilyMember", "Family members", "Remove a family member", null, 204, { ...patientAccess, parameters: [id("id")], errors: [404] });
 
+const medicalReports = "/api/v1/patients/me/reports";
+add("get", medicalReports, "listMyMedicalReports", "Medical reports", "List your uploaded medical reports", "MedicalReportsList", 200, patientAccess);
+add("post", medicalReports, "uploadMedicalReport", "Medical reports", "Upload a medical report to share with treating doctors", "MedicalReportSummary", 201, {
+  ...patientAccess, body: "CreateMedicalReport", errors: [400, 413],
+  description: "PATIENT only. Uploads a base64-encoded medical report (up to 2 MB) visible only to the patient and their treating doctors.",
+});
+add("get", `${medicalReports}/{reportId}/download`, "downloadMedicalReport", "Medical reports", "Download a medical report (patient or treating doctor only)", "MedicalReportDetail", 200, {
+  access: "bearer", roles: ["PATIENT", "DOCTOR"], parameters: [id("reportId")], errors: [403, 404],
+  description: "PATIENT or treating DOCTOR only. ADMIN cannot read medical report content.",
+});
+add("delete", `${medicalReports}/{reportId}`, "deleteMedicalReport", "Medical reports", "Delete your uploaded medical report", null, 204, {
+  ...patientAccess, parameters: [id("reportId")], errors: [404],
+});
+
 const reviews = "/api/v1/reviews";
 add("post", `${reviews}/me/reviews`, "createReview", "Reviews", "Submit a review for a completed appointment", "Review", 201, {
   ...patientAccess, body: "CreateReview", errors: [404, 409], parameters: [],
@@ -147,11 +174,22 @@ add("delete", `${reviews}/{reviewId}`, "deleteReview", "Reviews", "Admin: remove
 
 const prescriptions = "/api/v1/prescriptions";
 const prescriptionDoctorAccess = { access: "bearer" as const, roles: ["DOCTOR"] };
+add("get", `${prescriptions}/medicines/suggest`, "suggestMedicines", "Prescriptions", "Autocomplete medicine names and standard dosages", "MedicineSuggestionsList", 200, {
+  ...prescriptionDoctorAccess, parameters: [query("q", { type: "string", maxLength: 100 }, "Search prefix or keyword for medicine brand/generic name.")],
+});
 add("post", `${prescriptions}/me/prescriptions`, "createPrescription", "Prescriptions", "Doctor creates a prescription for a completed appointment", "Prescription", 201, {
   ...prescriptionDoctorAccess, body: "CreatePrescription", errors: [403, 404, 409],
   description: "DOCTOR only. One prescription per completed appointment. Requires at least one medicine. Editable within 24h of creation.",
 });
 add("get", `${prescriptions}/me/prescriptions`, "listDoctorPrescriptions", "Prescriptions", "List prescriptions issued by the doctor", "PrescriptionsList", 200, prescriptionDoctorAccess);
+add("get", `${prescriptions}/{prescriptionId}/pdf`, "downloadPrescriptionPdf", "Prescriptions", "Download a formatted PDF of the prescription", null, 200, {
+  access: "bearer", roles: ["PATIENT", "DOCTOR"], parameters: [id("prescriptionId")], errors: [403, 404],
+  description: "PATIENT or prescribing DOCTOR only (never ADMIN). Streams an application/pdf document.",
+});
+paths[`${prescriptions}/{prescriptionId}/pdf`]!.get!.responses[200] = {
+  description: "Formatted PDF prescription document.",
+  content: { "application/pdf": { schema: { type: "string", format: "binary" } } },
+};
 add("put", `${prescriptions}/{prescriptionId}`, "updatePrescription", "Prescriptions", "Update a prescription within 24h edit window", "Prescription", 200, {
   ...prescriptionDoctorAccess, body: "UpdatePrescription", errors: [403, 404, 409], parameters: [id("prescriptionId")],
   description: "DOCTOR only. Only the prescribing doctor can update. Edit window is 24 hours from creation. Updates are versioned.",
@@ -211,8 +249,10 @@ for (const kind of ["ipn", "success", "fail", "cancel"] as const) {
 }
 
 const errorDescriptions: Record<number, string> = {
+  400: "Malformed request payload or empty content.",
   401: "Missing, invalid, expired, or reused authentication/session token.", 403: "Wrong role, inactive account, unapproved doctor, or forbidden ownership.",
   404: "Resource not found or not visible to the current user.", 409: "Business-state, availability, idempotency, or payment-verification conflict.",
+  413: "Uploaded payload exceeds the maximum allowed size.",
   422: "Validation failed; fieldErrors identifies invalid inputs.", 500: "Unexpected server error; internal details are not exposed.",
   502: "Provider unavailable, ambiguous, or invalid response. An uncertain initiation may include details.paymentId.",
   503: "Sandbox payment credentials/public callback URL are not configured.",

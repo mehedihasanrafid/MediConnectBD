@@ -1,0 +1,1 @@
+export { VerifyPrescriptionPage } from "./VerifyPrescriptionPage";

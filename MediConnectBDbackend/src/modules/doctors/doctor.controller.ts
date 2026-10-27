@@ -31,6 +31,17 @@ getMyProfile: async (_request, response) => {
             const user = (response.locals as AuthenticatedLocals).authUser;
             response.status(200).json(await options.doctorService.getMyProfile(user.id));
         },
+getMyEarnings: async (_request, response) => {
+            const user = (response.locals as AuthenticatedLocals).authUser;
+            response.status(200).json(await options.doctorService.getMyEarnings(user.id));
+        },
+getPatientHistory: async (request, response) => {
+            const user = (response.locals as AuthenticatedLocals).authUser;
+            const patientProfileId = doctorIdSchema.parse(request.params.patientProfileId);
+            response.status(200).json(
+                await options.doctorService.getPatientHistory(user.id, patientProfileId),
+            );
+        },
 updateMyProfile: async (request, response) => {
             const user = (response.locals as AuthenticatedLocals).authUser;
             const input = updateDoctorProfileSchema.parse(request.body);

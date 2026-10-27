@@ -7,7 +7,7 @@ import type { RequestHandler as HttpHandler } from "express";
 import { type RequestHandler } from "express";
 import { AppError } from "../../utils/app-error";
 import { type AuthenticatedLocals } from "../auth/auth.middleware";
-import { appointmentIdSchema, bookAppointmentSchema, cancelAppointmentSchema, createHoldSchema, holdIdSchema } from "./appointment.schema";
+import { appointmentIdSchema, bookAppointmentSchema, cancelAppointmentSchema, createHoldSchema, holdIdSchema, rescheduleAppointmentSchema } from "./appointment.schema";
 import type { AppointmentService } from "./appointment.service";
 /**
  * HTTP handlers: validate input, call services, and format responses.
@@ -35,7 +35,27 @@ export function createAppointmentController(options: {
             const input = bookAppointmentSchema.parse(request.body);
             response
                 .status(201)
-                .json(await options.appointmentService.bookAppointment(patientProfileId, input.holdId));
+                .json(
+                    await options.appointmentService.bookAppointment(
+                        patientProfileId,
+                        input.holdId,
+                        input.familyMemberId ?? null,
+                    ),
+                );
+        },
+        rescheduleAppointment: async (request, response) => {
+            const patientProfileId = getPatientProfileId(response.locals as AuthenticatedLocals);
+            const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
+            const input = rescheduleAppointmentSchema.parse(request.body);
+            response
+                .status(200)
+                .json(
+                    await options.appointmentService.rescheduleAppointment(
+                        patientProfileId,
+                        appointmentId,
+                        input.newSlotId,
+                    ),
+                );
         },
         listMyAppointments: async (_request, response) => {
             const patientProfileId = getPatientProfileId(response.locals as AuthenticatedLocals);
@@ -93,6 +113,16 @@ export function createAppointmentController(options: {
             const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
             response.status(200).json(
                 await options.appointmentService.markNoShow(doctorProfileId, appointmentId),
+            );
+        },
+        getVideoSession: async (request, response) => {
+            const locals = response.locals as AuthenticatedLocals;
+            const appointmentId = appointmentIdSchema.parse(request.params.appointmentId);
+            response.status(200).json(
+                await options.appointmentService.getVideoSession(appointmentId, {
+                    patientProfileId: locals.authUser.patientProfileId ?? null,
+                    doctorProfileId: locals.authUser.doctorProfile?.id ?? null,
+                }),
             );
         },
     } satisfies Record<string, HttpHandler>;

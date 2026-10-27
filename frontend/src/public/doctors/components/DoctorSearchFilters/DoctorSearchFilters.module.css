@@ -1,0 +1,12 @@
+.filtersCard {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background-color: var(--surface, #ffffff);
+}
+
+.fieldWrapper {
+  flex: 1;
+  min-width: 220px;
+}

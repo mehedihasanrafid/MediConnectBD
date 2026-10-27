@@ -1,0 +1,64 @@
+/**
+ * Patient appointment list showing upcoming and past visits with status, fee, online payment
+ * checkout, inline cancellation with refund preview, and post-visit reviews.
+ */
+
+import { Alert, EmptyState, Spinner } from "../../components/ui";
+import styles from "./AppointmentsPage.module.css";
+import { PatientAppointmentCard } from "./components/PatientAppointmentCard";
+import { usePatientAppointments } from "./hooks/usePatientAppointments";
+import { partitionAppointments } from "./utils/patientAppointments.utils";
+
+export function AppointmentsPage() {
+  const {
+    appointments,
+    reviewsByAppointment,
+    loading,
+    error,
+    notice,
+    loadAll,
+    handleRescheduled,
+    handleCancelled,
+    handleReviewCreated,
+  } = usePatientAppointments();
+
+  if (loading) return <Spinner label="Loading appointments…" />;
+
+  const { upcoming, past } = partitionAppointments(appointments);
+
+  return (
+    <div className={`page ${styles.page}`}>
+      <header className={`page-header ${styles.header}`}>
+        <p className="eyebrow">Patient Portal</p>
+        <h1>My appointments</h1>
+        <p className="muted">All times are shown in Bangladesh time (Asia/Dhaka).</p>
+      </header>
+
+      {error && <Alert kind="error">{error}</Alert>}
+      {notice && <Alert kind="success">{notice}</Alert>}
+
+      <h2 className={styles.sectionTitle}>Active & Upcoming ({upcoming.length})</h2>
+      {upcoming.length === 0 && <EmptyState>No active or upcoming appointments.</EmptyState>}
+      {upcoming.map((appointment) => (
+        <PatientAppointmentCard
+          key={appointment.id}
+          appointment={appointment}
+          onPaymentUpdated={() => void loadAll()}
+          onRescheduled={handleRescheduled}
+          onCancelled={handleCancelled}
+        />
+      ))}
+
+      <h2 className={styles.sectionTitle}>Completed & Past ({past.length})</h2>
+      {past.length === 0 && <EmptyState>No past appointments.</EmptyState>}
+      {past.map((appointment) => (
+        <PatientAppointmentCard
+          key={appointment.id}
+          appointment={appointment}
+          existingReview={reviewsByAppointment[appointment.id]}
+          onReviewCreated={handleReviewCreated}
+        />
+      ))}
+    </div>
+  );
+}

@@ -1,0 +1,100 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_dev_password
+      MYSQL_DATABASE: mediconnect
+      MYSQL_USER: mediconnect_app
+      MYSQL_PASSWORD: mediconnect_dev_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "mediconnect_app", "-pmediconnect_dev_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./MediConnectBDbackend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      APP_URL: http://localhost:5173
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: mediconnect
+      DB_USER: mediconnect_app
+      DB_PASSWORD: mediconnect_dev_password
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: mediconnect_local_dev_jwt_secret_key_32_chars_min
+      ACCESS_TOKEN_TTL_SECONDS: 900
+      REFRESH_TOKEN_TTL_DAYS: 30
+      SEED_DEMO_PASSWORD: "#king123"
+    ports:
+      - "4000:4000"
+    command: ["sh", "-c", "npm run migration:run && npm run seed && node dist/server.js"]
+
+  worker:
+    build:
+      context: ./MediConnectBDbackend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      APP_URL: http://localhost:5173
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: mediconnect
+      DB_USER: mediconnect_app
+      DB_PASSWORD: mediconnect_dev_password
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: mediconnect_local_dev_jwt_secret_key_32_chars_min
+    command: ["node", "dist/workers/worker.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:4000
+    ports:
+      - "5173:5173"
+
+volumes:
+  mysql_data:
+  redis_data:

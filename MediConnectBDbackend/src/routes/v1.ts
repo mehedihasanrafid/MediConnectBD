@@ -26,6 +26,8 @@ import {
 } from "../modules/doctors/doctor.routes";
 import { createFamilyMemberRouter } from "../modules/patients/family-member.routes";
 import type { FamilyMemberService } from "../modules/patients/family-member.service";
+import { createMedicalReportRouter } from "../modules/patients/medical-report.routes";
+import type { MedicalReportService } from "../modules/patients/medical-report.service";
 import { TypeOrmFamilyMemberRepository } from "../modules/patients/typeorm-family-member.repository";
 import type { ReviewService } from "../modules/reviews/review.service";
 import { createReviewRouter } from "../modules/reviews/review.routes";
@@ -43,6 +45,7 @@ export interface ApiRouterOptions {
   appointmentService: AppointmentService;
   paymentService?: PaymentService;
   familyMemberService?: FamilyMemberService;
+  medicalReportService?: MedicalReportService;
   reviewService?: ReviewService;
   prescriptionService?: PrescriptionService;
   adminService?: AdminService;
@@ -94,6 +97,13 @@ export function createApiRouter(options: ApiRouterOptions): Router {
     router.use(
       "/patients/me/family-members",
       createFamilyMemberRouter(options.familyMemberService, authenticate),
+    );
+  }
+
+  if (options.medicalReportService) {
+    router.use(
+      "/patients/me/reports",
+      createMedicalReportRouter(options.medicalReportService, authenticate),
     );
   }
 

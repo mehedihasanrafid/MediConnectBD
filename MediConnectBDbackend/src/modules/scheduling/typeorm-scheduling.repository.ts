@@ -5,12 +5,15 @@
  */
 
 import { In, type DataSource } from "typeorm";
+import { Appointment, AppointmentStatus } from "../appointments/appointment.entity";
+import type { EmailTransport } from "../notifications/email.types";
 import {
   AppointmentSlot,
   AppointmentSlotStatus,
 } from "./appointment-slot.entity";
 import { DoctorSchedule } from "./doctor-schedule.entity";
 import { ScheduleTimeOff } from "./schedule-time-off.entity";
+import { dhakaDateRange } from "./slot-generator";
 import type { SchedulingRepository } from "./scheduling.repository";
 import type {
   AvailableSlotView,
@@ -22,7 +25,10 @@ import type {
 } from "./scheduling.types";
 
 export class TypeOrmSchedulingRepository implements SchedulingRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly emailTransport?: EmailTransport | null,
+  ) {}
 
   async listRules(doctorId: string): Promise<ScheduleRuleView[]> {
     const rules = await this.dataSource.getRepository(DoctorSchedule).find({
@@ -91,6 +97,43 @@ export class TypeOrmSchedulingRepository implements SchedulingRepository {
         reason: input.reason ?? null,
       }),
     );
+
+    if (this.emailTransport) {
+      try {
+        const range = dhakaDateRange(input.date, 1);
+        const affected = await this.dataSource
+          .getRepository(Appointment)
+          .createQueryBuilder("appointment")
+          .leftJoinAndSelect("appointment.patientProfile", "patientProfile")
+          .leftJoinAndSelect("patientProfile.user", "patientUser")
+          .leftJoinAndSelect("appointment.doctor", "doctor")
+          .leftJoinAndSelect("doctor.user", "doctorUser")
+          .where("appointment.doctor_profile_id = :doctorId", { doctorId })
+          .andWhere("appointment.status = :status", { status: AppointmentStatus.CONFIRMED })
+          .andWhere(
+            "appointment.scheduled_start_at >= :start AND appointment.scheduled_start_at < :end",
+            { start: range.start, end: range.end },
+          )
+          .getMany();
+
+        for (const appt of affected) {
+          const email = appt.patientProfile?.user?.email;
+          if (!email) continue;
+          const doctorName = appt.doctor?.user
+            ? `Dr. ${appt.doctor.user.firstName} ${appt.doctor.user.lastName}`.trim()
+            : "your doctor";
+          await this.emailTransport.send({
+            to: email,
+            subject: "Notice: Doctor Schedule Update — MediConnect BD",
+            html: `<p>${doctorName} has marked time off on ${input.date}${input.reason ? ` (${input.reason})` : ""}. Please visit your MediConnect BD appointments page to reschedule or cancel if needed.</p>`,
+            text: `${doctorName} has marked time off on ${input.date}. Please check your MediConnect BD appointments to reschedule if needed.`,
+          });
+        }
+      } catch (error) {
+        console.error({ error }, "Failed to send time-off notifications to booked patients");
+      }
+    }
+
     return this.toTimeOff(saved);
   }
 

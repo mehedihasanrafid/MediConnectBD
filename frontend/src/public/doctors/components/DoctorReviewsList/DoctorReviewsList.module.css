@@ -1,0 +1,26 @@
+.sectionTitle {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.reviewCard {
+  margin-bottom: 0.75rem;
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reviewMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comment {
+  margin: 0.5rem 0 0;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.5;
+}

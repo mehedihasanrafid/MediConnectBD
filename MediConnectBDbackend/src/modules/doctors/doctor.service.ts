@@ -9,6 +9,8 @@ import { DoctorApplicationStatus } from "./doctor-profile.entity";
 import type { DoctorRepository } from "./doctor.repository";
 import type {
   DoctorApplicationQuery,
+  DoctorEarningsSummary,
+  DoctorPatientHistory,
   DoctorProfileDetails,
   DoctorReviewInput,
   PublicDoctorQuery,
@@ -24,6 +26,30 @@ export class DoctorService {
       throw new AppError(404, "DOCTOR_PROFILE_NOT_FOUND", "Doctor profile was not found");
     }
     return profile;
+  }
+
+  async getMyEarnings(userId: string): Promise<DoctorEarningsSummary> {
+    const profile = await this.getMyProfile(userId);
+    return this.repository.getEarnings(profile.id);
+  }
+
+  async getPatientHistory(
+    userId: string,
+    patientProfileId: string,
+  ): Promise<DoctorPatientHistory> {
+    const profile = await this.getMyProfile(userId);
+    const result = await this.repository.getPatientHistory(profile.id, patientProfileId);
+    if (result.kind === "PATIENT_NOT_FOUND") {
+      throw new AppError(404, "PATIENT_NOT_FOUND", "Patient profile was not found");
+    }
+    if (result.kind === "DOCTOR_FORBIDDEN") {
+      throw new AppError(
+        403,
+        "DOCTOR_PATIENT_RELATIONSHIP_REQUIRED",
+        "Only a doctor with an appointment for this patient can view their clinical history",
+      );
+    }
+    return result.history;
   }
 
   /**

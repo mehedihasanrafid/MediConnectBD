@@ -46,6 +46,13 @@ export class AppointmentService {
         "Appointments must be booked at least one hour before the start time",
       );
     }
+    if (result.kind === "PATIENT_OVERLAP") {
+      throw new AppError(
+        409,
+        "PATIENT_APPOINTMENT_OVERLAP",
+        "You already have another appointment or active hold at an overlapping time",
+      );
+    }
     return result.hold;
   }
 
@@ -57,12 +64,14 @@ export class AppointmentService {
   async bookAppointment(
     patientProfileId: string,
     holdId: string,
+    familyMemberId?: string | null,
     patientEmail?: string,
     doctorName?: string,
   ) {
     const result = await this.repository.bookHold({
       holdId,
       patientProfileId,
+      familyMemberId,
       now: this.now(),
     });
     if (result.kind === "HOLD_NOT_FOUND") {
@@ -76,6 +85,16 @@ export class AppointmentService {
     }
     if (result.kind === "HOLD_NOT_ACTIVE") {
       throw new AppError(409, "HOLD_NOT_ACTIVE", "The appointment hold is no longer active");
+    }
+    if (result.kind === "FAMILY_MEMBER_NOT_FOUND") {
+      throw new AppError(404, "FAMILY_MEMBER_NOT_FOUND", "Family member was not found");
+    }
+    if (result.kind === "PATIENT_OVERLAP") {
+      throw new AppError(
+        409,
+        "PATIENT_APPOINTMENT_OVERLAP",
+        "You already have another appointment or active hold at an overlapping time",
+      );
     }
 
     // Send confirmation email for chamber bookings only (video stays PENDING_PAYMENT)
@@ -152,6 +171,62 @@ export class AppointmentService {
     return result.outcome;
   }
 
+  async rescheduleAppointment(
+    patientProfileId: string,
+    appointmentId: string,
+    newSlotId: string,
+  ) {
+    const now = this.now();
+    const result = await this.repository.rescheduleAppointment({
+      appointmentId,
+      patientProfileId,
+      newSlotId,
+      now,
+      minimumStartAt: new Date(now.getTime() + MINIMUM_BOOKING_LEAD_MILLISECONDS),
+    });
+    if (result.kind === "APPOINTMENT_NOT_FOUND") {
+      throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+    }
+    if (result.kind === "APPOINTMENT_FORBIDDEN") {
+      throw new AppError(403, "APPOINTMENT_FORBIDDEN", "This appointment belongs to another patient");
+    }
+    if (result.kind === "APPOINTMENT_NOT_RESCHEDULABLE") {
+      throw new AppError(
+        409,
+        "APPOINTMENT_NOT_RESCHEDULABLE",
+        "Only an upcoming confirmed or pending-payment appointment at least 1 hour away can be rescheduled",
+      );
+    }
+    if (result.kind === "SLOT_NOT_FOUND") {
+      throw new AppError(404, "SLOT_NOT_FOUND", "Target appointment slot was not found");
+    }
+    if (result.kind === "SLOT_MISMATCH") {
+      throw new AppError(
+        409,
+        "SLOT_MISMATCH",
+        "You can only reschedule to a slot with the same doctor and consultation mode",
+      );
+    }
+    if (result.kind === "BOOKING_TOO_LATE") {
+      throw new AppError(
+        409,
+        "BOOKING_LEAD_TIME_REQUIRED",
+        "Appointments must be rescheduled to a slot at least one hour in the future",
+      );
+    }
+    if (result.kind === "SLOT_UNAVAILABLE") {
+      throw new AppError(409, "SLOT_UNAVAILABLE", "The selected slot is no longer available");
+    }
+    if (result.kind === "PATIENT_OVERLAP") {
+      throw new AppError(
+        409,
+        "PATIENT_APPOINTMENT_OVERLAP",
+        "You already have another appointment or active hold at an overlapping time",
+      );
+    }
+    return result.appointment;
+  }
+
   listMyAppointments(patientProfileId: string) {
     return this.repository.listPatientAppointments(patientProfileId);
   }
@@ -212,5 +287,60 @@ export class AppointmentService {
       );
     }
     return result.appointment;
+  }
+
+  async getVideoSession(
+    appointmentId: string,
+    actor: {
+      patientProfileId?: string | null | undefined;
+      doctorProfileId?: string | null | undefined;
+    },
+  ) {
+    if (!this.repository.getVideoSession) {
+      throw new AppError(501, "VIDEO_SESSION_NOT_SUPPORTED", "Video sessions are not configured");
+    }
+    const result = await this.repository.getVideoSession({
+      appointmentId,
+      actor,
+      now: this.now(),
+    });
+    if (result.kind === "APPOINTMENT_NOT_FOUND") {
+      throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+    }
+    if (result.kind === "APPOINTMENT_FORBIDDEN") {
+      throw new AppError(
+        403,
+        "APPOINTMENT_FORBIDDEN",
+        "Only the booked patient or assigned doctor can join this video consultation",
+      );
+    }
+    if (result.kind === "VIDEO_NOT_APPLICABLE") {
+      throw new AppError(
+        409,
+        "VIDEO_SESSION_NOT_APPLICABLE",
+        "Video session is only available for video consultations",
+      );
+    }
+    if (result.kind === "VIDEO_NOT_CONFIRMED") {
+      throw new AppError(
+        409,
+        "VIDEO_SESSION_NOT_CONFIRMED",
+        "Video session is only available for confirmed appointments",
+      );
+    }
+    if (result.kind === "VIDEO_WINDOW_CLOSED") {
+      throw new AppError(
+        409,
+        "VIDEO_SESSION_WINDOW_CLOSED",
+        "Video room opens 5 minutes before the scheduled start time and closes when the slot ends",
+        {
+          opensAt: result.opensAt,
+          closesAt: result.closesAt,
+          scheduledStartAt: result.scheduledStartAt,
+          scheduledEndAt: result.scheduledEndAt,
+        },
+      );
+    }
+    return result.session;
   }
 }

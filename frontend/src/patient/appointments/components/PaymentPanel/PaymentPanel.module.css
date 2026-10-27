@@ -19,3 +19,25 @@
   align-items: center;
   margin-top: 0.75rem;
 }
+
+.statusCard {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+}
+
+.statusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.verifySection {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--border, #e2e8f0);
+}

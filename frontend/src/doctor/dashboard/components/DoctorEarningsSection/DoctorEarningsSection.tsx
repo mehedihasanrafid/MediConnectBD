@@ -1,5 +1,5 @@
 /**
- * Displays a doctor's earnings summary (gross revenue, 15% platform commission, net payout,
+ * Displays a doctor's earnings summary (gross revenue, 10% platform commission, net payout,
  * and completed consultations) along with daily and monthly breakdowns.
  */
 
@@ -32,11 +32,11 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
           <dd>{formatMoney(Number(earnings.totals.grossAmount))}</dd>
         </div>
         <div>
-          <dt>Platform fee (15%)</dt>
+          <dt>Platform fee (10%)</dt>
           <dd>{formatMoney(Number(earnings.totals.commissionAmount))}</dd>
         </div>
         <div>
-          <dt>Net doctor payout (85%)</dt>
+          <dt>Net doctor payout (90%)</dt>
           <dd>
             <strong className={styles.payoutHighlight}>
               {formatMoney(Number(earnings.totals.netAmount))}

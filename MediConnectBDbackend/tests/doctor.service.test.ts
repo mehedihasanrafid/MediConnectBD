@@ -83,16 +83,16 @@ class FakeDoctorRepository implements DoctorRepository {
         succeededPayments: 2,
         completedConsultations: 2,
         grossAmount: "2000.00",
-        commissionAmount: "300.00",
-        netAmount: "1700.00",
+        commissionAmount: "200.00",
+        netAmount: "1800.00",
       },
       byDay: [
         {
           period: "2026-10-26",
           appointmentsCount: 2,
           grossAmount: "2000.00",
-          commissionAmount: "300.00",
-          netAmount: "1700.00",
+          commissionAmount: "200.00",
+          netAmount: "1800.00",
         },
       ],
       byMonth: [
@@ -100,8 +100,8 @@ class FakeDoctorRepository implements DoctorRepository {
           period: "2026-10",
           appointmentsCount: 2,
           grossAmount: "2000.00",
-          commissionAmount: "300.00",
-          netAmount: "1700.00",
+          commissionAmount: "200.00",
+          netAmount: "1800.00",
         },
       ],
     };
@@ -241,7 +241,8 @@ describe("DoctorService", () => {
     const service = new DoctorService(new FakeDoctorRepository(approved));
 
     const earnings = await service.getMyEarnings(approved.userId);
-    expect(earnings.totals.netAmount).toBe("1700.00");
+    expect(earnings.totals.commissionAmount).toBe("200.00");
+    expect(earnings.totals.netAmount).toBe("1800.00");
     expect(earnings.byDay).toHaveLength(1);
     expect(earnings.byMonth).toHaveLength(1);
   });

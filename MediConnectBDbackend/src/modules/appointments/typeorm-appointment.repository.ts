@@ -4,7 +4,6 @@
  * until verified payment confirms them.
  */
 
-import { createHmac } from "node:crypto";
 import type { DataSource, EntityManager } from "typeorm";
 import {
   Appointment,
@@ -19,12 +18,12 @@ import { SlotHold, SlotHoldStatus } from "./slot-hold.entity";
 import type { AppointmentRepository } from "./appointment.repository";
 import type {
   AppointmentView,
+  AppointmentVideoEligibilityResult,
   BookingSlotView,
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
   DoctorAppointmentView,
-  GetVideoSessionResult,
   ReleaseHoldResult,
   RescheduleAppointmentResult,
   SlotHoldView,
@@ -609,14 +608,14 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     }));
   }
 
-  async getVideoSession(input: {
+  async getAppointmentForVideoSession(input: {
     appointmentId: string;
     actor: {
       patientProfileId?: string | null | undefined;
       doctorProfileId?: string | null | undefined;
     };
     now: Date;
-  }): Promise<GetVideoSessionResult> {
+  }): Promise<AppointmentVideoEligibilityResult> {
     const appointment = await this.dataSource.getRepository(Appointment).findOne({
       where: { id: input.appointmentId },
       relations: {
@@ -668,30 +667,18 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       : "Patient";
     const participantRole = isDoctor ? "DOCTOR" : "PATIENT";
     const participantName = isDoctor ? doctorName : patientName;
-    const roomName = `mediconnect-consult-${appointment.id}`;
-    const payload = Buffer.from(
-      JSON.stringify({
-        sub: isDoctor ? appointment.doctorProfileId : appointment.patientProfileId,
-        role: participantRole,
-        room: roomName,
-        exp: Math.floor(closesAt.getTime() / 1000),
-      }),
-    ).toString("base64url");
-    const signature = createHmac("sha256", "mediconnect-video-room")
-      .update(payload)
-      .digest("base64url");
 
     return {
       kind: "OK",
-      session: {
+      details: {
         appointmentId: appointment.id,
-        roomName,
-        roomUrl: `https://meet.jit.si/${roomName}`,
-        accessToken: `${payload}.${signature}`,
-        participantRole,
-        participantName,
+        doctorProfileId: appointment.doctorProfileId,
+        patientProfileId: appointment.patientProfileId,
         doctorName,
         patientName,
+        participantRole,
+        participantName,
+        participantIdentity: isDoctor ? appointment.doctorProfileId : appointment.patientProfileId,
         scheduledStartAt: appointment.scheduledStartAt,
         scheduledEndAt: appointment.scheduledEndAt,
         opensAt,

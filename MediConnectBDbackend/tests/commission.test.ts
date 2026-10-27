@@ -37,4 +37,20 @@ describe("splitCommission", () => {
     expect(() => splitCommission("abc")).toThrow("Invalid monetary amount");
     expect(() => splitCommission("1.234")).toThrow("Invalid monetary amount");
   });
+
+  it("reports 10% commission and 90% doctor net for legacy payment records without stored commission values", () => {
+    const legacyPayment = { amount: "1000.00", commissionAmount: null, netAmount: null };
+    const fallback = splitCommission(legacyPayment.amount);
+    const commission =
+      legacyPayment.commissionAmount !== null
+        ? Number(legacyPayment.commissionAmount)
+        : Number(fallback.commissionAmount);
+    const net =
+      legacyPayment.netAmount !== null
+        ? Number(legacyPayment.netAmount)
+        : Number(fallback.netAmount);
+
+    expect(commission).toBe(100.00);
+    expect(net).toBe(900.00);
+  });
 });

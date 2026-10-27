@@ -21,6 +21,7 @@ import { SchedulingService } from "./modules/scheduling/scheduling.service";
 import { TypeOrmSchedulingRepository } from "./modules/scheduling/typeorm-scheduling.repository";
 import { AppointmentService } from "./modules/appointments/appointment.service";
 import { TypeOrmAppointmentRepository } from "./modules/appointments/typeorm-appointment.repository";
+import { DailyVideoProvider, MockVideoProvider } from "./modules/appointments/video-provider";
 import { PaymentService } from "./modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "./modules/payments/typeorm-payment.repository";
 import { SslcommerzPaymentProvider } from "./modules/payments/sslcommerz-payment-provider";
@@ -77,9 +78,15 @@ async function main(): Promise<void> {
     new TypeOrmSchedulingRepository(AppDataSource, emailTransport),
     doctorRepository,
   );
+  const videoProvider = env.DAILY_API_KEY
+    ? new DailyVideoProvider(env.DAILY_API_KEY, env.DAILY_DOMAIN)
+    : new MockVideoProvider();
+
   const appointmentService = new AppointmentService(
     new TypeOrmAppointmentRepository(AppDataSource, notificationService),
     notificationService,
+    () => new Date(),
+    videoProvider,
   );
   const familyMemberService = new FamilyMemberService(
     new TypeOrmFamilyMemberRepository(),

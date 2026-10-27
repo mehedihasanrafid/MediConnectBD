@@ -9,6 +9,8 @@ import { AppointmentStatus } from "./appointment.entity";
 import type { AppointmentRepository } from "./appointment.repository";
 import type { CancellationActor } from "./cancellation-policy";
 import type { NotificationService } from "../notifications/notification-service";
+import { MockVideoProvider, type VideoProvider } from "./video-provider";
+import type { VideoSessionView } from "./appointment.types";
 
 const HOLD_DURATION_MILLISECONDS = 10 * 60 * 1000;
 const MINIMUM_BOOKING_LEAD_MILLISECONDS = 60 * 60 * 1000;
@@ -18,6 +20,7 @@ export class AppointmentService {
     private readonly repository: AppointmentRepository,
     private readonly notificationService?: NotificationService | null,
     private readonly now: () => Date = () => new Date(),
+    private readonly videoProvider?: VideoProvider | null,
   ) {}
 
   /**
@@ -295,7 +298,82 @@ export class AppointmentService {
       patientProfileId?: string | null | undefined;
       doctorProfileId?: string | null | undefined;
     },
-  ) {
+  ): Promise<VideoSessionView> {
+    if (this.repository.getAppointmentForVideoSession) {
+      const eligibility = await this.repository.getAppointmentForVideoSession({
+        appointmentId,
+        actor,
+        now: this.now(),
+      });
+      if (eligibility.kind === "APPOINTMENT_NOT_FOUND") {
+        throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Appointment was not found");
+      }
+      if (eligibility.kind === "APPOINTMENT_FORBIDDEN") {
+        throw new AppError(
+          403,
+          "APPOINTMENT_FORBIDDEN",
+          "Only the booked patient or assigned doctor can join this video consultation",
+        );
+      }
+      if (eligibility.kind === "VIDEO_NOT_APPLICABLE") {
+        throw new AppError(
+          409,
+          "VIDEO_SESSION_NOT_APPLICABLE",
+          "Video session is only available for video consultations",
+        );
+      }
+      if (eligibility.kind === "VIDEO_NOT_CONFIRMED") {
+        throw new AppError(
+          409,
+          "VIDEO_SESSION_NOT_CONFIRMED",
+          "Video session is only available for confirmed appointments",
+        );
+      }
+      if (eligibility.kind === "VIDEO_WINDOW_CLOSED") {
+        throw new AppError(
+          409,
+          "VIDEO_SESSION_WINDOW_CLOSED",
+          "Video room opens 5 minutes before the scheduled start time and closes when the slot ends",
+          {
+            opensAt: eligibility.opensAt,
+            closesAt: eligibility.closesAt,
+            scheduledStartAt: eligibility.scheduledStartAt,
+            scheduledEndAt: eligibility.scheduledEndAt,
+          },
+        );
+      }
+
+      const videoProvider = this.videoProvider ?? new MockVideoProvider();
+      const roomName = `mediconnect-consult-${eligibility.details.appointmentId}`;
+      const credentials = await videoProvider.createSession({
+        appointmentId: eligibility.details.appointmentId,
+        roomName,
+        opensAt: eligibility.details.opensAt,
+        closesAt: eligibility.details.closesAt,
+        participant: {
+          identity: eligibility.details.participantIdentity,
+          name: eligibility.details.participantName,
+          role: eligibility.details.participantRole,
+          isOwner: eligibility.details.participantRole === "DOCTOR",
+        },
+      });
+
+      return {
+        appointmentId: eligibility.details.appointmentId,
+        roomName: credentials.roomName,
+        roomUrl: credentials.roomUrl,
+        accessToken: credentials.accessToken,
+        participantRole: eligibility.details.participantRole,
+        participantName: eligibility.details.participantName,
+        doctorName: eligibility.details.doctorName,
+        patientName: eligibility.details.patientName,
+        scheduledStartAt: eligibility.details.scheduledStartAt,
+        scheduledEndAt: eligibility.details.scheduledEndAt,
+        opensAt: eligibility.details.opensAt,
+        closesAt: eligibility.details.closesAt,
+      };
+    }
+
     if (!this.repository.getVideoSession) {
       throw new AppError(501, "VIDEO_SESSION_NOT_SUPPORTED", "Video sessions are not configured");
     }

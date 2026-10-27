@@ -15,6 +15,14 @@ export function AdminRefundsTable({
 }: AdminRefundsTableProps) {
   return (
     <Card>
+      <div style={{ marginBottom: "1rem" }}>
+        <h3 style={{ margin: "0 0 0.25rem 0" }}>Refund Requests</h3>
+        <p className="muted small" style={{ margin: 0 }}>
+          Refunds must be processed manually via your payment provider (SSLCommerz) or bank portal.
+          Marking a record here updates internal operational tracking and indicates manual payout has been initiated.
+        </p>
+      </div>
+
       {refunds.length === 0 ? (
         <EmptyState>No refund requests.</EmptyState>
       ) : (
@@ -45,7 +53,7 @@ export function AdminRefundsTable({
                       disabled={busyId === r.id}
                       onClick={() => void onSubmitRefund(r.id)}
                     >
-                      Mark submitted
+                      Mark for manual refund
                     </Button>
                   )}
                 </td>

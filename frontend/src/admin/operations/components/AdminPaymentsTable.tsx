@@ -17,7 +17,7 @@ export function AdminPaymentsTable({ payments }: AdminPaymentsTableProps) {
             <tr>
               <th>Transaction ID</th>
               <th>Gross</th>
-              <th>Commission (15%)</th>
+              <th>Commission (10%)</th>
               <th>Doctor Net</th>
               <th>Status</th>
               <th>Created</th>

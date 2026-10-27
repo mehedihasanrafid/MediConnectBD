@@ -30,6 +30,8 @@ const envSchema = z.object({
   SSLCOMMERZ_STORE_ID: z.string().min(1).optional(),
   SSLCOMMERZ_STORE_PASSWORD: z.string().min(1).optional(),
   PUBLIC_API_URL: z.string().url().max(180).optional(),
+  DAILY_API_KEY: z.string().min(1).optional(),
+  DAILY_DOMAIN: z.string().min(1).optional(),
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: z

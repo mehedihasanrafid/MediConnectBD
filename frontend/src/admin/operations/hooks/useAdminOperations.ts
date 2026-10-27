@@ -38,7 +38,7 @@ export interface AdminRefundRow {
 }
 
 /**
- * Custom hook managing admin operations: appointments, payments (15% commission split), and refunds.
+ * Custom hook managing admin operations: appointments, payments (10% commission split), and refunds.
  */
 export function useAdminOperations() {
   const [tab, setTab] = useState<"APPOINTMENTS" | "PAYMENTS" | "REFUNDS">("APPOINTMENTS");
@@ -118,10 +118,10 @@ export function useAdminOperations() {
       setNotice(null);
       try {
         await adminApi.submitRefund(refundId);
-        setNotice("Refund marked as SUBMITTED.");
+        setNotice("Refund recorded for manual processing.");
         await loadAll();
       } catch (caught) {
-        setError(getErrorMessage(caught, "Could not submit refund."));
+        setError(getErrorMessage(caught, "Could not record refund for manual processing."));
       } finally {
         setBusyId(null);
       }

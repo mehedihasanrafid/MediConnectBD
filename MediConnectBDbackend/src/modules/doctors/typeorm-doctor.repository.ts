@@ -16,6 +16,7 @@ import { Hospital } from "../hospitals/hospital.entity";
 import { MedicalReport } from "../patients/medical-report.entity";
 import { PatientProfile } from "../patients/patient-profile.entity";
 import { Payment } from "../payments/payment.entity";
+import { splitCommission } from "../payments/payment.types";
 import { Prescription } from "../prescriptions/prescription.entity";
 import { Review } from "../reviews/review.entity";
 import { todayInDhaka } from "../scheduling/slot-generator";
@@ -85,14 +86,15 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
 
     for (const payment of payments) {
       const gross = Number(payment.amount);
+      const fallback = splitCommission(payment.amount);
       const commission =
         payment.commissionAmount !== null
           ? Number(payment.commissionAmount)
-          : Number((gross * 0.15).toFixed(2));
+          : Number(fallback.commissionAmount);
       const net =
         payment.netAmount !== null
           ? Number(payment.netAmount)
-          : Number((gross - commission).toFixed(2));
+          : Number(fallback.netAmount);
 
       totalGross += gross;
       totalCommission += commission;

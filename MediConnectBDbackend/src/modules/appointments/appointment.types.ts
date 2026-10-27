@@ -125,6 +125,35 @@ export type TransitionAppointmentStatusResult =
   | { kind: "APPOINTMENT_FORBIDDEN" }
   | { kind: "APPOINTMENT_INVALID_STATE" };
 
+export interface AppointmentVideoEligibilityDetails {
+  appointmentId: string;
+  doctorProfileId: string;
+  patientProfileId: string;
+  doctorName: string;
+  patientName: string;
+  participantRole: "PATIENT" | "DOCTOR";
+  participantName: string;
+  participantIdentity: string;
+  scheduledStartAt: Date;
+  scheduledEndAt: Date;
+  opensAt: Date;
+  closesAt: Date;
+}
+
+export type AppointmentVideoEligibilityResult =
+  | { kind: "OK"; details: AppointmentVideoEligibilityDetails }
+  | { kind: "APPOINTMENT_NOT_FOUND" }
+  | { kind: "APPOINTMENT_FORBIDDEN" }
+  | { kind: "VIDEO_NOT_APPLICABLE" }
+  | { kind: "VIDEO_NOT_CONFIRMED" }
+  | {
+      kind: "VIDEO_WINDOW_CLOSED";
+      opensAt: Date;
+      closesAt: Date;
+      scheduledStartAt: Date;
+      scheduledEndAt: Date;
+    };
+
 export interface VideoSessionView {
   appointmentId: string;
   roomName: string;

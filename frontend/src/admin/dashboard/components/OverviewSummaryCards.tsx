@@ -55,7 +55,7 @@ export function OverviewSummaryCards({ overview }: OverviewSummaryCardsProps) {
 
       <article className={styles.metricCard}>
         <div>
-          <p>Platform Commission (15%)</p>
+          <p>Platform Commission (10%)</p>
           <strong>{formatMoney(overview.payments.commissionAmount)}</strong>
           <span>
             Gross {formatMoney(overview.payments.grossAmount)} · Net {formatMoney(overview.payments.netAmount)}

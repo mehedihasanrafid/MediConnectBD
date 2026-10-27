@@ -111,7 +111,7 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
       </Card>
 
       <Card>
-        <h2>Payments & 15% Commission</h2>
+        <h2>Payments & 10% Commission</h2>
         <dl className="facts">
           <div>
             <dt>Succeeded</dt>
@@ -122,7 +122,7 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
             <dd>{formatMoney(overview.payments.grossAmount)}</dd>
           </div>
           <div>
-            <dt>Commission (15%)</dt>
+            <dt>Commission (10%)</dt>
             <dd>{formatMoney(overview.payments.commissionAmount)}</dd>
           </div>
           <div>

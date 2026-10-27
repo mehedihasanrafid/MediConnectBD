@@ -15,9 +15,11 @@ import styles from "./PaymentPanel.module.css";
 
 export function PaymentPanel({
   appointment,
+  initialPayment,
   onPaymentUpdated,
 }: {
   appointment: Appointment;
+  initialPayment?: Payment | null;
   onPaymentUpdated: () => void;
 }) {
   const { user } = useAuth();
@@ -31,9 +33,13 @@ export function PaymentPanel({
   const [city, setCity] = useState("Dhaka");
   const [postcode, setPostcode] = useState("1209");
 
-  const [payment, setPayment] = useState<Payment | null>(null);
+  const [payment, setPayment] = useState<Payment | null>(initialPayment ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    kind: "success" | "info";
+    text: string;
+  } | null>(null);
 
   const idempotencyKey = `checkout_${appointment.id.replaceAll("-", "")}`;
 
@@ -41,6 +47,7 @@ export function PaymentPanel({
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setStatusMessage(null);
     try {
       const created = await paymentsApi.initiate(
         appointment.id,
@@ -56,7 +63,16 @@ export function PaymentPanel({
       );
       setPayment(created);
       if (created.status === "SUCCEEDED") {
+        setStatusMessage({
+          kind: "success",
+          text: "Payment verified successfully! Your consultation slot is confirmed.",
+        });
         onPaymentUpdated();
+      } else {
+        setStatusMessage({
+          kind: "info",
+          text: "Payment session ready. Complete your payment in the SSLCommerz portal, then click 'I completed payment - verify now'.",
+        });
       }
     } catch (caught) {
       setError(getErrorMessage(caught, "Could not initiate payment checkout."));
@@ -69,10 +85,26 @@ export function PaymentPanel({
     if (!payment) return;
     setBusy(true);
     setError(null);
+    setStatusMessage(null);
     try {
       const refreshed = await paymentsApi.reconcile(payment.id);
       setPayment(refreshed);
-      onPaymentUpdated();
+      if (refreshed.status === "SUCCEEDED") {
+        setStatusMessage({
+          kind: "success",
+          text: "Payment verified successfully! Your consultation slot is confirmed.",
+        });
+        onPaymentUpdated();
+      } else if (refreshed.status === "FAILED") {
+        setError(
+          "Payment verification failed or the transaction was cancelled at the provider. Please try checking out again.",
+        );
+      } else {
+        setStatusMessage({
+          kind: "info",
+          text: "Payment has not been confirmed by the provider yet. If you just completed payment, please wait a moment and click verify again.",
+        });
+      }
     } catch (caught) {
       setError(getErrorMessage(caught, "Could not verify payment status with provider."));
     } finally {
@@ -100,6 +132,7 @@ export function PaymentPanel({
       </div>
 
       {error && <Alert kind="error">{error}</Alert>}
+      {statusMessage && <Alert kind={statusMessage.kind}>{statusMessage.text}</Alert>}
 
       {open && (
         <form onSubmit={handleInitiate} className={styles.formGrid}>
@@ -114,38 +147,47 @@ export function PaymentPanel({
             <Button type="submit" disabled={busy}>
               {busy ? "Connecting gateway…" : `Pay ${formatMoney(appointment.feeAmount)}`}
             </Button>
-            {payment && (
-              <Button type="button" variant="secondary" disabled={busy} onClick={() => void handleReconcile()}>
-                Verify / Reconcile Payment
-              </Button>
-            )}
           </div>
         </form>
       )}
 
       {payment && (
-        <div style={{ marginTop: "0.5rem" }}>
-          <p className="small">
-            Payment {payment.transactionId}:{" "}
-            <Badge tone={payment.status === "SUCCEEDED" ? "success" : "warning"}>
-              {formatStatus(payment.status)}
-            </Badge>
-            {payment.gatewayUrl && payment.status === "INITIATED" && (
-              <>
-                {" "}
-                ·{" "}
+        <div className={styles.statusCard}>
+          <div className={styles.statusHeader}>
+            <p className="small" style={{ margin: 0 }}>
+              Payment <code>{payment.transactionId}</code>:{" "}
+              <Badge tone={payment.status === "SUCCEEDED" ? "success" : "warning"}>
+                {formatStatus(payment.status)}
+              </Badge>
+            </p>
+            {payment.gatewayUrl &&
+              (payment.status === "PENDING" || payment.status === "INITIATED") && (
                 <a
                   href={payment.gatewayUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-primary"
-                  style={{ display: "inline-block", padding: "0.2rem 0.6rem" }}
+                  style={{ display: "inline-block", padding: "0.25rem 0.65rem", textDecoration: "none" }}
                 >
                   Open SSLCommerz portal
                 </a>
-              </>
-            )}
-          </p>
+              )}
+          </div>
+
+          {(payment.status === "PENDING" || payment.status === "INITIATED") && (
+            <div className={styles.verifySection}>
+              <p className="small muted" style={{ margin: "0 0 0.5rem 0" }}>
+                Returned from payment? Click below to verify your transaction with SSLCommerz and confirm your appointment.
+              </p>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void handleReconcile()}
+              >
+                {busy ? "Verifying with provider…" : "I completed payment - verify now"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

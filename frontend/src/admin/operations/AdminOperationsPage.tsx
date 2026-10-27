@@ -1,5 +1,5 @@
 /**
- * Admin operations console for monitoring all appointments, payments (with 15% commission),
+ * Admin operations console for monitoring all appointments, payments (with 10% commission),
  * and processing refund requests.
  */
 

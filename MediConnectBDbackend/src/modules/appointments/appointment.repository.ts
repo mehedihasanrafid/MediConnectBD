@@ -7,6 +7,7 @@
 import type { AppointmentStatus } from "./appointment.entity";
 import type {
   AppointmentView,
+  AppointmentVideoEligibilityResult,
   BookHoldResult,
   CancelAppointmentResult,
   CreateHoldResult,
@@ -59,6 +60,14 @@ export interface AppointmentRepository {
   }): Promise<TransitionAppointmentStatusResult>;
   listPatientAppointments(patientProfileId: string): Promise<AppointmentView[]>;
   listDoctorAppointments(doctorProfileId: string): Promise<DoctorAppointmentView[]>;
+  getAppointmentForVideoSession?(input: {
+    appointmentId: string;
+    actor: {
+      patientProfileId?: string | null | undefined;
+      doctorProfileId?: string | null | undefined;
+    };
+    now: Date;
+  }): Promise<AppointmentVideoEligibilityResult>;
   getVideoSession?(input: {
     appointmentId: string;
     actor: {

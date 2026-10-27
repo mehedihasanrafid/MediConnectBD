@@ -88,5 +88,42 @@ describe("MedicalReportService", () => {
     await expect(
       service.getForDownload(summary.id, { doctorProfileId: unrelatedDoctorId }),
     ).rejects.toMatchObject({ statusCode: 403, code: "MEDICAL_REPORT_FORBIDDEN" });
+
+    await expect(
+      service.getForDownload(summary.id, {}),
+    ).rejects.toMatchObject({ statusCode: 403, code: "MEDICAL_REPORT_FORBIDDEN" });
+
+    await expect(
+      service.getForDownload(randomUUID(), { patientProfileId: patientId }),
+    ).rejects.toMatchObject({ statusCode: 404, code: "MEDICAL_REPORT_NOT_FOUND" });
+  });
+
+  it("validates report size boundaries on upload", async () => {
+    const repo = new FakeMedicalReportRepository();
+    const service = new MedicalReportService(repo);
+    const patientId = randomUUID();
+
+    // Empty content rejected
+    await expect(
+      service.create({
+        patientProfileId: patientId,
+        title: "Empty Report",
+        fileName: "empty.pdf",
+        mimeType: "application/pdf",
+        contentBase64: "",
+      }),
+    ).rejects.toMatchObject({ statusCode: 400, code: "INVALID_REPORT_CONTENT" });
+
+    // Oversized content (> 2 MB) rejected
+    const oversizedBase64 = Buffer.alloc(2.5 * 1024 * 1024).toString("base64");
+    await expect(
+      service.create({
+        patientProfileId: patientId,
+        title: "Large Report",
+        fileName: "large.pdf",
+        mimeType: "application/pdf",
+        contentBase64: oversizedBase64,
+      }),
+    ).rejects.toMatchObject({ statusCode: 413, code: "REPORT_TOO_LARGE" });
   });
 });

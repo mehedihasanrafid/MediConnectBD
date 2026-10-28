@@ -251,86 +251,15 @@
    * comment out the others!
    * ============================================================================ */
 
-  /* --- [OPTION 1: 🌊 Aqua Water] (CURRENTLY ACTIVE) --- */
+  /* Default active primary brand (Aqua Water) */
   --active-primary:            var(--preset-aqua-primary);
   --active-primary-hover:      var(--preset-aqua-primary-hover);
   --active-primary-active:     var(--preset-aqua-primary-active);
   --active-primary-soft:       var(--preset-aqua-primary-soft);
   --active-primary-soft-hover: var(--preset-aqua-primary-soft-hover);
 
-  /* --- [OPTION 2: 🌿 Clinical Teal] (Uncomment to use)
-  --active-primary:            var(--preset-teal-primary);
-  --active-primary-hover:      var(--preset-teal-primary-hover);
-  --active-primary-active:     var(--preset-teal-primary-active);
-  --active-primary-soft:       var(--preset-teal-primary-soft);
-  --active-primary-soft-hover: var(--preset-teal-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 3: 🌌 Midnight Navy] (Uncomment to use)
-  --active-primary:            var(--preset-navy-primary);
-  --active-primary-hover:      var(--preset-navy-primary-hover);
-  --active-primary-active:     var(--preset-navy-primary-active);
-  --active-primary-soft:       var(--preset-navy-primary-soft);
-  --active-primary-soft-hover: var(--preset-navy-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 4: 🌲 Emerald Healthcare] (Uncomment to use)
-  --active-primary:            var(--preset-emerald-primary);
-  --active-primary-hover:      var(--preset-emerald-primary-hover);
-  --active-primary-active:     var(--preset-emerald-primary-active);
-  --active-primary-soft:       var(--preset-emerald-primary-soft);
-  --active-primary-soft-hover: var(--preset-emerald-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 5: 💎 Royal Blue] (Uncomment to use)
-  --active-primary:            var(--preset-blue-primary);
-  --active-primary-hover:      var(--preset-blue-primary-hover);
-  --active-primary-active:     var(--preset-blue-primary-active);
-  --active-primary-soft:       var(--preset-blue-primary-soft);
-  --active-primary-soft-hover: var(--preset-blue-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 6: 🖤 Charcoal Minimalist] (Uncomment to use)
-  --active-primary:            var(--preset-charcoal-primary);
-  --active-primary-hover:      var(--preset-charcoal-primary-hover);
-  --active-primary-active:     var(--preset-charcoal-primary-active);
-  --active-primary-soft:       var(--preset-charcoal-primary-soft);
-  --active-primary-soft-hover: var(--preset-charcoal-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 7: 🔮 Amethyst Violet] (Uncomment to use)
-  --active-primary:            var(--preset-amethyst-primary);
-  --active-primary-hover:      var(--preset-amethyst-primary-hover);
-  --active-primary-active:     var(--preset-amethyst-primary-active);
-  --active-primary-soft:       var(--preset-amethyst-primary-soft);
-  --active-primary-soft-hover: var(--preset-amethyst-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 8: 🌅 Sunset Coral] (Uncomment to use)
-  --active-primary:            var(--preset-coral-primary);
-  --active-primary-hover:      var(--preset-coral-primary-hover);
-  --active-primary-active:     var(--preset-coral-primary-active);
-  --active-primary-soft:       var(--preset-coral-primary-soft);
-  --active-primary-soft-hover: var(--preset-coral-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 9: ⚡ Amber Daylight] (Uncomment to use)
-  --active-primary:            var(--preset-amber-primary);
-  --active-primary-hover:      var(--preset-amber-primary-hover);
-  --active-primary-active:     var(--preset-amber-primary-active);
-  --active-primary-soft:       var(--preset-amber-primary-soft);
-  --active-primary-soft-hover: var(--preset-amber-primary-soft-hover);
-  --- */
-
-  /* --- [OPTION 10: ❄️ Arctic Glacier] (Uncomment to use)
-  --active-primary:            var(--preset-arctic-primary);
-  --active-primary-hover:      var(--preset-arctic-primary-hover);
-  --active-primary-active:     var(--preset-arctic-primary-active);
-  --active-primary-soft:       var(--preset-arctic-primary-soft);
-  --active-primary-soft-hover: var(--preset-arctic-primary-soft-hover);
-  --- */
-
   /* Shared static primitive palettes */
+
   --slate-0: #ffffff;
   --slate-25: #fafcfc;
   --slate-50: #f4f7f7;
@@ -513,21 +442,96 @@
 }
 
 /* ==============================================================================
- * 🌙 DARK THEME CONFIGURATION (10 READY-TO-USE CHOICES)
- * ------------------------------------------------------------------------------
- * HOW TO SWITCH:
- * 1. Put /* and * / around THEME 1.
- * 2. Remove /* and * / from any of THEMES 2 through 10!
- * 3. Save (Ctrl+S). The browser updates immediately!
+ * ☀️ LIGHT THEME COLOR PRESETS (Applied via [data-preset="..."])
+ * ============================================================================== */
+[data-preset="aqua"] {
+  --active-primary:            var(--preset-aqua-primary);
+  --active-primary-hover:      var(--preset-aqua-primary-hover);
+  --active-primary-active:     var(--preset-aqua-primary-active);
+  --active-primary-soft:       var(--preset-aqua-primary-soft);
+  --active-primary-soft-hover: var(--preset-aqua-primary-soft-hover);
+}
+
+[data-preset="teal"] {
+  --active-primary:            var(--preset-teal-primary);
+  --active-primary-hover:      var(--preset-teal-primary-hover);
+  --active-primary-active:     var(--preset-teal-primary-active);
+  --active-primary-soft:       var(--preset-teal-primary-soft);
+  --active-primary-soft-hover: var(--preset-teal-primary-soft-hover);
+}
+
+[data-preset="navy"] {
+  --active-primary:            var(--preset-navy-primary);
+  --active-primary-hover:      var(--preset-navy-primary-hover);
+  --active-primary-active:     var(--preset-navy-primary-active);
+  --active-primary-soft:       var(--preset-navy-primary-soft);
+  --active-primary-soft-hover: var(--preset-navy-primary-soft-hover);
+}
+
+[data-preset="emerald"] {
+  --active-primary:            var(--preset-emerald-primary);
+  --active-primary-hover:      var(--preset-emerald-primary-hover);
+  --active-primary-active:     var(--preset-emerald-primary-active);
+  --active-primary-soft:       var(--preset-emerald-primary-soft);
+  --active-primary-soft-hover: var(--preset-emerald-primary-soft-hover);
+}
+
+[data-preset="blue"] {
+  --active-primary:            var(--preset-blue-primary);
+  --active-primary-hover:      var(--preset-blue-primary-hover);
+  --active-primary-active:     var(--preset-blue-primary-active);
+  --active-primary-soft:       var(--preset-blue-primary-soft);
+  --active-primary-soft-hover: var(--preset-blue-primary-soft-hover);
+}
+
+[data-preset="charcoal"] {
+  --active-primary:            var(--preset-charcoal-primary);
+  --active-primary-hover:      var(--preset-charcoal-primary-hover);
+  --active-primary-active:     var(--preset-charcoal-primary-active);
+  --active-primary-soft:       var(--preset-charcoal-primary-soft);
+  --active-primary-soft-hover: var(--preset-charcoal-primary-soft-hover);
+}
+
+[data-preset="amethyst"] {
+  --active-primary:            var(--preset-amethyst-primary);
+  --active-primary-hover:      var(--preset-amethyst-primary-hover);
+  --active-primary-active:     var(--preset-amethyst-primary-active);
+  --active-primary-soft:       var(--preset-amethyst-primary-soft);
+  --active-primary-soft-hover: var(--preset-amethyst-primary-soft-hover);
+}
+
+[data-preset="coral"] {
+  --active-primary:            var(--preset-coral-primary);
+  --active-primary-hover:      var(--preset-coral-primary-hover);
+  --active-primary-active:     var(--preset-coral-primary-active);
+  --active-primary-soft:       var(--preset-coral-primary-soft);
+  --active-primary-soft-hover: var(--preset-coral-primary-soft-hover);
+}
+
+[data-preset="amber"] {
+  --active-primary:            var(--preset-amber-primary);
+  --active-primary-hover:      var(--preset-amber-primary-hover);
+  --active-primary-active:     var(--preset-amber-primary-active);
+  --active-primary-soft:       var(--preset-amber-primary-soft);
+  --active-primary-soft-hover: var(--preset-amber-primary-soft-hover);
+}
+
+[data-preset="arctic"] {
+  --active-primary:            var(--preset-arctic-primary);
+  --active-primary-hover:      var(--preset-arctic-primary-hover);
+  --active-primary-active:     var(--preset-arctic-primary-active);
+  --active-primary-soft:       var(--preset-arctic-primary-soft);
+  --active-primary-soft-hover: var(--preset-arctic-primary-soft-hover);
+}
+
+/* ==============================================================================
+ * 🌙 DARK THEME CONFIGURATION (DEFAULT BASE)
  * ============================================================================== */
 [data-theme="dark"] {
-  /* ⚠️ DO NOT TOUCH THIS LINE (keeps dark scrollbars & native inputs dark) */
+  /* ⚠️ Keeps dark scrollbars & native inputs dark */
   color-scheme: dark;
 
-  /* ============================================================================
-   * 🌊 THEME 1: MODERN AQUA WATER (CURRENTLY ACTIVE)
-   * Inspired by crystalline water, deep oceanic navy, and glowing cyan accents.
-   * ============================================================================ */
+  /* Default Dark Mode (Aqua Water) */
   --color-bg:             var(--preset-aqua-dark-bg);
   --color-bg-subtle:      var(--preset-aqua-dark-bg-subtle);
   --color-surface:        var(--preset-aqua-dark-surface);
@@ -542,176 +546,14 @@
   --color-primary-soft-hover: var(--preset-aqua-dark-primary-soft-hover);
   --color-on-primary:     var(--preset-aqua-dark-on-primary);
 
-  /* ============================================================================
-   * 🌿 THEME 2: CLINICAL TEAL (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-teal-dark-bg);
-  --color-bg-subtle:      var(--preset-teal-dark-bg-subtle);
-  --color-surface:        var(--preset-teal-dark-surface);
-  --color-surface-raised: var(--preset-teal-dark-surface-raised);
-  --color-surface-sunken: var(--preset-teal-dark-surface-sunken);
-  --color-border:         var(--preset-teal-dark-border);
-  --color-border-strong:  var(--preset-teal-dark-border-strong);
-  --color-primary:        var(--preset-teal-dark-primary);
-  --color-primary-hover:  var(--preset-teal-dark-primary-hover);
-  --color-primary-active: var(--preset-teal-dark-primary-active);
-  --color-primary-soft:   var(--preset-teal-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-teal-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-teal-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 🌌 THEME 3: MIDNIGHT NAVY (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-navy-dark-bg);
-  --color-bg-subtle:      var(--preset-navy-dark-bg-subtle);
-  --color-surface:        var(--preset-navy-dark-surface);
-  --color-surface-raised: var(--preset-navy-dark-surface-raised);
-  --color-surface-sunken: var(--preset-navy-dark-surface-sunken);
-  --color-border:         var(--preset-navy-dark-border);
-  --color-border-strong:  var(--preset-navy-dark-border-strong);
-  --color-primary:        var(--preset-navy-dark-primary);
-  --color-primary-hover:  var(--preset-navy-dark-primary-hover);
-  --color-primary-active: var(--preset-navy-dark-primary-active);
-  --color-primary-soft:   var(--preset-navy-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-navy-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-navy-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 🌲 THEME 4: EMERALD HEALTHCARE (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-emerald-dark-bg);
-  --color-bg-subtle:      var(--preset-emerald-dark-bg-subtle);
-  --color-surface:        var(--preset-emerald-dark-surface);
-  --color-surface-raised: var(--preset-emerald-dark-surface-raised);
-  --color-surface-sunken: var(--preset-emerald-dark-surface-sunken);
-  --color-border:         var(--preset-emerald-dark-border);
-  --color-border-strong:  var(--preset-emerald-dark-border-strong);
-  --color-primary:        var(--preset-emerald-dark-primary);
-  --color-primary-hover:  var(--preset-emerald-dark-primary-hover);
-  --color-primary-active: var(--preset-emerald-dark-primary-active);
-  --color-primary-soft:   var(--preset-emerald-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-emerald-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-emerald-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 💎 THEME 5: ROYAL CLINICAL BLUE (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-blue-dark-bg);
-  --color-bg-subtle:      var(--preset-blue-dark-bg-subtle);
-  --color-surface:        var(--preset-blue-dark-surface);
-  --color-surface-raised: var(--preset-blue-dark-surface-raised);
-  --color-surface-sunken: var(--preset-blue-dark-surface-sunken);
-  --color-border:         var(--preset-blue-dark-border);
-  --color-border-strong:  var(--preset-blue-dark-border-strong);
-  --color-primary:        var(--preset-blue-dark-primary);
-  --color-primary-hover:  var(--preset-blue-dark-primary-hover);
-  --color-primary-active: var(--preset-blue-dark-primary-active);
-  --color-primary-soft:   var(--preset-blue-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-blue-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-blue-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 🖤 THEME 6: CHARCOAL MINIMALIST (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-charcoal-dark-bg);
-  --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
-  --color-surface:        var(--preset-charcoal-dark-surface);
-  --color-surface-raised: var(--preset-charcoal-dark-surface-raised);
-  --color-surface-sunken: var(--preset-charcoal-dark-surface-sunken);
-  --color-border:         var(--preset-charcoal-dark-border);
-  --color-border-strong:  var(--preset-charcoal-dark-border-strong);
-  --color-primary:        var(--preset-charcoal-dark-primary);
-  --color-primary-hover:  var(--preset-charcoal-dark-primary-hover);
-  --color-primary-active: var(--preset-charcoal-dark-primary-active);
-  --color-primary-soft:   var(--preset-charcoal-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-charcoal-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-charcoal-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 🔮 THEME 7: AMETHYST VIOLET (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-amethyst-dark-bg);
-  --color-bg-subtle:      var(--preset-amethyst-dark-bg-subtle);
-  --color-surface:        var(--preset-amethyst-dark-surface);
-  --color-surface-raised: var(--preset-amethyst-dark-surface-raised);
-  --color-surface-sunken: var(--preset-amethyst-dark-surface-sunken);
-  --color-border:         var(--preset-amethyst-dark-border);
-  --color-border-strong:  var(--preset-amethyst-dark-border-strong);
-  --color-primary:        var(--preset-amethyst-dark-primary);
-  --color-primary-hover:  var(--preset-amethyst-dark-primary-hover);
-  --color-primary-active: var(--preset-amethyst-dark-primary-active);
-  --color-primary-soft:   var(--preset-amethyst-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-amethyst-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-amethyst-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * 🌅 THEME 8: SUNSET CORAL (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-coral-dark-bg);
-  --color-bg-subtle:      var(--preset-coral-dark-bg-subtle);
-  --color-surface:        var(--preset-coral-dark-surface);
-  --color-surface-raised: var(--preset-coral-dark-surface-raised);
-  --color-surface-sunken: var(--preset-coral-dark-surface-sunken);
-  --color-border:         var(--preset-coral-dark-border);
-  --color-border-strong:  var(--preset-coral-dark-border-strong);
-  --color-primary:        var(--preset-coral-dark-primary);
-  --color-primary-hover:  var(--preset-coral-dark-primary-hover);
-  --color-primary-active: var(--preset-coral-dark-primary-active);
-  --color-primary-soft:   var(--preset-coral-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-coral-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-coral-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * ⚡ THEME 9: AMBER DAYLIGHT (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-amber-dark-bg);
-  --color-bg-subtle:      var(--preset-amber-dark-bg-subtle);
-  --color-surface:        var(--preset-amber-dark-surface);
-  --color-surface-raised: var(--preset-amber-dark-surface-raised);
-  --color-surface-sunken: var(--preset-amber-dark-surface-sunken);
-  --color-border:         var(--preset-amber-dark-border);
-  --color-border-strong:  var(--preset-amber-dark-border-strong);
-  --color-primary:        var(--preset-amber-dark-primary);
-  --color-primary-hover:  var(--preset-amber-dark-primary-hover);
-  --color-primary-active: var(--preset-amber-dark-primary-active);
-  --color-primary-soft:   var(--preset-amber-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-amber-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-amber-dark-on-primary);
-  ============================================================================ */
-
-  /* ============================================================================
-   * ❄️ THEME 10: ARCTIC GLACIER (Uncomment to use)
-   * ============================================================================
-  --color-bg:             var(--preset-arctic-dark-bg);
-  --color-bg-subtle:      var(--preset-arctic-dark-bg-subtle);
-  --color-surface:        var(--preset-arctic-dark-surface);
-  --color-surface-raised: var(--preset-arctic-dark-surface-raised);
-  --color-surface-sunken: var(--preset-arctic-dark-surface-sunken);
-  --color-border:         var(--preset-arctic-dark-border);
-  --color-border-strong:  var(--preset-arctic-dark-border-strong);
-  --color-primary:        var(--preset-arctic-dark-primary);
-  --color-primary-hover:  var(--preset-arctic-dark-primary-hover);
-  --color-primary-active: var(--preset-arctic-dark-primary-active);
-  --color-primary-soft:   var(--preset-arctic-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-arctic-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-arctic-dark-on-primary);
-  ============================================================================ */
-
-  /* Text & Overlays */
+  /* Shared Dark Text & Overlays */
   --color-overlay:        rgb(0 0 0 / 0.65);
   --color-text:           #e6f0ee;
   --color-text-muted:     #9fb3af;
   --color-text-subtle:    #7d928e;
   --color-text-inverse:   var(--slate-900);
 
-  /* Status Colors (Adjusted for high dark contrast) */
+  /* Shared Dark Status Colors */
   --color-success:        #4ade80;
   --color-success-soft:   #0f2a1a;
   --color-success-border: #1f4d31;
@@ -740,4 +582,178 @@
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5);
   --shadow-md: 0 8px 24px rgb(0 0 0 / 0.5);
   --shadow-lg: 0 16px 40px rgb(0 0 0 / 0.6);
+}
+
+/* ==============================================================================
+ * 🌙 DARK THEME PRESETS (10 Ready-to-Use UI Choices)
+ * ============================================================================== */
+
+/* 🌊 THEME 1: Modern Aqua Water */
+[data-theme="dark"][data-preset="aqua"] {
+  --color-bg:             var(--preset-aqua-dark-bg);
+  --color-bg-subtle:      var(--preset-aqua-dark-bg-subtle);
+  --color-surface:        var(--preset-aqua-dark-surface);
+  --color-surface-raised: var(--preset-aqua-dark-surface-raised);
+  --color-surface-sunken: var(--preset-aqua-dark-surface-sunken);
+  --color-border:         var(--preset-aqua-dark-border);
+  --color-border-strong:  var(--preset-aqua-dark-border-strong);
+  --color-primary:        var(--preset-aqua-dark-primary);
+  --color-primary-hover:  var(--preset-aqua-dark-primary-hover);
+  --color-primary-active: var(--preset-aqua-dark-primary-active);
+  --color-primary-soft:   var(--preset-aqua-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-aqua-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-aqua-dark-on-primary);
+}
+
+/* 🌿 THEME 2: Clinical Teal */
+[data-theme="dark"][data-preset="teal"] {
+  --color-bg:             var(--preset-teal-dark-bg);
+  --color-bg-subtle:      var(--preset-teal-dark-bg-subtle);
+  --color-surface:        var(--preset-teal-dark-surface);
+  --color-surface-raised: var(--preset-teal-dark-surface-raised);
+  --color-surface-sunken: var(--preset-teal-dark-surface-sunken);
+  --color-border:         var(--preset-teal-dark-border);
+  --color-border-strong:  var(--preset-teal-dark-border-strong);
+  --color-primary:        var(--preset-teal-dark-primary);
+  --color-primary-hover:  var(--preset-teal-dark-primary-hover);
+  --color-primary-active: var(--preset-teal-dark-primary-active);
+  --color-primary-soft:   var(--preset-teal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-teal-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-teal-dark-on-primary);
+}
+
+/* 🌌 THEME 3: Midnight Navy */
+[data-theme="dark"][data-preset="navy"] {
+  --color-bg:             var(--preset-navy-dark-bg);
+  --color-bg-subtle:      var(--preset-navy-dark-bg-subtle);
+  --color-surface:        var(--preset-navy-dark-surface);
+  --color-surface-raised: var(--preset-navy-dark-surface-raised);
+  --color-surface-sunken: var(--preset-navy-dark-surface-sunken);
+  --color-border:         var(--preset-navy-dark-border);
+  --color-border-strong:  var(--preset-navy-dark-border-strong);
+  --color-primary:        var(--preset-navy-dark-primary);
+  --color-primary-hover:  var(--preset-navy-dark-primary-hover);
+  --color-primary-active: var(--preset-navy-dark-primary-active);
+  --color-primary-soft:   var(--preset-navy-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-navy-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-navy-dark-on-primary);
+}
+
+/* 🌲 THEME 4: Emerald Healthcare */
+[data-theme="dark"][data-preset="emerald"] {
+  --color-bg:             var(--preset-emerald-dark-bg);
+  --color-bg-subtle:      var(--preset-emerald-dark-bg-subtle);
+  --color-surface:        var(--preset-emerald-dark-surface);
+  --color-surface-raised: var(--preset-emerald-dark-surface-raised);
+  --color-surface-sunken: var(--preset-emerald-dark-surface-sunken);
+  --color-border:         var(--preset-emerald-dark-border);
+  --color-border-strong:  var(--preset-emerald-dark-border-strong);
+  --color-primary:        var(--preset-emerald-dark-primary);
+  --color-primary-hover:  var(--preset-emerald-dark-primary-hover);
+  --color-primary-active: var(--preset-emerald-dark-primary-active);
+  --color-primary-soft:   var(--preset-emerald-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-emerald-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-emerald-dark-on-primary);
+}
+
+/* 💎 THEME 5: Royal Clinical Blue */
+[data-theme="dark"][data-preset="blue"] {
+  --color-bg:             var(--preset-blue-dark-bg);
+  --color-bg-subtle:      var(--preset-blue-dark-bg-subtle);
+  --color-surface:        var(--preset-blue-dark-surface);
+  --color-surface-raised: var(--preset-blue-dark-surface-raised);
+  --color-surface-sunken: var(--preset-blue-dark-surface-sunken);
+  --color-border:         var(--preset-blue-dark-border);
+  --color-border-strong:  var(--preset-blue-dark-border-strong);
+  --color-primary:        var(--preset-blue-dark-primary);
+  --color-primary-hover:  var(--preset-blue-dark-primary-hover);
+  --color-primary-active: var(--preset-blue-dark-primary-active);
+  --color-primary-soft:   var(--preset-blue-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-blue-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-blue-dark-on-primary);
+}
+
+/* 🖤 THEME 6: Charcoal Minimalist */
+[data-theme="dark"][data-preset="charcoal"] {
+  --color-bg:             var(--preset-charcoal-dark-bg);
+  --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
+  --color-surface:        var(--preset-charcoal-dark-surface);
+  --color-surface-raised: var(--preset-charcoal-dark-surface-raised);
+  --color-surface-sunken: var(--preset-charcoal-dark-surface-sunken);
+  --color-border:         var(--preset-charcoal-dark-border);
+  --color-border-strong:  var(--preset-charcoal-dark-border-strong);
+  --color-primary:        var(--preset-charcoal-dark-primary);
+  --color-primary-hover:  var(--preset-charcoal-dark-primary-hover);
+  --color-primary-active: var(--preset-charcoal-dark-primary-active);
+  --color-primary-soft:   var(--preset-charcoal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-charcoal-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-charcoal-dark-on-primary);
+}
+
+/* 🔮 THEME 7: Amethyst Violet */
+[data-theme="dark"][data-preset="amethyst"] {
+  --color-bg:             var(--preset-amethyst-dark-bg);
+  --color-bg-subtle:      var(--preset-amethyst-dark-bg-subtle);
+  --color-surface:        var(--preset-amethyst-dark-surface);
+  --color-surface-raised: var(--preset-amethyst-dark-surface-raised);
+  --color-surface-sunken: var(--preset-amethyst-dark-surface-sunken);
+  --color-border:         var(--preset-amethyst-dark-border);
+  --color-border-strong:  var(--preset-amethyst-dark-border-strong);
+  --color-primary:        var(--preset-amethyst-dark-primary);
+  --color-primary-hover:  var(--preset-amethyst-dark-primary-hover);
+  --color-primary-active: var(--preset-amethyst-dark-primary-active);
+  --color-primary-soft:   var(--preset-amethyst-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-amethyst-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-amethyst-dark-on-primary);
+}
+
+/* 🌅 THEME 8: Sunset Coral */
+[data-theme="dark"][data-preset="coral"] {
+  --color-bg:             var(--preset-coral-dark-bg);
+  --color-bg-subtle:      var(--preset-coral-dark-bg-subtle);
+  --color-surface:        var(--preset-coral-dark-surface);
+  --color-surface-raised: var(--preset-coral-dark-surface-raised);
+  --color-surface-sunken: var(--preset-coral-dark-surface-sunken);
+  --color-border:         var(--preset-coral-dark-border);
+  --color-border-strong:  var(--preset-coral-dark-border-strong);
+  --color-primary:        var(--preset-coral-dark-primary);
+  --color-primary-hover:  var(--preset-coral-dark-primary-hover);
+  --color-primary-active: var(--preset-coral-dark-primary-active);
+  --color-primary-soft:   var(--preset-coral-primary-soft);
+  --color-primary-soft-hover: var(--preset-coral-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-coral-dark-on-primary);
+}
+
+/* ⚡ THEME 9: Amber Daylight */
+[data-theme="dark"][data-preset="amber"] {
+  --color-bg:             var(--preset-amber-dark-bg);
+  --color-bg-subtle:      var(--preset-amber-dark-bg-subtle);
+  --color-surface:        var(--preset-amber-dark-surface);
+  --color-surface-raised: var(--preset-amber-dark-surface-raised);
+  --color-surface-sunken: var(--preset-amber-dark-surface-sunken);
+  --color-border:         var(--preset-amber-dark-border);
+  --color-border-strong:  var(--preset-amber-dark-border-strong);
+  --color-primary:        var(--preset-amber-dark-primary);
+  --color-primary-hover:  var(--preset-amber-dark-primary-hover);
+  --color-primary-active: var(--preset-amber-dark-primary-active);
+  --color-primary-soft:   var(--preset-amber-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-amber-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-amber-dark-on-primary);
+}
+
+/* ❄️ THEME 10: Arctic Glacier */
+[data-theme="dark"][data-preset="arctic"] {
+  --color-bg:             var(--preset-arctic-dark-bg);
+  --color-bg-subtle:      var(--preset-arctic-dark-bg-subtle);
+  --color-surface:        var(--preset-arctic-dark-surface);
+  --color-surface-raised: var(--preset-arctic-dark-surface-raised);
+  --color-surface-sunken: var(--preset-arctic-dark-surface-sunken);
+  --color-border:         var(--preset-arctic-dark-border);
+  --color-border-strong:  var(--preset-arctic-dark-border-strong);
+  --color-primary:        var(--preset-arctic-dark-primary);
+  --color-primary-hover:  var(--preset-arctic-dark-primary-hover);
+  --color-primary-active: var(--preset-arctic-dark-primary-active);
+  --color-primary-soft:   var(--preset-arctic-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-arctic-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-arctic-dark-on-primary);
 }

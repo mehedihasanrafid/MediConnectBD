@@ -10,7 +10,7 @@
 
 :root {
   /* ============================================================================
-   * 🎨 THEME PRESET LIBRARY
+   * 🎨 THEME PRESET LIBRARY (10 Curated Palettes)
    * ============================================================================ */
 
   /* ----------------------------------------------------------------------------
@@ -84,7 +84,7 @@
   --preset-navy-dark-on-primary: #082f49;
 
   /* ----------------------------------------------------------------------------
-   * PRESET 4: 🌿 "Emerald Healthcare" (Warm Botanical Organic Green)
+   * PRESET 4: 🌲 "Emerald Healthcare" (Warm Botanical Organic Green)
    * ---------------------------------------------------------------------------- */
   --preset-emerald-primary: #059669;
   --preset-emerald-primary-hover: #047857;
@@ -152,20 +152,113 @@
   --preset-charcoal-dark-primary-soft-hover: #1f4845;
   --preset-charcoal-dark-on-primary: #042f2e;
 
+  /* ----------------------------------------------------------------------------
+   * PRESET 7: 🔮 "Amethyst Violet" (Modern Neurology & Luxury Care)
+   * ---------------------------------------------------------------------------- */
+  --preset-amethyst-primary: #7c3aed;
+  --preset-amethyst-primary-hover: #6d28d9;
+  --preset-amethyst-primary-active: #5b21b6;
+  --preset-amethyst-primary-soft: #f5f3ff;
+  --preset-amethyst-primary-soft-hover: #ede9fe;
+
+  --preset-amethyst-dark-bg: #100b1a;
+  --preset-amethyst-dark-bg-subtle: #171026;
+  --preset-amethyst-dark-surface: #1d1430;
+  --preset-amethyst-dark-surface-raised: #261b40;
+  --preset-amethyst-dark-surface-sunken: #0a0712;
+  --preset-amethyst-dark-border: #2d1f4a;
+  --preset-amethyst-dark-border-strong: #412d6a;
+  --preset-amethyst-dark-primary: #a78bfa;
+  --preset-amethyst-dark-primary-hover: #c4b5fd;
+  --preset-amethyst-dark-primary-active: #ddd6fe;
+  --preset-amethyst-dark-primary-soft: #261642;
+  --preset-amethyst-dark-primary-soft-hover: #361f5c;
+  --preset-amethyst-dark-on-primary: #1e1136;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 8: 🌅 "Sunset Coral" (Warm Compassionate Care / Pediatrics)
+   * ---------------------------------------------------------------------------- */
+  --preset-coral-primary: #e11d48;
+  --preset-coral-primary-hover: #be123c;
+  --preset-coral-primary-active: #9f1239;
+  --preset-coral-primary-soft: #fff1f2;
+  --preset-coral-primary-soft-hover: #ffe4e6;
+
+  --preset-coral-dark-bg: #180b0e;
+  --preset-coral-dark-bg-subtle: #221015;
+  --preset-coral-dark-surface: #2b141a;
+  --preset-coral-dark-surface-raised: #381a23;
+  --preset-coral-dark-surface-sunken: #110709;
+  --preset-coral-dark-border: #441f2a;
+  --preset-coral-dark-border-strong: #5e2a39;
+  --preset-coral-dark-primary: #fb7185;
+  --preset-coral-dark-primary-hover: #fda4af;
+  --preset-coral-dark-primary-active: #fecdd3;
+  --preset-coral-dark-primary-soft: #38141e;
+  --preset-coral-dark-primary-soft-hover: #4e1c2b;
+  --preset-coral-dark-on-primary: #2d0912;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 9: ⚡ "Amber Daylight" (Warm Golden Radiance / Wellness)
+   * ---------------------------------------------------------------------------- */
+  --preset-amber-primary: #d97706;
+  --preset-amber-primary-hover: #b45309;
+  --preset-amber-primary-active: #92400e;
+  --preset-amber-primary-soft: #fffbeb;
+  --preset-amber-primary-soft-hover: #fef3c7;
+
+  --preset-amber-dark-bg: #161108;
+  --preset-amber-dark-bg-subtle: #20190c;
+  --preset-amber-dark-surface: #2a2110;
+  --preset-amber-dark-surface-raised: #382c16;
+  --preset-amber-dark-surface-sunken: #0e0a04;
+  --preset-amber-dark-border: #423419;
+  --preset-amber-dark-border-strong: #5c4823;
+  --preset-amber-dark-primary: #fbbf24;
+  --preset-amber-dark-primary-hover: #fcd34d;
+  --preset-amber-dark-primary-active: #fde68a;
+  --preset-amber-dark-primary-soft: #38290a;
+  --preset-amber-dark-primary-soft-hover: #4e390e;
+  --preset-amber-dark-on-primary: #261902;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 10: ❄️ "Arctic Glacier" (Ultra Crisp Frost Ice-Blue)
+   * ---------------------------------------------------------------------------- */
+  --preset-arctic-primary: #0284c7;
+  --preset-arctic-primary-hover: #0369a1;
+  --preset-arctic-primary-active: #075985;
+  --preset-arctic-primary-soft: #f0f9ff;
+  --preset-arctic-primary-soft-hover: #e0f2fe;
+
+  --preset-arctic-dark-bg: #081017;
+  --preset-arctic-dark-bg-subtle: #0e1924;
+  --preset-arctic-dark-surface: #132230;
+  --preset-arctic-dark-surface-raised: #1b2e40;
+  --preset-arctic-dark-surface-sunken: #050a0f;
+  --preset-arctic-dark-border: #1e3950;
+  --preset-arctic-dark-border-strong: #2a4e6e;
+  --preset-arctic-dark-primary: #7dd3fc;
+  --preset-arctic-dark-primary-hover: #bae6fd;
+  --preset-arctic-dark-primary-active: #e0f2fe;
+  --preset-arctic-dark-primary-soft: #123247;
+  --preset-arctic-dark-primary-soft-hover: #194663;
+  --preset-arctic-dark-on-primary: #052336;
+
   /* ============================================================================
-   * ☀️ LIGHT THEME ACCENT COLOR SELECTION
+   * ☀️ LIGHT THEME ACCENT COLOR SELECTION (10 CHOICES)
    * ----------------------------------------------------------------------------
-   * To switch light accent, uncomment one block and comment out the others:
+   * To switch light accent, remove slash-stars on the one you want and
+   * comment out the others!
    * ============================================================================ */
 
-  /* --- [LIGHT OPTION 1: 🌊 Aqua Water] (ACTIVE) --- */
+  /* --- [OPTION 1: 🌊 Aqua Water] (CURRENTLY ACTIVE) --- */
   --active-primary:            var(--preset-aqua-primary);
   --active-primary-hover:      var(--preset-aqua-primary-hover);
   --active-primary-active:     var(--preset-aqua-primary-active);
   --active-primary-soft:       var(--preset-aqua-primary-soft);
   --active-primary-soft-hover: var(--preset-aqua-primary-soft-hover);
 
-  /* --- [LIGHT OPTION 2: 🌿 Clinical Teal] (Uncomment to use)
+  /* --- [OPTION 2: 🌿 Clinical Teal] (Uncomment to use)
   --active-primary:            var(--preset-teal-primary);
   --active-primary-hover:      var(--preset-teal-primary-hover);
   --active-primary-active:     var(--preset-teal-primary-active);
@@ -173,7 +266,7 @@
   --active-primary-soft-hover: var(--preset-teal-primary-soft-hover);
   --- */
 
-  /* --- [LIGHT OPTION 3: 🌌 Midnight Navy] (Uncomment to use)
+  /* --- [OPTION 3: 🌌 Midnight Navy] (Uncomment to use)
   --active-primary:            var(--preset-navy-primary);
   --active-primary-hover:      var(--preset-navy-primary-hover);
   --active-primary-active:     var(--preset-navy-primary-active);
@@ -181,12 +274,60 @@
   --active-primary-soft-hover: var(--preset-navy-primary-soft-hover);
   --- */
 
-  /* --- [LIGHT OPTION 4: 💎 Royal Blue] (Uncomment to use)
+  /* --- [OPTION 4: 🌲 Emerald Healthcare] (Uncomment to use)
+  --active-primary:            var(--preset-emerald-primary);
+  --active-primary-hover:      var(--preset-emerald-primary-hover);
+  --active-primary-active:     var(--preset-emerald-primary-active);
+  --active-primary-soft:       var(--preset-emerald-primary-soft);
+  --active-primary-soft-hover: var(--preset-emerald-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 5: 💎 Royal Blue] (Uncomment to use)
   --active-primary:            var(--preset-blue-primary);
   --active-primary-hover:      var(--preset-blue-primary-hover);
   --active-primary-active:     var(--preset-blue-primary-active);
   --active-primary-soft:       var(--preset-blue-primary-soft);
   --active-primary-soft-hover: var(--preset-blue-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 6: 🖤 Charcoal Minimalist] (Uncomment to use)
+  --active-primary:            var(--preset-charcoal-primary);
+  --active-primary-hover:      var(--preset-charcoal-primary-hover);
+  --active-primary-active:     var(--preset-charcoal-primary-active);
+  --active-primary-soft:       var(--preset-charcoal-primary-soft);
+  --active-primary-soft-hover: var(--preset-charcoal-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 7: 🔮 Amethyst Violet] (Uncomment to use)
+  --active-primary:            var(--preset-amethyst-primary);
+  --active-primary-hover:      var(--preset-amethyst-primary-hover);
+  --active-primary-active:     var(--preset-amethyst-primary-active);
+  --active-primary-soft:       var(--preset-amethyst-primary-soft);
+  --active-primary-soft-hover: var(--preset-amethyst-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 8: 🌅 Sunset Coral] (Uncomment to use)
+  --active-primary:            var(--preset-coral-primary);
+  --active-primary-hover:      var(--preset-coral-primary-hover);
+  --active-primary-active:     var(--preset-coral-primary-active);
+  --active-primary-soft:       var(--preset-coral-primary-soft);
+  --active-primary-soft-hover: var(--preset-coral-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 9: ⚡ Amber Daylight] (Uncomment to use)
+  --active-primary:            var(--preset-amber-primary);
+  --active-primary-hover:      var(--preset-amber-primary-hover);
+  --active-primary-active:     var(--preset-amber-primary-active);
+  --active-primary-soft:       var(--preset-amber-primary-soft);
+  --active-primary-soft-hover: var(--preset-amber-primary-soft-hover);
+  --- */
+
+  /* --- [OPTION 10: ❄️ Arctic Glacier] (Uncomment to use)
+  --active-primary:            var(--preset-arctic-primary);
+  --active-primary-hover:      var(--preset-arctic-primary-hover);
+  --active-primary-active:     var(--preset-arctic-primary-active);
+  --active-primary-soft:       var(--preset-arctic-primary-soft);
+  --active-primary-soft-hover: var(--preset-arctic-primary-soft-hover);
   --- */
 
   /* Shared static primitive palettes */
@@ -372,17 +513,15 @@
 }
 
 /* ==============================================================================
- * 🌙 DARK THEME CONFIGURATION
+ * 🌙 DARK THEME CONFIGURATION (10 READY-TO-USE CHOICES)
  * ------------------------------------------------------------------------------
- * HOW TO SWITCH DARK THEMES:
- * 5 complete theme choices are written below.
- * ONE theme is active (without slash-stars).
- * To switch:
- *   1. Add slash-star around the current active theme.
- *   2. Remove slash-star from the theme you want to activate!
+ * HOW TO SWITCH:
+ * 1. Put /* and * / around THEME 1.
+ * 2. Remove /* and * / from any of THEMES 2 through 10!
+ * 3. Save (Ctrl+S). The browser updates immediately!
  * ============================================================================== */
 [data-theme="dark"] {
-  /* ⚠️ DO NOT TOUCH THIS LINE (keeps dark scrollbars & native browser inputs dark) */
+  /* ⚠️ DO NOT TOUCH THIS LINE (keeps dark scrollbars & native inputs dark) */
   color-scheme: dark;
 
   /* ============================================================================
@@ -440,7 +579,43 @@
   ============================================================================ */
 
   /* ============================================================================
-   * 🖤 THEME 4: CHARCOAL MINIMALIST (Uncomment to use)
+   * 🌲 THEME 4: EMERALD HEALTHCARE (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-emerald-dark-bg);
+  --color-bg-subtle:      var(--preset-emerald-dark-bg-subtle);
+  --color-surface:        var(--preset-emerald-dark-surface);
+  --color-surface-raised: var(--preset-emerald-dark-surface-raised);
+  --color-surface-sunken: var(--preset-emerald-dark-surface-sunken);
+  --color-border:         var(--preset-emerald-dark-border);
+  --color-border-strong:  var(--preset-emerald-dark-border-strong);
+  --color-primary:        var(--preset-emerald-dark-primary);
+  --color-primary-hover:  var(--preset-emerald-dark-primary-hover);
+  --color-primary-active: var(--preset-emerald-dark-primary-active);
+  --color-primary-soft:   var(--preset-emerald-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-emerald-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-emerald-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * 💎 THEME 5: ROYAL CLINICAL BLUE (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-blue-dark-bg);
+  --color-bg-subtle:      var(--preset-blue-dark-bg-subtle);
+  --color-surface:        var(--preset-blue-dark-surface);
+  --color-surface-raised: var(--preset-blue-dark-surface-raised);
+  --color-surface-sunken: var(--preset-blue-dark-surface-sunken);
+  --color-border:         var(--preset-blue-dark-border);
+  --color-border-strong:  var(--preset-blue-dark-border-strong);
+  --color-primary:        var(--preset-blue-dark-primary);
+  --color-primary-hover:  var(--preset-blue-dark-primary-hover);
+  --color-primary-active: var(--preset-blue-dark-primary-active);
+  --color-primary-soft:   var(--preset-blue-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-blue-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-blue-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * 🖤 THEME 6: CHARCOAL MINIMALIST (Uncomment to use)
    * ============================================================================
   --color-bg:             var(--preset-charcoal-dark-bg);
   --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
@@ -458,21 +633,75 @@
   ============================================================================ */
 
   /* ============================================================================
-   * 💎 THEME 5: ROYAL BLUE (Uncomment to use)
+   * 🔮 THEME 7: AMETHYST VIOLET (Uncomment to use)
    * ============================================================================
-  --color-bg:             var(--preset-blue-dark-bg);
-  --color-bg-subtle:      var(--preset-blue-dark-bg-subtle);
-  --color-surface:        var(--preset-blue-dark-surface);
-  --color-surface-raised: var(--preset-blue-dark-surface-raised);
-  --color-surface-sunken: var(--preset-blue-dark-surface-sunken);
-  --color-border:         var(--preset-blue-dark-border);
-  --color-border-strong:  var(--preset-blue-dark-border-strong);
-  --color-primary:        var(--preset-blue-dark-primary);
-  --color-primary-hover:  var(--preset-blue-dark-primary-hover);
-  --color-primary-active: var(--preset-blue-dark-primary-active);
-  --color-primary-soft:   var(--preset-blue-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-blue-dark-primary-soft-hover);
-  --color-on-primary:     var(--preset-blue-dark-on-primary);
+  --color-bg:             var(--preset-amethyst-dark-bg);
+  --color-bg-subtle:      var(--preset-amethyst-dark-bg-subtle);
+  --color-surface:        var(--preset-amethyst-dark-surface);
+  --color-surface-raised: var(--preset-amethyst-dark-surface-raised);
+  --color-surface-sunken: var(--preset-amethyst-dark-surface-sunken);
+  --color-border:         var(--preset-amethyst-dark-border);
+  --color-border-strong:  var(--preset-amethyst-dark-border-strong);
+  --color-primary:        var(--preset-amethyst-dark-primary);
+  --color-primary-hover:  var(--preset-amethyst-dark-primary-hover);
+  --color-primary-active: var(--preset-amethyst-dark-primary-active);
+  --color-primary-soft:   var(--preset-amethyst-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-amethyst-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-amethyst-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * 🌅 THEME 8: SUNSET CORAL (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-coral-dark-bg);
+  --color-bg-subtle:      var(--preset-coral-dark-bg-subtle);
+  --color-surface:        var(--preset-coral-dark-surface);
+  --color-surface-raised: var(--preset-coral-dark-surface-raised);
+  --color-surface-sunken: var(--preset-coral-dark-surface-sunken);
+  --color-border:         var(--preset-coral-dark-border);
+  --color-border-strong:  var(--preset-coral-dark-border-strong);
+  --color-primary:        var(--preset-coral-dark-primary);
+  --color-primary-hover:  var(--preset-coral-dark-primary-hover);
+  --color-primary-active: var(--preset-coral-dark-primary-active);
+  --color-primary-soft:   var(--preset-coral-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-coral-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-coral-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * ⚡ THEME 9: AMBER DAYLIGHT (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-amber-dark-bg);
+  --color-bg-subtle:      var(--preset-amber-dark-bg-subtle);
+  --color-surface:        var(--preset-amber-dark-surface);
+  --color-surface-raised: var(--preset-amber-dark-surface-raised);
+  --color-surface-sunken: var(--preset-amber-dark-surface-sunken);
+  --color-border:         var(--preset-amber-dark-border);
+  --color-border-strong:  var(--preset-amber-dark-border-strong);
+  --color-primary:        var(--preset-amber-dark-primary);
+  --color-primary-hover:  var(--preset-amber-dark-primary-hover);
+  --color-primary-active: var(--preset-amber-dark-primary-active);
+  --color-primary-soft:   var(--preset-amber-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-amber-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-amber-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * ❄️ THEME 10: ARCTIC GLACIER (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-arctic-dark-bg);
+  --color-bg-subtle:      var(--preset-arctic-dark-bg-subtle);
+  --color-surface:        var(--preset-arctic-dark-surface);
+  --color-surface-raised: var(--preset-arctic-dark-surface-raised);
+  --color-surface-sunken: var(--preset-arctic-dark-surface-sunken);
+  --color-border:         var(--preset-arctic-dark-border);
+  --color-border-strong:  var(--preset-arctic-dark-border-strong);
+  --color-primary:        var(--preset-arctic-dark-primary);
+  --color-primary-hover:  var(--preset-arctic-dark-primary-hover);
+  --color-primary-active: var(--preset-arctic-dark-primary-active);
+  --color-primary-soft:   var(--preset-arctic-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-arctic-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-arctic-dark-on-primary);
   ============================================================================ */
 
   /* Text & Overlays */

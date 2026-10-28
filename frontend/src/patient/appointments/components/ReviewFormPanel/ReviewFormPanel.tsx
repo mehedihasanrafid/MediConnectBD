@@ -6,7 +6,7 @@
 import { useState } from "react";
 
 import { reviewsApi } from "../../../../api/reviews";
-import { Alert, Badge, Button, Field } from "../../../../components/ui";
+import { Alert, Badge, Button, Cluster, Field, FormField, Select, Text } from "../../../../shared/ui";
 import { renderStars } from "../../../../public/doctors/utils/doctorSearch.utils";
 import type { Review } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
@@ -29,12 +29,12 @@ export function ReviewFormPanel({
 
   if (existingReview) {
     return (
-      <div className={`row ${styles.reviewRow}`}>
+      <div className={styles.reviewRow}>
         <Badge tone="success">
           {renderStars(existingReview.rating)} ({existingReview.rating}/5)
         </Badge>
         {existingReview.comment && (
-          <span className="muted small">“{existingReview.comment}”</span>
+          <Text tone="muted" size="sm">“{existingReview.comment}”</Text>
         )}
       </div>
     );
@@ -61,34 +61,33 @@ export function ReviewFormPanel({
 
   return (
     <div className={styles.container}>
-      <div className="row space-between">
+      <Cluster justify="between">
         <strong>Review this visit</strong>
         <Button variant="secondary" onClick={() => setOpen(!open)}>
           {open ? "Cancel" : "Leave a review"}
         </Button>
-      </div>
+      </Cluster>
 
       {error && <Alert kind="error">{error}</Alert>}
 
       {open && (
         <form onSubmit={handleSubmit} className={styles.form}>
-          <label className="field">
-            <span>Rating (1 to 5)</span>
-            <select value={rating} onChange={(e) => setRating(e.target.value)}>
+          <FormField label="Rating (1 to 5)">
+            <Select value={rating} onChange={(e) => setRating(e.target.value)}>
               <option value="5">★★★★★ (5 - Excellent)</option>
               <option value="4">★★★★☆ (4 - Good)</option>
               <option value="3">★★★☆☆ (3 - Average)</option>
               <option value="2">★★☆☆☆ (2 - Poor)</option>
               <option value="1">★☆☆☆☆ (1 - Very poor)</option>
-            </select>
-          </label>
+            </Select>
+          </FormField>
           <Field
             label="Feedback & comments"
             value={comment}
             onChange={setComment}
             placeholder="Share your consultation experience…"
           />
-          <div className="row">
+          <div>
             <Button type="submit" disabled={busy}>
               {busy ? "Submitting…" : "Post review"}
             </Button>

@@ -6,7 +6,7 @@
 import { useState } from "react";
 
 import { paymentsApi } from "../../../../api/payments";
-import { Alert, Badge, Button, Field } from "../../../../components/ui";
+import { Alert, Badge, Button, Cluster, Field, Text } from "../../../../shared/ui";
 import { useAuth } from "../../../../features/auth/AuthContext";
 import type { Appointment, Payment } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
@@ -118,18 +118,18 @@ export function PaymentPanel({
 
   return (
     <div className={styles.container}>
-      <div className="row space-between">
+      <Cluster justify="between" className={styles.headerRow}>
         <div>
           <strong>Payment required</strong>
-          <p className="muted small">
+          <Text tone="muted" size="sm">
             Amount: {formatMoney(appointment.feeAmount)} · Pay online to confirm your video
             consultation slot.
-          </p>
+          </Text>
         </div>
         <Button variant={open ? "secondary" : "primary"} onClick={() => setOpen(!open)}>
           {open ? "Close checkout" : "Pay now"}
         </Button>
-      </div>
+      </Cluster>
 
       {error && <Alert kind="error">{error}</Alert>}
       {statusMessage && <Alert kind={statusMessage.kind}>{statusMessage.text}</Alert>}
@@ -143,7 +143,7 @@ export function PaymentPanel({
           <Field label="City" value={city} onChange={setCity} required />
           <Field label="Postcode" value={postcode} onChange={setPostcode} required />
 
-          <div className={`row ${styles.actions}`} style={{ gridColumn: "1 / -1" }}>
+          <div className={styles.formActions}>
             <Button type="submit" disabled={busy}>
               {busy ? "Connecting gateway…" : `Pay ${formatMoney(appointment.feeAmount)}`}
             </Button>
@@ -154,7 +154,7 @@ export function PaymentPanel({
       {payment && (
         <div className={styles.statusCard}>
           <div className={styles.statusHeader}>
-            <p className="small" style={{ margin: 0 }}>
+            <p className={styles.statusText}>
               Payment <code>{payment.transactionId}</code>:{" "}
               <Badge tone={payment.status === "SUCCEEDED" ? "success" : "warning"}>
                 {formatStatus(payment.status)}
@@ -166,8 +166,7 @@ export function PaymentPanel({
                   href={payment.gatewayUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn btn-primary"
-                  style={{ display: "inline-block", padding: "0.25rem 0.65rem", textDecoration: "none" }}
+                  className={styles.gatewayLink}
                 >
                   Open SSLCommerz portal
                 </a>
@@ -176,9 +175,9 @@ export function PaymentPanel({
 
           {(payment.status === "PENDING" || payment.status === "INITIATED") && (
             <div className={styles.verifySection}>
-              <p className="small muted" style={{ margin: "0 0 0.5rem 0" }}>
+              <Text tone="muted" size="sm" className={styles.verifyHelpText}>
                 Returned from payment? Click below to verify your transaction with SSLCommerz and confirm your appointment.
-              </p>
+              </Text>
               <Button
                 variant="secondary"
                 disabled={busy}

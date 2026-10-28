@@ -1,0 +1,39 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.filtersRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.fileLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.fileLabelText {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.fileInput {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  padding: var(--space-2) 0;
+}
+
+.helpText {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}

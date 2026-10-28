@@ -1,0 +1,24 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tableWrapper {
+  margin-top: var(--space-2);
+}
+
+.subheading {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.extraInfo {
+  margin-top: var(--space-2);
+}
+
+.actions {
+  margin-top: var(--space-3);
+}

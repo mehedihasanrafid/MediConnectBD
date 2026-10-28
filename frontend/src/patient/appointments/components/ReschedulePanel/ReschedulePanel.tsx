@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 import { appointmentsApi } from "../../../../api/appointments";
 import { doctorsApi } from "../../../../api/doctors";
-import { Alert, Badge, Button, EmptyState, Spinner } from "../../../../components/ui";
+import { Alert, Badge, Button, EmptyState, Spinner, Text } from "../../../../shared/ui";
 import type { Appointment, AvailabilitySlot } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDate, formatDhakaTime, formatMoney } from "../../../../shared/utils/format";
@@ -70,16 +70,16 @@ export function ReschedulePanel({ appointment, onRescheduled, onCancel }: Resche
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h4 style={{ margin: 0 }}>Reschedule consultation</h4>
+        <h4 className={styles.title}>Reschedule consultation</h4>
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
 
-      <p className="muted small">
+      <Text tone="muted" size="sm">
         Select a new available {appointment.mode.toLowerCase()} slot. Your fee payment transfers
         automatically.
-      </p>
+      </Text>
 
       {loading && <Spinner label="Loading available alternative slots…" />}
       {error && <Alert kind="error">{error}</Alert>}
@@ -95,13 +95,14 @@ export function ReschedulePanel({ appointment, onRescheduled, onCancel }: Resche
             {daySlots.map((slot) => (
               <button
                 key={slot.id}
-                className="slot"
+                type="button"
+                className={styles.slotButton}
                 disabled={busySlotId === slot.id}
                 onClick={() => void handleSelectSlot(slot.id)}
               >
                 <span>{formatDhakaTime(slot.startAt)}</span>
                 <Badge tone={slot.mode === "VIDEO" ? "info" : "neutral"}>{slot.mode}</Badge>
-                <span className="muted small">{formatMoney(slot.feeAmount)}</span>
+                <Text tone="muted" size="sm" as="span">{formatMoney(slot.feeAmount)}</Text>
               </button>
             ))}
           </div>

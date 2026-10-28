@@ -4,9 +4,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Button, Card, EmptyState, Field, Spinner } from "../../components/ui";
+import { Alert, Button, Card, Cluster, EmptyState, Field, Page, PageHeader, Spinner, Text } from "../../shared/ui";
 import { api, ApiRequestError } from "../../shared/api";
 import type { FamilyMember } from "../../shared/types";
+import styles from "./FamilyMembersPage.module.css";
 
 export function FamilyMembersPage() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -80,30 +81,38 @@ export function FamilyMembersPage() {
   }
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Patient Account</p>
-        <h1>Family members</h1>
-        <p className="muted">Book appointments on behalf of a parent or child from one account.</p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Patient Account"
+        title="Family members"
+        description="Book appointments on behalf of a parent or child from one account."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
 
       <Card>
         <h2>Add a family member</h2>
-        <form onSubmit={handleCreate} className="filters">
-          <Field label="Name" value={name} onChange={setName} required />
-          <Field
-            label="Relationship"
-            value={relationship}
-            onChange={setRelationship}
-            placeholder="child, parent, spouse"
-            required
-          />
-          <Field label="Date of birth" value={dateOfBirth} onChange={setDateOfBirth} type="date" />
-          <Button type="submit" disabled={busy}>
-            {busy ? "Adding…" : "Add member"}
-          </Button>
+        <form onSubmit={handleCreate} className={styles.form}>
+          <div className={styles.formField}>
+            <Field label="Name" value={name} onChange={setName} required />
+          </div>
+          <div className={styles.formField}>
+            <Field
+              label="Relationship"
+              value={relationship}
+              onChange={setRelationship}
+              placeholder="child, parent, spouse"
+              required
+            />
+          </div>
+          <div className={styles.formField}>
+            <Field label="Date of birth" value={dateOfBirth} onChange={setDateOfBirth} type="date" />
+          </div>
+          <div className={styles.formActions}>
+            <Button type="submit" disabled={busy}>
+              {busy ? "Adding…" : "Add member"}
+            </Button>
+          </div>
         </form>
       </Card>
 
@@ -112,21 +121,21 @@ export function FamilyMembersPage() {
 
       {members.map((member) => (
         <Card key={member.id}>
-          <div className="row space-between">
+          <Cluster justify="between">
             <div>
               <h3>{member.name}</h3>
-              <p className="muted small">
+              <Text tone="muted" size="sm">
                 {member.relationship}
                 {member.dateOfBirth ? ` · born ${member.dateOfBirth}` : ""}
                 {member.phone ? ` · ${member.phone}` : ""}
-              </p>
+              </Text>
             </div>
             <Button variant="danger" onClick={() => void handleDelete(member.id)}>
               Remove
             </Button>
-          </div>
+          </Cluster>
         </Card>
       ))}
-    </div>
+    </Page>
   );
 }

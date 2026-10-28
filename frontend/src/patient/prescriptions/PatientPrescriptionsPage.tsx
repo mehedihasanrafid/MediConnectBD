@@ -4,11 +4,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { prescriptionsApi } from "../../api/prescriptions";
-import { Alert, Badge, Button, Card, EmptyState, Spinner } from "../../components/ui";
+import { Alert, Badge, Button, ButtonLink, Card, Cluster, EmptyState, Page, PageHeader, Spinner, Table, Text } from "../../shared/ui";
 import type { Prescription } from "../../shared/types";
 import { formatDhakaDateTime } from "../../shared/utils/format";
+import styles from "./PatientPrescriptionsPage.module.css";
 
 export function PatientPrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
@@ -36,12 +36,12 @@ export function PatientPrescriptionsPage() {
   if (loading) return <Spinner label="Loading prescriptions…" />;
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Patient Health Records</p>
-        <h1>My prescriptions</h1>
-        <p className="muted">Digital prescriptions issued after your completed consultations.</p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Patient Health Records"
+        title="My prescriptions"
+        description="Digital prescriptions issued after your completed consultations."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
       {prescriptions.length === 0 && !error && (
@@ -49,50 +49,54 @@ export function PatientPrescriptionsPage() {
       )}
 
       {prescriptions.map((rx) => (
-        <Card key={rx.id}>
-          <div className="row space-between">
+        <Card key={rx.id} className={styles.card}>
+          <Cluster justify="between">
             <div>
               <h3>Diagnosis: {rx.diagnosis}</h3>
-              <p className="muted small">Issued {formatDhakaDateTime(rx.createdAt)}</p>
+              <Text tone="muted" size="sm">Issued {formatDhakaDateTime(rx.createdAt)}</Text>
             </div>
             <Badge tone="info">Code: {rx.verificationCode}</Badge>
+          </Cluster>
+
+          <div>
+            <h4 className={styles.subheading}>Prescribed medicines</h4>
+            <div className={styles.tableWrapper}>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rx.medicines.map((med, idx) => (
+                    <tr key={`${rx.id}-med-${idx}`}>
+                      <td>{med.name}</td>
+                      <td>{med.dosage}</td>
+                      <td>{med.frequency}</td>
+                      <td>{med.duration}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
           </div>
 
-          <h4 style={{ margin: "0.75rem 0 0.25rem", fontSize: "0.9rem" }}>Prescribed medicines</h4>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Medicine</th>
-                <th>Dosage</th>
-                <th>Frequency</th>
-                <th>Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rx.medicines.map((med, idx) => (
-                <tr key={`${rx.id}-med-${idx}`}>
-                  <td>{med.name}</td>
-                  <td>{med.dosage}</td>
-                  <td>{med.frequency}</td>
-                  <td>{med.duration}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
           {rx.tests.length > 0 && (
-            <p className="small" style={{ marginTop: "0.75rem" }}>
+            <Text size="sm" className={styles.extraInfo}>
               <strong>Recommended tests:</strong> {rx.tests.join(", ")}
-            </p>
+            </Text>
           )}
 
           {rx.advice && (
-            <p className="small" style={{ marginTop: "0.5rem" }}>
+            <Text size="sm" className={styles.extraInfo}>
               <strong>Advice:</strong> {rx.advice}
-            </p>
+            </Text>
           )}
 
-          <div className="row" style={{ marginTop: "0.75rem" }}>
+          <Cluster gap={2} className={styles.actions}>
             <Button
               onClick={() => {
                 void prescriptionsApi
@@ -105,15 +109,15 @@ export function PatientPrescriptionsPage() {
             <Button variant="secondary" onClick={() => window.print()}>
               Print
             </Button>
-            <Link
-              className="btn btn-secondary"
+            <ButtonLink
+              variant="secondary"
               to={`/verify-prescription?code=${encodeURIComponent(rx.verificationCode)}`}
             >
               Verify code
-            </Link>
-          </div>
+            </ButtonLink>
+          </Cluster>
         </Card>
       ))}
-    </div>
+    </Page>
   );
 }

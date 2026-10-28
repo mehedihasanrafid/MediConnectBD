@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 import { reportsApi } from "../../../api/reports";
-import { Button, Card, Field } from "../../../components/ui";
+import { Button, Card, Cluster, Field, Text } from "../../../shared/ui";
 import { getErrorMessage } from "../../../shared/utils/apiError";
+import styles from "./ReportUploadForm.module.css";
 
 export const ALLOWED_REPORT_MIME_TYPES = [
   "application/pdf",
@@ -110,8 +111,8 @@ export function ReportUploadForm({
   return (
     <Card>
       <h2>Upload a medical report</h2>
-      <form onSubmit={handleUpload} className="page" style={{ marginTop: "0.5rem" }}>
-        <div className="filters">
+      <form onSubmit={handleUpload} className={styles.form}>
+        <div className={styles.filtersRow}>
           <Field
             label="Report title"
             value={title}
@@ -126,24 +127,25 @@ export function ReportUploadForm({
             placeholder="e.g. Fasting sample from Popular Diagnostic"
           />
         </div>
-        <label className="field">
-          <span>Select file (Supported formats: PDF, JPEG, PNG, WEBP, TXT · max 2 MB)</span>
+        <label className={styles.fileLabel}>
+          <span className={styles.fileLabelText}>Select file (Supported formats: PDF, JPEG, PNG, WEBP, TXT · max 2 MB)</span>
           <input
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain"
             onChange={handleFileChange}
+            className={styles.fileInput}
             required
           />
         </label>
-        <p className="muted small" style={{ margin: "-0.25rem 0 0.5rem" }}>
+        <Text tone="muted" size="sm" className={styles.helpText}>
           Allowed file formats: <code>.pdf</code>, <code>.jpg</code>, <code>.png</code>,{" "}
           <code>.webp</code>, <code>.txt</code> (up to 2 MB)
-        </p>
-        <div className="row">
+        </Text>
+        <Cluster gap={2}>
           <Button type="submit" disabled={uploading || !selectedFile}>
             {uploading ? "Uploading…" : "Upload report"}
           </Button>
-        </div>
+        </Cluster>
       </form>
     </Card>
   );

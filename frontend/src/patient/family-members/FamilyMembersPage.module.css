@@ -1,0 +1,16 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.formField {
+  flex: 1;
+  min-width: 180px;
+}
+
+.formActions {
+  padding-bottom: 2px;
+}

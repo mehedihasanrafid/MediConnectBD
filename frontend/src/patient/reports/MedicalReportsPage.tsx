@@ -5,11 +5,12 @@
  */
 
 import { reportsApi } from "../../api/reports";
-import { Alert, Badge, Button, Card, EmptyState, Spinner } from "../../components/ui";
+import { Alert, Badge, Button, Card, Cluster, EmptyState, Page, PageHeader, Spinner, Text } from "../../shared/ui";
 import { getErrorMessage } from "../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../shared/utils/format";
 import { ReportUploadForm } from "./components/ReportUploadForm";
 import { useMedicalReports } from "./hooks/useMedicalReports";
+import styles from "./MedicalReportsPage.module.css";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -30,15 +31,12 @@ export function MedicalReportsPage() {
   } = useMedicalReports();
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Patient Health Records</p>
-        <h1>My medical reports</h1>
-        <p className="muted">
-          Upload lab tests, imaging, or past medical documents so your doctors can review them
-          before your consultation. Only you and your treating doctors can access these files.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Patient Health Records"
+        title="My medical reports"
+        description="Upload lab tests, imaging, or past medical documents so your doctors can review them before your consultation. Only you and your treating doctors can access these files."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
@@ -55,19 +53,19 @@ export function MedicalReportsPage() {
       )}
 
       {reports.map((report) => (
-        <Card key={report.id}>
-          <div className="row space-between">
+        <Card key={report.id} className={styles.card}>
+          <Cluster justify="between">
             <div>
               <h3>{report.title}</h3>
-              <p className="muted small">
+              <Text tone="muted" size="sm">
                 {report.fileName} · {formatFileSize(report.sizeBytes)} · Uploaded{" "}
                 {formatDhakaDateTime(report.createdAt)}
-              </p>
-              {report.notes && <p className="small">Notes: {report.notes}</p>}
+              </Text>
+              {report.notes && <Text size="sm">Notes: {report.notes}</Text>}
             </div>
             <Badge tone="info">{report.mimeType}</Badge>
-          </div>
-          <div className="row" style={{ marginTop: "0.75rem" }}>
+          </Cluster>
+          <Cluster gap={2} className={styles.actions}>
             <Button
               variant="secondary"
               onClick={() => {
@@ -83,9 +81,9 @@ export function MedicalReportsPage() {
             <Button variant="danger" onClick={() => void handleDelete(report.id)}>
               Delete
             </Button>
-          </div>
+          </Cluster>
         </Card>
       ))}
-    </div>
+    </Page>
   );
 }

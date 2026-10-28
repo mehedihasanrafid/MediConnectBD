@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 import { appointmentsApi } from "../../../../api/appointments";
 import { reportsApi } from "../../../../api/reports";
-import { Alert, Badge, Button, EmptyState, Field, Spinner } from "../../../../components/ui";
+import { Alert, Badge, Button, Cluster, EmptyState, Field, Spinner, Table, Text } from "../../../../shared/ui";
 import type { MedicalReportSummary, VideoSession } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../../../shared/utils/format";
@@ -127,12 +127,12 @@ export function VideoSessionPanel({
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h4 style={{ margin: 0 }}>Consultation Video Room</h4>
-          <p className="muted small" style={{ margin: "0.2rem 0 0" }}>
+          <h4 className={styles.title}>Consultation Video Room</h4>
+          <Text tone="muted" size="sm" className={styles.participantSubtitle}>
             {session
               ? `Participant: ${session.participantName} (${session.participantRole === "DOCTOR" ? "Doctor" : "Patient"})`
               : "Connecting to consultation slot…"}
-          </p>
+          </Text>
         </div>
         <Button variant="secondary" onClick={onClose}>
           Exit room
@@ -146,18 +146,18 @@ export function VideoSessionPanel({
       {session && (
         <div>
           <div className={styles.metaBar}>
-            <div className="row" style={{ alignItems: "center", gap: "0.5rem" }}>
+            <div className={styles.metaStatus}>
               {isMockProvider ? (
                 <Badge tone="warning">Development Mock Mode</Badge>
               ) : (
                 <Badge tone="success">Live Video Active</Badge>
               )}
-              <span className="small">Room: {session.roomName}</span>
+              <Text size="sm" as="span">Room: {session.roomName}</Text>
             </div>
-            <span className="muted small">
+            <Text tone="muted" size="sm">
               Session window: {formatDhakaDateTime(session.scheduledStartAt)} –{" "}
               {formatDhakaDateTime(session.scheduledEndAt)}
-            </span>
+            </Text>
           </div>
 
           <div className={styles.tabs}>
@@ -186,7 +186,7 @@ export function VideoSessionPanel({
                     Daily API keys are not configured in backend environment. Operating in development
                     mock mode for room <code>{session.roomName}</code>.
                   </Alert>
-                  <div style={{ marginTop: "1rem", textAlign: "left", fontSize: "0.9rem" }}>
+                  <div className={styles.mockDetails}>
                     <p>
                       <strong>Doctor:</strong> Dr. {session.doctorName}
                     </p>
@@ -201,7 +201,7 @@ export function VideoSessionPanel({
                       <code>{session.accessToken.slice(0, 36)}…</code>
                     </p>
                   </div>
-                  <div className={styles.actions} style={{ justifyContent: "center", marginTop: "1rem" }}>
+                  <div className={styles.mockActions}>
                     <Button variant="secondary" onClick={onClose}>
                       Leave mock room
                     </Button>
@@ -216,11 +216,11 @@ export function VideoSessionPanel({
                     allow="camera; microphone; fullscreen; display-capture; autoplay"
                     allowFullScreen
                   />
-                  <div className={styles.actions} style={{ marginTop: "0.75rem", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-                    <p className="muted small" style={{ margin: 0 }}>
+                  <div className={styles.callControls}>
+                    <Text tone="muted" size="sm" className={styles.callNotice}>
                       In-call text chat, screen sharing, and audio/video controls are active in the call window.
-                    </p>
-                    <div className="row" style={{ gap: "0.5rem" }}>
+                    </Text>
+                    <Cluster gap={2} className={styles.callButtons}>
                       <Button
                         variant="secondary"
                         onClick={() => window.open(embedUrl, "_blank", "noopener,noreferrer")}
@@ -230,7 +230,7 @@ export function VideoSessionPanel({
                       <Button variant="danger" onClick={onClose}>
                         Leave call
                       </Button>
-                    </div>
+                    </Cluster>
                   </div>
                 </div>
               )}
@@ -239,19 +239,19 @@ export function VideoSessionPanel({
 
           {activeTab === "FILES" && (
             <div className={styles.filesCard}>
-              <div style={{ marginBottom: "0.75rem" }}>
-                <h4 style={{ margin: "0 0 0.25rem 0" }}>In-call Clinical File Sharing</h4>
-                <p className="muted small" style={{ margin: 0 }}>
+              <div className={styles.filesHeader}>
+                <h4 className={styles.filesTitle}>In-call Clinical File Sharing</h4>
+                <Text tone="muted" size="sm" className={styles.filesNotice}>
                   Files shared here are protected by appointment authorization and accessible only by
                   the treating doctor and patient.
-                </p>
+                </Text>
               </div>
 
               {session.participantRole === "PATIENT" && (
-                <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "var(--surface, #ffffff)", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}>
-                  <strong className="small">Share a document with Dr. {session.doctorName}</strong>
-                  <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.75rem", alignItems: "flex-end", flexWrap: "wrap" }}>
-                    <div style={{ flex: 1, minWidth: "160px" }}>
+                <div className={styles.uploadBox}>
+                  <Text size="sm" weight="bold">Share a document with Dr. {session.doctorName}</Text>
+                  <div className={styles.uploadRow}>
+                    <div className={styles.uploadTitleField}>
                       <Field
                         label="Document title"
                         value={uploadTitle}
@@ -260,12 +260,17 @@ export function VideoSessionPanel({
                       />
                     </div>
                     <div>
-                      <label className="btn btn-secondary" style={{ display: "inline-block", cursor: uploadBusy ? "wait" : "pointer", margin: 0 }}>
-                        {uploadBusy ? "Uploading…" : "Select File (PDF/Image)"}
+                      <label
+                        className={styles.fileSelectLabel}
+                        data-busy={uploadBusy}
+                      >
+                        <Button variant="secondary" as="span">
+                          {uploadBusy ? "Uploading…" : "Select File (PDF/Image)"}
+                        </Button>
                         <input
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          style={{ display: "none" }}
+                          className={styles.fileInputHidden}
                           disabled={uploadBusy}
                           onChange={(e) => void handleFileUpload(e)}
                         />
@@ -282,39 +287,41 @@ export function VideoSessionPanel({
               )}
 
               {!loadingReports && reports.length > 0 && (
-                <table className="table" style={{ marginTop: "0.5rem" }}>
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>File name</th>
-                      <th>Uploaded</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reports.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.title}</td>
-                        <td>{r.fileName}</td>
-                        <td>{formatDhakaDateTime(r.createdAt)}</td>
-                        <td>
-                          <Button
-                            variant="secondary"
-                            onClick={() => {
-                              void reportsApi
-                                .downloadReport(r.id)
-                                .catch((caught) =>
-                                  setError(getErrorMessage(caught, "Could not download file.")),
-                                );
-                            }}
-                          >
-                            Download
-                          </Button>
-                        </td>
+                <div className={styles.filesTable}>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>File name</th>
+                        <th>Uploaded</th>
+                        <th>Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {reports.map((r) => (
+                        <tr key={r.id}>
+                          <td>{r.title}</td>
+                          <td>{r.fileName}</td>
+                          <td>{formatDhakaDateTime(r.createdAt)}</td>
+                          <td>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                void reportsApi
+                                  .downloadReport(r.id)
+                                  .catch((caught) =>
+                                    setError(getErrorMessage(caught, "Could not download file.")),
+                                  );
+                              }}
+                            >
+                              Download
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
               )}
             </div>
           )}

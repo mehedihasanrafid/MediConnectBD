@@ -3,7 +3,7 @@
  * checkout, inline cancellation with refund preview, and post-visit reviews.
  */
 
-import { Alert, EmptyState, Spinner } from "../../components/ui";
+import { Alert, EmptyState, Page, PageHeader, Spinner } from "../../shared/ui";
 import styles from "./AppointmentsPage.module.css";
 import { PatientAppointmentCard } from "./components/PatientAppointmentCard";
 import { usePatientAppointments } from "./hooks/usePatientAppointments";
@@ -26,12 +26,12 @@ export function AppointmentsPage() {
   const { upcoming, past } = partitionAppointments(appointments);
 
   return (
-    <div className={`page ${styles.page}`}>
-      <header className={`page-header ${styles.header}`}>
-        <p className="eyebrow">Patient Portal</p>
-        <h1>My appointments</h1>
-        <p className="muted">All times are shown in Bangladesh time (Asia/Dhaka).</p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Patient Portal"
+        title="My appointments"
+        description="All times are shown in Bangladesh time (Asia/Dhaka)."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
 
@@ -57,6 +57,6 @@ export function AppointmentsPage() {
           onReviewCreated={handleReviewCreated}
         />
       ))}
-    </div>
+    </Page>
   );
 }

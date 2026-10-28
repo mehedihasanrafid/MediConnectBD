@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { appointmentsApi } from "../../../../api/appointments";
-import { Alert, Badge, Button, Card, Field } from "../../../../components/ui";
+import { Alert, Badge, Button, Card, Cluster, Field, Text } from "../../../../shared/ui";
 import {
   hasRefundablePayment,
   previewPatientRefund,
@@ -85,24 +85,24 @@ export function PatientAppointmentCard({
           <h3 className={styles.title}>
             Appointment #{appointment.id.slice(0, 8)}
           </h3>
-          <p className="muted small">
+          <Text tone="muted" size="sm">
             Mode: {appointment.mode}
             {appointment.familyMember
               ? ` · Patient: ${appointment.familyMember.name} (${appointment.familyMember.relationship})`
               : " · Patient: Self"}
-          </p>
+          </Text>
         </div>
-        <div className="row">
+        <Cluster gap={2}>
           <Badge tone={appointment.mode === "VIDEO" ? "info" : "neutral"}>
             {appointment.mode}
           </Badge>
           <Badge tone={appointmentStatusTone(appointment.status)}>
             {formatStatus(appointment.status)}
           </Badge>
-        </div>
+        </Cluster>
       </div>
 
-      <dl className="facts">
+      <dl className={styles.facts}>
         <div>
           <dt>Scheduled time</dt>
           <dd>{formatDhakaDateTime(appointment.scheduledStartAt)}</dd>
@@ -126,7 +126,7 @@ export function PatientAppointmentCard({
       )}
 
       {appointment.mode === "VIDEO" && appointment.status === "CONFIRMED" && (
-        <div className="row" style={{ marginTop: "0.5rem" }}>
+        <div className={styles.videoRow}>
           <Button onClick={() => setJoiningVideo(!joiningVideo)}>
             {joiningVideo ? "Hide video room" : "Join video session"}
           </Button>
@@ -199,14 +199,14 @@ export function PatientAppointmentCard({
             placeholder="e.g. Schedule conflict"
           />
 
-          <div className="row">
+          <Cluster gap={2}>
             <Button variant="danger" disabled={busy} onClick={cancel}>
               {busy ? "Cancelling…" : "Confirm cancellation"}
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => setConfirming(false)}>
               Keep appointment
             </Button>
-          </div>
+          </Cluster>
         </div>
       )}
     </Card>

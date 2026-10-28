@@ -4,14 +4,17 @@
  */
 
 import { ErrorBoundary, ToastProvider } from "./shared/ui";
+import { ThemeProvider } from "./shared/theme";
 import { AppRouter } from "./routes/AppRouter";
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <AppRouter />
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AppRouter />
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

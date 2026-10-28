@@ -3,6 +3,7 @@ import { ExternalLink, LayoutDashboard, LogOut, Stethoscope } from "lucide-react
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../features/auth/AuthContext";
+import { ThemeToggle } from "../../../shared/theme";
 import { ButtonLink, IconButton } from "../../../shared/ui";
 import styles from "./AdminHeader.module.css";
 
@@ -42,6 +43,8 @@ export const AdminHeader: React.FC = () => {
               <span className={styles.roleBadge}>{user.roles.join(", ")}</span>
             </div>
           )}
+
+          <ThemeToggle />
 
           <IconButton
             type="button"

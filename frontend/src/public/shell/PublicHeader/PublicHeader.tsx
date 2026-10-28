@@ -17,6 +17,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../features/auth/AuthContext";
 import { isAdmin, isDoctor, isPatient } from "../../../shared/utils/roles";
 import { Button, ButtonLink } from "../../../shared/ui";
+import { ThemeToggle } from "../../../shared/theme";
 import styles from "./PublicHeader.module.css";
 
 /**
@@ -131,7 +132,7 @@ export const PublicHeader: React.FC = () => {
 
         {/* Top-bar actions (desktop user menu & mobile menu toggle) */}
         <div className={styles.actions}>
-          {/* ThemeToggle placeholder slot for Phase 5 */}
+          <ThemeToggle />
 
           {user ? (
             <div className={styles.userMenu}>

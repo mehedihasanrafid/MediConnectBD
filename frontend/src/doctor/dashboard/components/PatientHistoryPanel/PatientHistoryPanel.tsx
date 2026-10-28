@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 import { doctorsApi } from "../../../../api/doctors";
 import { reportsApi } from "../../../../api/reports";
-import { Alert, Badge, Button, EmptyState, Spinner } from "../../../../components/ui";
+import { Alert, Badge, Button, EmptyState, Spinner, Table } from "../../../../shared/ui";
 import type { DoctorPatientHistory } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDateTime, formatStatus } from "../../../../shared/utils/format";
@@ -57,7 +57,7 @@ export function PatientHistoryPanel({
       {error && <Alert kind="error">{error}</Alert>}
 
       {history && (
-        <div className="page" style={{ marginTop: "0.5rem" }}>
+        <div className={styles.historyContent}>
           <p className={styles.patientMeta}>
             Patient: <strong>{history.patient.firstName} {history.patient.lastName}</strong> ·{" "}
             Sex: {history.patient.sex}
@@ -71,7 +71,7 @@ export function PatientHistoryPanel({
               <EmptyState>No medical reports uploaded by this patient.</EmptyState>
             ) : (
               <div className={styles.tableWrapper}>
-                <table className="table" style={{ marginTop: "0.35rem" }}>
+                <Table>
                   <thead>
                     <tr>
                       <th>Title</th>
@@ -95,8 +95,8 @@ export function PatientHistoryPanel({
                               void reportsApi
                                 .downloadReport(report.id)
                                 .catch((caught) =>
-                                  setError(getErrorMessage(caught, "Could not download report.")),
-                                );
+                                    setError(getErrorMessage(caught, "Could not download report.")),
+                                  );
                             }}
                           >
                             Download
@@ -105,18 +105,18 @@ export function PatientHistoryPanel({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             )}
           </div>
 
-          <div style={{ marginTop: "1rem" }}>
+          <div>
             <div className={styles.sectionTitle}>Previous Prescriptions ({history.prescriptions.length})</div>
             {history.prescriptions.length === 0 ? (
               <EmptyState>No previous prescriptions on record.</EmptyState>
             ) : (
               <div className={styles.tableWrapper}>
-                <table className="table" style={{ marginTop: "0.35rem" }}>
+                <Table>
                   <thead>
                     <tr>
                       <th>Issued</th>
@@ -137,15 +137,15 @@ export function PatientHistoryPanel({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             )}
           </div>
 
-          <div style={{ marginTop: "1rem" }}>
+          <div>
             <div className={styles.sectionTitle}>Past & Upcoming Visits ({history.visits.length})</div>
             <div className={styles.tableWrapper}>
-              <table className="table" style={{ marginTop: "0.35rem" }}>
+              <Table>
                 <thead>
                   <tr>
                     <th>Date & Time</th>
@@ -166,7 +166,7 @@ export function PatientHistoryPanel({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           </div>
         </div>

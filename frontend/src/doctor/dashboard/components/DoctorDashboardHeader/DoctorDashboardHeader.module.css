@@ -1,14 +1,1 @@
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
+/* DoctorDashboardHeader (layout handled by shared PageHeader primitive) */

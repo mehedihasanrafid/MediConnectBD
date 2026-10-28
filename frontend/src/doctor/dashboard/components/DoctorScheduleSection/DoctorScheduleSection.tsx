@@ -5,7 +5,7 @@
 import { useState } from "react";
 
 import { doctorsApi } from "../../../../api/doctors";
-import { Alert, Button, Card, EmptyState, Field } from "../../../../components/ui";
+import { Alert, Badge, Button, Card, EmptyState, Field, FormField, Select, Table, Text } from "../../../../shared/ui";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import styles from "./DoctorScheduleSection.module.css";
 import { DoctorTimeOffSection } from "./DoctorTimeOffSection";
@@ -130,7 +130,7 @@ export function DoctorScheduleSection({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Weekly schedule</h2>
-            <p className="muted small">Timezone: {schedule?.timezone ?? "Asia/Dhaka"}</p>
+            <Text tone="muted" size="sm">Timezone: {schedule?.timezone ?? "Asia/Dhaka"}</Text>
           </div>
           <div className={styles.ruleActions}>
             <Button variant="secondary" disabled={busy} onClick={() => setAddingRule(!addingRule)}>
@@ -144,26 +144,24 @@ export function DoctorScheduleSection({
 
         {addingRule && (
           <form onSubmit={handleAddRule} className={styles.ruleForm}>
-            <label className="field">
-              <span>Day of week</span>
-              <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)}>
+            <FormField label="Day of week">
+              <Select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)}>
                 {DAY_NAMES.map((name, idx) => (
                   <option key={name} value={String(idx)}>
                     {name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <Field label="Start (HH:MM)" value={startTime} onChange={setStartTime} required />
             <Field label="End (HH:MM)" value={endTime} onChange={setEndTime} required />
-            <label className="field">
-              <span>Slot duration</span>
-              <select value={duration} onChange={(e) => setDuration(e.target.value)}>
+            <FormField label="Slot duration">
+              <Select value={duration} onChange={(e) => setDuration(e.target.value)}>
                 <option value="15">15 min</option>
                 <option value="20">20 min</option>
                 <option value="30">30 min</option>
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <Button type="submit" disabled={busy}>
               Save rule
             </Button>
@@ -174,7 +172,7 @@ export function DoctorScheduleSection({
           <EmptyState>No weekly schedule configured.</EmptyState>
         ) : (
           <div className={styles.tableWrapper}>
-            <table className="table" style={{ marginTop: "0.75rem" }}>
+            <Table>
               <thead>
                 <tr>
                   <th>Day</th>
@@ -192,8 +190,10 @@ export function DoctorScheduleSection({
                       {rule.startTime.slice(0, 5)}–{rule.endTime.slice(0, 5)}
                     </td>
                     <td>{rule.slotDurationMinutes} min</td>
-                    <td><span className={styles.badgeMode}>{rule.mode}</span></td>
-                    <td style={{ textAlign: "right" }}>
+                    <td>
+                      <Badge tone={rule.mode === "VIDEO" ? "info" : "neutral"}>{rule.mode}</Badge>
+                    </td>
+                    <td className={styles.alignRight}>
                       <Button
                         variant="danger"
                         disabled={busy}
@@ -205,7 +205,7 @@ export function DoctorScheduleSection({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
       </Card>

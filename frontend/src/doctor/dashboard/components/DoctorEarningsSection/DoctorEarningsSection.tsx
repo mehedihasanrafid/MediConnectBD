@@ -3,7 +3,7 @@
  * and completed consultations) along with daily and monthly breakdowns.
  */
 
-import { Card, EmptyState } from "../../../../components/ui";
+import { Card, EmptyState, Stack, Text } from "../../../../shared/ui";
 import type { DoctorEarningsSummary } from "../../../../shared/types";
 import { formatMoney } from "../../../../shared/utils/format";
 import styles from "./DoctorEarningsSection.module.css";
@@ -18,7 +18,7 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
   return (
     <Card className={styles.section}>
       <h2>Earnings & Payout Summary</h2>
-      <dl className={`facts ${styles.facts}`}>
+      <dl className={styles.facts}>
         <div>
           <dt>Completed visits</dt>
           <dd>{earnings.totals.completedConsultations}</dd>
@@ -51,7 +51,7 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
           {earnings.byMonth.length === 0 ? (
             <EmptyState>No monthly online payment records yet.</EmptyState>
           ) : (
-            <div className="stack">
+            <Stack gap={2}>
               {earnings.byMonth.map((row) => (
                 <div key={row.period} className={styles.historyRow}>
                   <span>
@@ -59,13 +59,13 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
                   </span>
                   <span>
                     Net: <strong>{formatMoney(Number(row.netAmount))}</strong>{" "}
-                    <span className="muted small">
+                    <Text tone="muted" size="sm" as="span">
                       (Gross {formatMoney(Number(row.grossAmount))})
-                    </span>
+                    </Text>
                   </span>
                 </div>
               ))}
-            </div>
+            </Stack>
           )}
         </div>
 
@@ -74,7 +74,7 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
           {earnings.byDay.length === 0 ? (
             <EmptyState>No daily online payment records yet.</EmptyState>
           ) : (
-            <div className="stack">
+            <Stack gap={2}>
               {earnings.byDay.slice(0, 7).map((row) => (
                 <div key={row.period} className={styles.historyRow}>
                   <span>
@@ -82,13 +82,13 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
                   </span>
                   <span>
                     Net: <strong>{formatMoney(Number(row.netAmount))}</strong>{" "}
-                    <span className="muted small">
+                    <Text tone="muted" size="sm" as="span">
                       (Gross {formatMoney(Number(row.grossAmount))})
-                    </span>
+                    </Text>
                   </span>
                 </div>
               ))}
-            </div>
+            </Stack>
           )}
         </div>
       </div>

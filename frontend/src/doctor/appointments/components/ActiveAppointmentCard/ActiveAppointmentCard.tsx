@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Badge, Button, Card } from "../../../../components/ui";
+import { Badge, Button, Card, Cluster, Text } from "../../../../shared/ui";
 import { VideoSessionPanel } from "../../../../patient/appointments/components/VideoSessionPanel";
 import type { DoctorAppointment } from "../../../../shared/types";
 import { formatDhakaDateTime, formatMoney, formatStatus } from "../../../../shared/utils/format";
@@ -32,24 +32,24 @@ export function ActiveAppointmentCard({
           <h3 className={styles.title}>
             {appt.patient ? `${appt.patient.firstName} ${appt.patient.lastName}` : "Patient visit"}
           </h3>
-          <p className="muted small">
+          <Text tone="muted" size="sm">
             {formatDhakaDateTime(appt.scheduledStartAt)} · {appt.mode} ·{" "}
             {formatMoney(appt.feeAmount)}
             {appt.familyMember
               ? ` · Family member: ${appt.familyMember.name} (${appt.familyMember.relationship})`
               : ""}
-          </p>
+          </Text>
           {appt.patient && (
-            <p className="muted small">
+            <Text tone="muted" size="sm">
               {appt.patient.email}
               {appt.patient.phone ? ` · ${appt.patient.phone}` : ""}
-            </p>
+            </Text>
           )}
         </div>
         <Badge tone={appointmentStatusTone(appt.status)}>{formatStatus(appt.status)}</Badge>
       </div>
 
-      <div className={`row ${styles.actions}`}>
+      <Cluster gap={2} className={styles.actions}>
         <Button variant="secondary" onClick={() => setShowHistory((current) => !current)}>
           {showHistory ? "Hide patient history" : "Patient history & reports"}
         </Button>
@@ -79,7 +79,7 @@ export function ActiveAppointmentCard({
             </Button>
           </>
         )}
-      </div>
+      </Cluster>
 
       {showVideo && (
         <VideoSessionPanel appointmentId={appt.id} onClose={() => setShowVideo(false)} />

@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 
-import { Alert, Button, Field } from "../../../../components/ui";
+import { Alert, Button, Field, Text } from "../../../../shared/ui";
 import type { Medicine } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import type { PrescriptionFormValues } from "../../types/doctorPrescriptions.types";
@@ -96,9 +96,9 @@ export function PrescriptionEditorForm({
         required
       />
 
-      <div style={{ marginTop: "0.75rem" }}>
-        <div className="row space-between" style={{ marginBottom: "0.5rem" }}>
-          <span className="small muted">Medicines ({medicines.length})</span>
+      <div className={styles.medicinesSection}>
+        <div className={styles.medicinesHeader}>
+          <Text tone="muted" size="sm">Medicines ({medicines.length})</Text>
           <Button type="button" variant="secondary" onClick={addMedicineRow}>
             + Add medicine
           </Button>
@@ -142,7 +142,7 @@ export function PrescriptionEditorForm({
         ))}
       </div>
 
-      <div style={{ marginTop: "0.75rem" }}>
+      <div className={styles.fieldGroup}>
         <Field
           label="Recommended tests (comma-separated, optional)"
           value={testsInput}
@@ -151,7 +151,7 @@ export function PrescriptionEditorForm({
         />
       </div>
 
-      <div style={{ marginTop: "0.75rem" }}>
+      <div className={styles.fieldGroup}>
         <Field
           label="Doctor's advice (optional)"
           value={advice}

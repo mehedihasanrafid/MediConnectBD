@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 import { doctorsApi } from "../../../../api/doctors";
-import { Button, Card, EmptyState, Field } from "../../../../components/ui";
+import { Button, Card, EmptyState, Field, Table } from "../../../../shared/ui";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import type { ScheduleOverview } from "./DoctorScheduleSection";
-import styles from "./DoctorScheduleSection.module.css";
+import styles from "./DoctorTimeOffSection.module.css";
 
 interface DoctorTimeOffSectionProps {
   schedule: ScheduleOverview | null;
@@ -64,24 +64,30 @@ export function DoctorTimeOffSection({
   return (
     <Card>
       <h2>Time off & blocked dates</h2>
-      <form onSubmit={handleAddTimeOff} className="filters" style={{ marginBottom: "0.75rem" }}>
-        <Field label="Date" value={offDate} onChange={setOffDate} type="date" required />
-        <Field
-          label="Reason (optional)"
-          value={offReason}
-          onChange={setOffReason}
-          placeholder="Conference or personal leave"
-        />
-        <Button type="submit" disabled={busy}>
-          Block full day
-        </Button>
+      <form onSubmit={handleAddTimeOff} className={styles.form}>
+        <div className={styles.field}>
+          <Field label="Date" value={offDate} onChange={setOffDate} type="date" required />
+        </div>
+        <div className={styles.field}>
+          <Field
+            label="Reason (optional)"
+            value={offReason}
+            onChange={setOffReason}
+            placeholder="Conference or personal leave"
+          />
+        </div>
+        <div>
+          <Button type="submit" disabled={busy}>
+            Block full day
+          </Button>
+        </div>
       </form>
 
       {!schedule || schedule.timeOff.length === 0 ? (
         <EmptyState>No blocked dates.</EmptyState>
       ) : (
         <div className={styles.tableWrapper}>
-          <table className="table">
+          <Table>
             <thead>
               <tr>
                 <th>Date</th>
@@ -100,7 +106,7 @@ export function DoctorTimeOffSection({
                       : "Full day"}
                   </td>
                   <td>{entry.reason ?? "—"}</td>
-                  <td style={{ textAlign: "right" }}>
+                  <td className={styles.alignRight}>
                     <Button
                       variant="secondary"
                       disabled={busy}
@@ -112,7 +118,7 @@ export function DoctorTimeOffSection({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </Card>

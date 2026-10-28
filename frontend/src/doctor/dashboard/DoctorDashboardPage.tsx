@@ -3,12 +3,11 @@
  * weekly schedule/time-off management, and quick navigation to the appointment queue & prescriptions.
  */
 
-import { Alert, EmptyState, Spinner } from "../../components/ui";
+import { Alert, EmptyState, Page, Spinner } from "../../shared/ui";
 import { DoctorDashboardHeader } from "./components/DoctorDashboardHeader";
 import { DoctorEarningsSection } from "./components/DoctorEarningsSection";
 import { DoctorProfileSection } from "./components/DoctorProfileSection";
 import { DoctorScheduleSection } from "./components/DoctorScheduleSection";
-import styles from "./DoctorDashboardPage.module.css";
 import { useDoctorDashboard } from "./hooks/useDoctorDashboard";
 
 export function DoctorDashboardPage() {
@@ -28,7 +27,7 @@ export function DoctorDashboardPage() {
   if (!profile) return <EmptyState>No doctor profile found.</EmptyState>;
 
   return (
-    <div className={`page ${styles.page}`}>
+    <Page>
       <DoctorDashboardHeader bmdcNumber={profile.bmdcNumber} />
 
       <DoctorEarningsSection earnings={earnings} />
@@ -40,6 +39,6 @@ export function DoctorDashboardPage() {
       />
 
       <DoctorScheduleSection schedule={schedule} onScheduleChanged={loadDashboard} />
-    </div>
+    </Page>
   );
 }

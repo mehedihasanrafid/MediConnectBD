@@ -1,0 +1,20 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.field {
+  flex: 1;
+  min-width: 180px;
+}
+
+.tableWrapper {
+  margin-top: var(--space-3);
+}
+
+.alignRight {
+  text-align: right;
+}

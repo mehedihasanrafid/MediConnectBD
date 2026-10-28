@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 import { prescriptionsApi } from "../../../../api/prescriptions";
-import { Badge, Button, Card } from "../../../../components/ui";
+import { Badge, Button, ButtonLink, Card, Cluster, Text } from "../../../../shared/ui";
 import type { DoctorAppointment, Prescription } from "../../../../shared/types";
 import { formatDhakaDateTime, formatMoney, formatStatus } from "../../../../shared/utils/format";
 import { PrescriptionEditorForm } from "../../../prescriptions/components/PrescriptionEditorForm";
@@ -32,10 +31,10 @@ export function PastAppointmentCard({
           <h3 className={styles.title}>
             {appt.patient ? `${appt.patient.firstName} ${appt.patient.lastName}` : "Patient visit"}
           </h3>
-          <p className="muted small">
+          <Text tone="muted" size="sm">
             {formatDhakaDateTime(appt.scheduledStartAt)} · {appt.mode} ·{" "}
             {formatMoney(appt.feeAmount)}
-          </p>
+          </Text>
         </div>
         <Badge tone={appointmentStatusTone(appt.status)}>{formatStatus(appt.status)}</Badge>
       </div>
@@ -43,12 +42,12 @@ export function PastAppointmentCard({
       {appt.status === "COMPLETED" && (
         <div className={styles.rxSection}>
           {existingRx ? (
-            <div className="row">
+            <Cluster gap={2}>
               <Badge tone="info">Prescription issued · {existingRx.verificationCode}</Badge>
-              <Link className="btn btn-secondary" to="/doctor/prescriptions">
+              <ButtonLink variant="secondary" to="/doctor/prescriptions">
                 View / Edit prescription
-              </Link>
-            </div>
+              </ButtonLink>
+            </Cluster>
           ) : writingRx ? (
             <PrescriptionEditorForm
               submitLabel="Issue prescription"

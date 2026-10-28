@@ -4,7 +4,7 @@
  * inspection, and inline post-visit prescription authoring.
  */
 
-import { Alert, EmptyState, Spinner } from "../../components/ui";
+import { Alert, EmptyState, Page, PageHeader, Spinner } from "../../shared/ui";
 import { ActiveAppointmentCard } from "./components/ActiveAppointmentCard";
 import { PastAppointmentCard } from "./components/PastAppointmentCard";
 import styles from "./DoctorAppointmentsPage.module.css";
@@ -32,12 +32,12 @@ export function DoctorAppointmentsPage() {
   );
 
   return (
-    <div className={`page ${styles.page}`}>
-      <header className={`page-header ${styles.header}`}>
-        <p className="eyebrow">Doctor Workspace</p>
-        <h1>Patient appointment queue</h1>
-        <p className="muted">All consultation times shown in Asia/Dhaka.</p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Doctor Workspace"
+        title="Patient appointment queue"
+        description="All consultation times shown in Asia/Dhaka."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
@@ -63,6 +63,6 @@ export function DoctorAppointmentsPage() {
           onPrescriptionCreated={registerCreatedPrescription}
         />
       ))}
-    </div>
+    </Page>
   );
 }

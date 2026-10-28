@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { doctorsApi } from "../../../../api/doctors";
-import { Alert, Badge, Button, Card, Field } from "../../../../components/ui";
+import { Alert, Badge, Button, Card, Cluster, Field, FormField, Select, Text } from "../../../../shared/ui";
 import type { Specialty } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatMoney } from "../../../../shared/utils/format";
@@ -107,7 +107,7 @@ export function DoctorProfileSection({
 
       {editing ? (
         <form onSubmit={handleSave} className={styles.formGrid}>
-          <div className="filters">
+          <div className={styles.filterRow}>
             <Field label="Degrees & qualifications" value={degrees} onChange={setDegrees} required />
             <Field
               label="Experience (years)"
@@ -123,10 +123,9 @@ export function DoctorProfileSection({
               type="number"
             />
           </div>
-          <div className="filters">
-            <label className="field">
-              <span>Primary specialty</span>
-              <select
+          <div className={styles.filterRow}>
+            <FormField label="Primary specialty">
+              <Select
                 value={selectedSpecialtyId}
                 onChange={(e) => setSelectedSpecialtyId(e.target.value)}
               >
@@ -135,8 +134,8 @@ export function DoctorProfileSection({
                     {spec.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <Field
               label="Languages (comma-separated)"
               value={languages}
@@ -145,18 +144,18 @@ export function DoctorProfileSection({
             />
           </div>
           <Field label="Short biography" value={bio} onChange={setBio} />
-          <div className="row">
+          <Cluster gap={2}>
             <Button type="submit" disabled={busy}>
               {busy ? "Saving…" : "Save profile"}
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => setEditing(false)}>
               Cancel
             </Button>
-          </div>
+          </Cluster>
         </form>
       ) : (
         <>
-          <dl className="facts">
+          <dl className={styles.facts}>
             <div>
               <dt>Degrees</dt>
               <dd>{profile.degrees ?? "—"}</dd>
@@ -178,7 +177,7 @@ export function DoctorProfileSection({
               <dd>{profile.chambers.length}</dd>
             </div>
           </dl>
-          {profile.bio && <p className="muted small">{profile.bio}</p>}
+          {profile.bio && <Text tone="muted" size="sm" className={styles.bio}>{profile.bio}</Text>}
 
           <div className={styles.actions}>
             {profile.applicationStatus !== "PENDING_REVIEW" && (

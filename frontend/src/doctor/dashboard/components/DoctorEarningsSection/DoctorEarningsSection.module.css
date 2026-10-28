@@ -5,27 +5,40 @@
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.facts dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.facts dd {
+  margin: var(--space-1) 0 0;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
 }
 
 .payoutHighlight {
-  color: var(--primary);
-  font-size: 1.15rem;
-  font-weight: 750;
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
 }
 
 .breakdownGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-top: 1rem;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
 }
 
 .historyRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.4rem 0;
-  border-bottom: 1px dashed var(--border);
+  padding: var(--space-2) 0;
+  border-bottom: 1px dashed var(--color-border);
 }

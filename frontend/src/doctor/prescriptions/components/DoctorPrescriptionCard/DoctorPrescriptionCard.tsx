@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { prescriptionsApi } from "../../../../api/prescriptions";
-import { Badge, Button, Card } from "../../../../components/ui";
+import { Badge, Button, Card, Cluster, Table, Text } from "../../../../shared/ui";
 import type { Prescription } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../../../shared/utils/format";
@@ -33,9 +33,9 @@ export function DoctorPrescriptionCard({
       <div className={styles.header}>
         <div>
           <h3 className={styles.title}>Diagnosis: {rx.diagnosis}</h3>
-          <p className="muted small">
+          <Text tone="muted" size="sm">
             Issued {formatDhakaDateTime(rx.createdAt)} · Code: {rx.verificationCode}
-          </p>
+          </Text>
         </div>
         <Badge tone={rx.isEditable ? "success" : "neutral"}>
           {rx.isEditable ? "Editable (within 24h)" : "Locked (24h elapsed)"}
@@ -62,7 +62,7 @@ export function DoctorPrescriptionCard({
       ) : (
         <>
           <div className={styles.medicinesList}>
-            <table className="table">
+            <Table>
               <thead>
                 <tr>
                   <th>Medicine</th>
@@ -83,22 +83,22 @@ export function DoctorPrescriptionCard({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
 
           {rx.tests.length > 0 && (
-            <p className="small" style={{ marginTop: "0.5rem" }}>
+            <Text size="sm" className={styles.extraInfo}>
               <strong>Tests:</strong> {rx.tests.join(", ")}
-            </p>
+            </Text>
           )}
 
           {rx.advice && (
-            <p className="small muted" style={{ marginTop: "0.35rem" }}>
+            <Text tone="muted" size="sm" className={styles.extraInfo}>
               <strong>Advice:</strong> {rx.advice}
-            </p>
+            </Text>
           )}
 
-          <div className={styles.actions}>
+          <Cluster gap={2} className={styles.actions}>
             <Button
               variant="secondary"
               onClick={async () => {
@@ -121,7 +121,7 @@ export function DoctorPrescriptionCard({
                 </Button>
               </>
             )}
-          </div>
+          </Cluster>
         </>
       )}
     </Card>

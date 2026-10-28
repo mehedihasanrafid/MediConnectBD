@@ -1,48 +1,37 @@
 .formContainer {
-  margin-top: 0.75rem;
-  padding: 1rem;
-  background-color: var(--surface-hover, #f8fafc);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 8px;
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.medicinesSection {
+  margin-top: var(--space-3);
+}
+
+.medicinesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
 }
 
 .medicineGrid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr auto;
-  gap: 0.5rem;
+  gap: var(--space-2);
   align-items: flex-end;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
-.suggestionsBox {
-  margin-top: 0.25rem;
-  padding: 0.5rem;
-  background-color: var(--surface, #ffffff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.suggestionBadge {
-  cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  background-color: var(--primary-subtle, #f0f9ff);
-  color: var(--primary-strong, #0369a1);
-  border-radius: 4px;
-  font-size: 0.8rem;
-}
-
-.suggestionBadge:hover {
-  background-color: var(--primary, #0284c7);
-  color: #ffffff;
+.fieldGroup {
+  margin-top: var(--space-3);
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: center;
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }

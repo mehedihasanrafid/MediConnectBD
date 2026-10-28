@@ -32,8 +32,3 @@
 .slot:hover:not(:disabled) { border-color: var(--primary); background: #f0fdfa; }
 .slot:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.auth-shell { display: grid; place-items: center; min-height: 70vh; padding: 1rem; }
-.auth-card { width: 100%; max-width: 400px; }
-.auth-card form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
-.demo-accounts { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-.demo-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }

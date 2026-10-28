@@ -1,41 +1,247 @@
-/* Design tokens (CSS custom properties) for MediConnect BD — aligned with DokanBD token conventions */
+/*
+ * Design tokens for MediConnect BD — "Clinical Teal" theme.
+ * Level 1 = primitives (raw palette, never used in components).
+ * Level 2 = semantic tokens (what components use).
+ * Level 3 = dark theme overrides (only semantic tokens change).
+ * This is the ONLY file allowed to contain raw colour values.
+ */
 
 :root {
-  /* Core MediConnect BD medical teal palette */
-  --bg: #f4f7f7;
-  --bg-color: var(--bg);
-  --surface: #ffffff;
-  --border: #dce6e5;
-  --text: #152220;
-  --text-main: var(--text);
-  --muted: #546663;
-  --text-muted: var(--muted);
-  --primary: #0d7a6f;
-  --primary-dark: #0a5f57;
-  --primary-hover: var(--primary-dark);
+  /* ---------- 1. PRIMITIVES ---------- */
+  --teal-50: #effaf8;
+  --teal-100: #d5f2ee;
+  --teal-200: #aee5dd;
+  --teal-300: #7dd1c6;
+  --teal-400: #3fb5a7;
+  --teal-500: #14a394;
+  --teal-600: #0d7a6f;
+  --teal-700: #0a5f57;
+  --teal-800: #094b45;
+  --teal-900: #083b36;
 
-  /* Semantic feedback colors */
-  --danger: #c53030;
-  --error: var(--danger);
-  --error-hover: #9b2c2c;
-  --error-bg: #fff5f5;
-  --success: #1e8e3e;
-  --success-bg: #e6f4ea;
-  --warning: #8a5b00;
-  --warning-bg: #fff4d5;
-  --info: #095d92;
-  --info-bg: #e1f3ff;
-  --accent: #0f766e;
-  --accent-bg: #ccfbf1;
+  --slate-0: #ffffff;
+  --slate-25: #fafcfc;
+  --slate-50: #f4f7f7;
+  --slate-100: #eaf0ef;
+  --slate-200: #dce6e5;
+  --slate-300: #c3d1cf;
+  --slate-400: #8fa3a0;
+  --slate-500: #6b7f7c;
+  --slate-600: #546663;
+  --slate-700: #3b4b49;
+  --slate-800: #243331;
+  --slate-900: #152220;
 
-  /* Geometry & elevation */
-  --radius: 0.75rem;
-  --radius-lg: 1.25rem;
-  --app-shadow-lifted: 0 8px 25px rgba(13, 122, 111, 0.08);
+  --amber-50: #fff8e6;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-800: #8a5b00;
 
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: var(--text-main);
-  background: var(--bg-color);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  --red-50: #fff5f5;
+  --red-200: #fed7d7;
+  --red-600: #c53030;
+  --red-700: #9b2c2c;
+
+  --green-50: #e6f4ea;
+  --green-200: #c6f6d5;
+  --green-600: #1e8e3e;
+  --green-800: #135226;
+
+  --blue-50: #e1f3ff;
+  --blue-200: #bee3f8;
+  --blue-700: #095d92;
+
+  /* ---------- 2. SEMANTIC (light) ---------- */
+  color-scheme: light;
+
+  --color-bg: var(--slate-50);
+  --color-bg-subtle: var(--slate-100);
+  --color-surface: var(--slate-0);
+  --color-surface-raised: var(--slate-0);
+  --color-surface-sunken: var(--slate-25);
+  --color-overlay: rgb(8 20 19 / 0.55);
+
+  --color-text: var(--slate-900);
+  --color-text-muted: var(--slate-600);
+  --color-text-subtle: var(--slate-500);
+  --color-text-inverse: var(--slate-0);
+
+  --color-border: var(--slate-200);
+  --color-border-strong: var(--slate-300);
+
+  --color-primary: var(--teal-600);
+  --color-primary-hover: var(--teal-700);
+  --color-primary-active: var(--teal-800);
+  --color-primary-soft: var(--teal-50);
+  --color-primary-soft-hover: var(--teal-100);
+  --color-on-primary: var(--slate-0);
+
+  --color-accent: var(--amber-500);
+  --color-accent-hover: var(--amber-600);
+  --color-on-accent: var(--slate-900);
+
+  --color-success: var(--green-600);
+  --color-success-soft: var(--green-50);
+  --color-success-border: var(--green-200);
+  --color-success-strong: var(--green-800);
+
+  --color-warning: var(--amber-800);
+  --color-warning-soft: var(--amber-50);
+  --color-warning-border: #fde68a;
+
+  --color-danger: var(--red-600);
+  --color-danger-hover: var(--red-700);
+  --color-danger-soft: var(--red-50);
+  --color-danger-border: var(--red-200);
+
+  --color-info: var(--blue-700);
+  --color-info-soft: var(--blue-50);
+  --color-info-border: var(--blue-200);
+
+  --color-neutral-soft: var(--slate-100);
+  --color-focus-ring: var(--teal-500);
+  --color-skeleton-base: var(--slate-100);
+  --color-skeleton-shine: var(--slate-25);
+
+  /* ---------- SCALES ---------- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 999px;
+
+  --font-sans: "Inter Variable", "Hind Siliguri", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --shadow-xs: 0 1px 2px rgb(8 59 54 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(8 59 54 / 0.08), 0 1px 2px rgb(8 59 54 / 0.04);
+  --shadow-md: 0 8px 24px rgb(8 59 54 / 0.08);
+  --shadow-lg: 0 16px 40px rgb(8 59 54 / 0.12);
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --z-header: 40;
+  --z-dropdown: 50;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+
+  --container-sm: 640px;
+  --container-md: 880px;
+  --container-lg: 1120px;
+  --container-xl: 1280px;
+  --header-height: 4rem;
+
+  /* ---------- LEGACY ALIASES (TEMPORARY — delete in Step 7.3) ---------- */
+  --bg: var(--color-bg);
+  --bg-color: var(--color-bg);
+  --surface: var(--color-surface);
+  --border: var(--color-border);
+  --text: var(--color-text);
+  --text-main: var(--color-text);
+  --muted: var(--color-text-muted);
+  --text-muted: var(--color-text-muted);
+  --primary: var(--color-primary);
+  --primary-dark: var(--color-primary-hover);
+  --primary-hover: var(--color-primary-hover);
+  --danger: var(--color-danger);
+  --error: var(--color-danger);
+  --error-hover: var(--color-danger-hover);
+  --error-bg: var(--color-danger-soft);
+  --success: var(--color-success);
+  --success-bg: var(--color-success-soft);
+  --warning: var(--color-warning);
+  --warning-bg: var(--color-warning-soft);
+  --info: var(--color-info);
+  --info-bg: var(--color-info-soft);
+  --accent: var(--color-primary);
+  --accent-bg: var(--color-primary-soft);
+  --radius: var(--radius-md);
+  --app-shadow-lifted: var(--shadow-md);
+}
+
+/* ---------- 3. DARK THEME ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #0b1514;
+  --color-bg-subtle: #0f1c1a;
+  --color-surface: #111e1c;
+  --color-surface-raised: #172826;
+  --color-surface-sunken: #0d1817;
+  --color-overlay: rgb(0 0 0 / 0.65);
+
+  --color-text: #e6f0ee;
+  --color-text-muted: #9fb3af;
+  --color-text-subtle: #7d928e;
+  --color-text-inverse: var(--slate-900);
+
+  --color-border: #233a37;
+  --color-border-strong: #2f4b47;
+
+  --color-primary: var(--teal-400);
+  --color-primary-hover: var(--teal-300);
+  --color-primary-active: var(--teal-200);
+  --color-primary-soft: #0f2e2a;
+  --color-primary-soft-hover: #143a35;
+  --color-on-primary: #04201d;
+
+  --color-success: #4ade80;
+  --color-success-soft: #0f2a1a;
+  --color-success-border: #1f4d31;
+  --color-success-strong: #86efac;
+
+  --color-warning: #fbbf24;
+  --color-warning-soft: #2a2108;
+  --color-warning-border: #4d3b0d;
+
+  --color-danger: #f87171;
+  --color-danger-hover: #fca5a5;
+  --color-danger-soft: #2d1414;
+  --color-danger-border: #5c2424;
+
+  --color-info: #60a5fa;
+  --color-info-soft: #0f1f33;
+  --color-info-border: #1e3a5f;
+
+  --color-neutral-soft: #1a2b29;
+  --color-focus-ring: var(--teal-300);
+  --color-skeleton-base: #16302c;
+  --color-skeleton-shine: #1d3b36;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 0.6);
 }

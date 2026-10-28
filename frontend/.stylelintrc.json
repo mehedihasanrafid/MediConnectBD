@@ -1,0 +1,32 @@
+{
+  "extends": ["stylelint-config-standard", "stylelint-config-css-modules"],
+  "rules": {
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "custom-property-empty-line-before": null,
+    "declaration-block-single-line-max-declarations": null,
+    "color-hex-length": null,
+    "alpha-value-notation": null,
+    "media-feature-range-notation": null,
+    "property-no-vendor-prefix": null,
+    "property-no-deprecated": null,
+    "value-keyword-case": null,
+    "at-rule-empty-line-before": null,
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla"],
+    "selector-pseudo-class-disallowed-list": ["global"],
+    "declaration-no-important": true,
+    "import-notation": "string"
+  },
+  "overrides": [
+    {
+      "files": ["src/styles/tokens.css"],
+      "rules": {
+        "color-no-hex": null,
+        "function-disallowed-list": null
+      }
+    }
+  ],
+  "ignoreFiles": ["src/styles/legacy/**", "dist/**", "node_modules/**"]
+}

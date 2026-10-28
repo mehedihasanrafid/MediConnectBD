@@ -1,24 +1,44 @@
 /*
  * Design Tokens for MediConnect BD
  * ==============================================================================
- * This is the CENTRAL DESIGN TOKEN file for the entire application.
- * It is the ONLY file where raw color codes (hex/rgb) are defined.
+ * CENTRAL DESIGN TOKEN FILE
+ * This is the ONLY file where raw color codes (hex/rgb) are configured.
  *
- * All components in the app consume semantic CSS variables:
- *   --color-primary, --color-bg, --color-surface, --color-border, --color-text
+ * All components in the app automatically adapt to the colors defined here.
  * ==============================================================================
  */
 
 :root {
   /* ============================================================================
-   * 🎨 THEME PRESET LIBRARY (5 Distinct Color Schemes)
-   * ----------------------------------------------------------------------------
-   * You can add new palettes or tweak these values anytime.
+   * 🎨 THEME PRESET LIBRARY
    * ============================================================================ */
 
   /* ----------------------------------------------------------------------------
-   * PRESET 1: "Clinical Teal" (Default MediConnect BD Brand)
-   * Calm, professional healthcare teal with fresh mint highlights.
+   * PRESET 1: 🌊 "Modern Aqua Water" (Fresh, Calming, Fluid Water Feel)
+   * Deep calm ocean water background with luminous crystalline aqua cyan accents.
+   * ---------------------------------------------------------------------------- */
+  --preset-aqua-primary: #0891b2;
+  --preset-aqua-primary-hover: #0e7490;
+  --preset-aqua-primary-active: #155e75;
+  --preset-aqua-primary-soft: #ecfeff;
+  --preset-aqua-primary-soft-hover: #cffafe;
+
+  --preset-aqua-dark-bg: #07151e;
+  --preset-aqua-dark-bg-subtle: #0b1e2a;
+  --preset-aqua-dark-surface: #0f2635;
+  --preset-aqua-dark-surface-raised: #153347;
+  --preset-aqua-dark-surface-sunken: #061118;
+  --preset-aqua-dark-border: #1a425a;
+  --preset-aqua-dark-border-strong: #255a7a;
+  --preset-aqua-dark-primary: #22d3ee;
+  --preset-aqua-dark-primary-hover: #67e8f9;
+  --preset-aqua-dark-primary-active: #a5f3fc;
+  --preset-aqua-dark-primary-soft: #0b2f3f;
+  --preset-aqua-dark-primary-soft-hover: #104257;
+  --preset-aqua-dark-on-primary: #042430;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 2: 🌿 "Clinical Teal" (Classic Healthcare Mint-Teal)
    * ---------------------------------------------------------------------------- */
   --preset-teal-primary: #0d7a6f;
   --preset-teal-primary-hover: #0a5f57;
@@ -41,8 +61,7 @@
   --preset-teal-dark-on-primary: #04201d;
 
   /* ----------------------------------------------------------------------------
-   * PRESET 2: "Midnight Navy" (Modern Tech / Digital Health)
-   * Deep space navy background with crisp sky-blue accents.
+   * PRESET 3: 🌌 "Midnight Navy" (Digital Tech / Modern SaaS)
    * ---------------------------------------------------------------------------- */
   --preset-navy-primary: #0284c7;
   --preset-navy-primary-hover: #0369a1;
@@ -65,8 +84,7 @@
   --preset-navy-dark-on-primary: #082f49;
 
   /* ----------------------------------------------------------------------------
-   * PRESET 3: "Emerald Healthcare" (Warm Botanical Medical)
-   * Natural healing emerald greens with deep organic dark tones.
+   * PRESET 4: 🌿 "Emerald Healthcare" (Warm Botanical Organic Green)
    * ---------------------------------------------------------------------------- */
   --preset-emerald-primary: #059669;
   --preset-emerald-primary-hover: #047857;
@@ -89,8 +107,7 @@
   --preset-emerald-dark-on-primary: #022c22;
 
   /* ----------------------------------------------------------------------------
-   * PRESET 4: "Royal Blue" (Classic Clinical Trust)
-   * Traditional hospital blue inspiring maximum patient trust and clarity.
+   * PRESET 5: 💎 "Royal Blue" (Classic Clinical Trust)
    * ---------------------------------------------------------------------------- */
   --preset-blue-primary: #2563eb;
   --preset-blue-primary-hover: #1d4ed8;
@@ -113,8 +130,7 @@
   --preset-blue-dark-on-primary: #172554;
 
   /* ----------------------------------------------------------------------------
-   * PRESET 5: "Charcoal Minimalist" (Pure Neutral Gray / OLED Friendly)
-   * High-contrast neutral graphite with a vibrant cyan-mint focal color.
+   * PRESET 6: 🖤 "Charcoal Minimalist" (Graphite / OLED High-Contrast)
    * ---------------------------------------------------------------------------- */
   --preset-charcoal-primary: #0f766e;
   --preset-charcoal-primary-hover: #115e59;
@@ -137,20 +153,41 @@
   --preset-charcoal-dark-on-primary: #042f2e;
 
   /* ============================================================================
-   * ⚡ ACTIVE THEME SWITCHER (METHOD 1)
+   * ☀️ LIGHT THEME ACCENT COLOR SELECTION
    * ----------------------------------------------------------------------------
-   * TO SWITCH THE LIGHT PALETTE:
-   * Replace "--preset-teal-..." below with:
-   *   --preset-navy-...
-   *   --preset-emerald-...
-   *   --preset-blue-...
-   *   --preset-charcoal-...
+   * To switch light accent, uncomment one block and comment out the others:
    * ============================================================================ */
+
+  /* --- [LIGHT OPTION 1: 🌊 Aqua Water] (ACTIVE) --- */
+  --active-primary:            var(--preset-aqua-primary);
+  --active-primary-hover:      var(--preset-aqua-primary-hover);
+  --active-primary-active:     var(--preset-aqua-primary-active);
+  --active-primary-soft:       var(--preset-aqua-primary-soft);
+  --active-primary-soft-hover: var(--preset-aqua-primary-soft-hover);
+
+  /* --- [LIGHT OPTION 2: 🌿 Clinical Teal] (Uncomment to use)
   --active-primary:            var(--preset-teal-primary);
   --active-primary-hover:      var(--preset-teal-primary-hover);
   --active-primary-active:     var(--preset-teal-primary-active);
   --active-primary-soft:       var(--preset-teal-primary-soft);
   --active-primary-soft-hover: var(--preset-teal-primary-soft-hover);
+  --- */
+
+  /* --- [LIGHT OPTION 3: 🌌 Midnight Navy] (Uncomment to use)
+  --active-primary:            var(--preset-navy-primary);
+  --active-primary-hover:      var(--preset-navy-primary-hover);
+  --active-primary-active:     var(--preset-navy-primary-active);
+  --active-primary-soft:       var(--preset-navy-primary-soft);
+  --active-primary-soft-hover: var(--preset-navy-primary-soft-hover);
+  --- */
+
+  /* --- [LIGHT OPTION 4: 💎 Royal Blue] (Uncomment to use)
+  --active-primary:            var(--preset-blue-primary);
+  --active-primary-hover:      var(--preset-blue-primary-hover);
+  --active-primary-active:     var(--preset-blue-primary-active);
+  --active-primary-soft:       var(--preset-blue-primary-soft);
+  --active-primary-soft-hover: var(--preset-blue-primary-soft-hover);
+  --- */
 
   /* Shared static primitive palettes */
   --slate-0: #ffffff;
@@ -186,7 +223,7 @@
   --blue-700: #095d92;
 
   /* ============================================================================
-   * ☀️ 1. LIGHT THEME SEMANTIC TOKENS
+   * ☀️ LIGHT THEME SEMANTIC TOKENS
    * ============================================================================ */
   color-scheme: light;
 
@@ -208,7 +245,7 @@
   --color-border: var(--slate-200);
   --color-border-strong: var(--slate-300);
 
-  /* Brand Primary (Consumed from Active Preset) */
+  /* Brand Primary */
   --color-primary: var(--active-primary);
   --color-primary-hover: var(--active-primary-hover);
   --color-primary-active: var(--active-primary-active);
@@ -245,7 +282,7 @@
   --color-skeleton-shine: var(--slate-25);
 
   /* ============================================================================
-   * 📐 SCALES & METRICS (Consistent across all themes)
+   * 📐 SCALES & METRICS
    * ============================================================================ */
   --space-0: 0;
   --space-1: 0.25rem;
@@ -306,7 +343,7 @@
   --container-xl: 1280px;
   --header-height: 4rem;
 
-  /* Legacy compatibility aliases */
+  /* Legacy aliases */
   --bg: var(--color-bg);
   --bg-color: var(--color-bg);
   --surface: var(--color-surface);
@@ -335,44 +372,115 @@
 }
 
 /* ==============================================================================
- * 🌙 2. DARK THEME CONFIGURATION
+ * 🌙 DARK THEME CONFIGURATION
  * ------------------------------------------------------------------------------
- * TO SWITCH THE DARK THEME:
- * Replace "charcoal" below with: teal, navy, emerald, or blue
- * (Example: change "--preset-charcoal-dark-bg" to "--preset-navy-dark-bg")
+ * HOW TO SWITCH DARK THEMES:
+ * 5 complete theme choices are written below.
+ * ONE theme is active (without slash-stars).
+ * To switch:
+ *   1. Add slash-star around the current active theme.
+ *   2. Remove slash-star from the theme you want to activate!
  * ============================================================================== */
 [data-theme="dark"] {
-  /* ⚠️ DO NOT CHANGE THIS LINE (it tells the browser to use dark scrollbars) */
+  /* ⚠️ DO NOT TOUCH THIS LINE (keeps dark scrollbars & native browser inputs dark) */
   color-scheme: dark;
 
-  /* ==========================================================================
-   * 🎨 ACTIVE DARK PALETTE — Currently set to: CHARCOAL
-   * To switch: replace "charcoal" with "teal", "navy", "emerald", or "blue"
-   * ========================================================================== */
+  /* ============================================================================
+   * 🌊 THEME 1: MODERN AQUA WATER (CURRENTLY ACTIVE)
+   * Inspired by crystalline water, deep oceanic navy, and glowing cyan accents.
+   * ============================================================================ */
+  --color-bg:             var(--preset-aqua-dark-bg);
+  --color-bg-subtle:      var(--preset-aqua-dark-bg-subtle);
+  --color-surface:        var(--preset-aqua-dark-surface);
+  --color-surface-raised: var(--preset-aqua-dark-surface-raised);
+  --color-surface-sunken: var(--preset-aqua-dark-surface-sunken);
+  --color-border:         var(--preset-aqua-dark-border);
+  --color-border-strong:  var(--preset-aqua-dark-border-strong);
+  --color-primary:        var(--preset-aqua-dark-primary);
+  --color-primary-hover:  var(--preset-aqua-dark-primary-hover);
+  --color-primary-active: var(--preset-aqua-dark-primary-active);
+  --color-primary-soft:   var(--preset-aqua-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-aqua-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-aqua-dark-on-primary);
+
+  /* ============================================================================
+   * 🌿 THEME 2: CLINICAL TEAL (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-teal-dark-bg);
+  --color-bg-subtle:      var(--preset-teal-dark-bg-subtle);
+  --color-surface:        var(--preset-teal-dark-surface);
+  --color-surface-raised: var(--preset-teal-dark-surface-raised);
+  --color-surface-sunken: var(--preset-teal-dark-surface-sunken);
+  --color-border:         var(--preset-teal-dark-border);
+  --color-border-strong:  var(--preset-teal-dark-border-strong);
+  --color-primary:        var(--preset-teal-dark-primary);
+  --color-primary-hover:  var(--preset-teal-dark-primary-hover);
+  --color-primary-active: var(--preset-teal-dark-primary-active);
+  --color-primary-soft:   var(--preset-teal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-teal-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-teal-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * 🌌 THEME 3: MIDNIGHT NAVY (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-navy-dark-bg);
+  --color-bg-subtle:      var(--preset-navy-dark-bg-subtle);
+  --color-surface:        var(--preset-navy-dark-surface);
+  --color-surface-raised: var(--preset-navy-dark-surface-raised);
+  --color-surface-sunken: var(--preset-navy-dark-surface-sunken);
+  --color-border:         var(--preset-navy-dark-border);
+  --color-border-strong:  var(--preset-navy-dark-border-strong);
+  --color-primary:        var(--preset-navy-dark-primary);
+  --color-primary-hover:  var(--preset-navy-dark-primary-hover);
+  --color-primary-active: var(--preset-navy-dark-primary-active);
+  --color-primary-soft:   var(--preset-navy-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-navy-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-navy-dark-on-primary);
+  ============================================================================ */
+
+  /* ============================================================================
+   * 🖤 THEME 4: CHARCOAL MINIMALIST (Uncomment to use)
+   * ============================================================================
   --color-bg:             var(--preset-charcoal-dark-bg);
   --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
   --color-surface:        var(--preset-charcoal-dark-surface);
   --color-surface-raised: var(--preset-charcoal-dark-surface-raised);
   --color-surface-sunken: var(--preset-charcoal-dark-surface-sunken);
-  --color-overlay:        rgb(0 0 0 / 0.65);
+  --color-border:         var(--preset-charcoal-dark-border);
+  --color-border-strong:  var(--preset-charcoal-dark-border-strong);
+  --color-primary:        var(--preset-charcoal-dark-primary);
+  --color-primary-hover:  var(--preset-charcoal-dark-primary-hover);
+  --color-primary-active: var(--preset-charcoal-dark-primary-active);
+  --color-primary-soft:   var(--preset-charcoal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-charcoal-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-charcoal-dark-on-primary);
+  ============================================================================ */
 
-  /* Text */
+  /* ============================================================================
+   * 💎 THEME 5: ROYAL BLUE (Uncomment to use)
+   * ============================================================================
+  --color-bg:             var(--preset-blue-dark-bg);
+  --color-bg-subtle:      var(--preset-blue-dark-bg-subtle);
+  --color-surface:        var(--preset-blue-dark-surface);
+  --color-surface-raised: var(--preset-blue-dark-surface-raised);
+  --color-surface-sunken: var(--preset-blue-dark-surface-sunken);
+  --color-border:         var(--preset-blue-dark-border);
+  --color-border-strong:  var(--preset-blue-dark-border-strong);
+  --color-primary:        var(--preset-blue-dark-primary);
+  --color-primary-hover:  var(--preset-blue-dark-primary-hover);
+  --color-primary-active: var(--preset-blue-dark-primary-active);
+  --color-primary-soft:   var(--preset-blue-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-blue-dark-primary-soft-hover);
+  --color-on-primary:     var(--preset-blue-dark-on-primary);
+  ============================================================================ */
+
+  /* Text & Overlays */
+  --color-overlay:        rgb(0 0 0 / 0.65);
   --color-text:           #e6f0ee;
   --color-text-muted:     #9fb3af;
   --color-text-subtle:    #7d928e;
   --color-text-inverse:   var(--slate-900);
-
-  /* Borders */
-  --color-border:         var(--preset-charcoal-dark-border);
-  --color-border-strong:  var(--preset-charcoal-dark-border-strong);
-
-  /* Brand Primary */
-  --color-primary:            var(--preset-charcoal-dark-primary);
-  --color-primary-hover:      var(--preset-charcoal-dark-primary-hover);
-  --color-primary-active:     var(--preset-charcoal-dark-primary-active);
-  --color-primary-soft:       var(--preset-charcoal-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-charcoal-dark-primary-soft-hover);
-  --color-on-primary:         var(--preset-charcoal-dark-on-primary);
 
   /* Status Colors (Adjusted for high dark contrast) */
   --color-success:        #4ade80;

@@ -4,8 +4,8 @@
  */
 
 import { Navigate, Outlet } from "react-router-dom";
-import { Spinner } from "../components/ui";
 import { useAuth } from "../features/auth/AuthContext";
+import { Spinner } from "../shared/ui";
 import { defaultHomePathFor, hasAnyRole } from "../shared/utils/roles";
 
 export function ProtectedRoute() {

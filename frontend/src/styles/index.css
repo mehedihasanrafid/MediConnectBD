@@ -1,5 +1,5 @@
 /* Single global CSS entry. Layer order: later layers win. CSS Modules are unlayered and win over all. */
-@layer reset, tokens, base, legacy;
+@layer reset, tokens, base;
 
 @import "@fontsource-variable/inter";
 @import "@fontsource/hind-siliguri/400.css";
@@ -8,9 +8,3 @@
 @import "./reset.css" layer(reset);
 @import "./tokens.css" layer(tokens);
 @import "./base.css" layer(base);
-
-/* TEMPORARY — removed file by file during Phase 4, folder deleted in Phase 7 */
-@import "./legacy/layout.css" layer(legacy);
-@import "./legacy/components.css" layer(legacy);
-@import "./legacy/features.css" layer(legacy);
-@import "./legacy/skeleton.css" layer(legacy);

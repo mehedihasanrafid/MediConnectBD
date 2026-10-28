@@ -2,7 +2,7 @@
  * Admin catalog management page for Specialties and Hospitals (create, toggle active, soft-delete).
  */
 
-import { Alert } from "../../components/ui";
+import { Alert } from "../../shared/ui/Alert";
 import { Page, PageHeader } from "../../shared/ui/Page";
 import { Spinner } from "../../shared/ui/Spinner";
 import { HospitalsPanel } from "./components/HospitalsPanel";

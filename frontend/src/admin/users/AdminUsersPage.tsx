@@ -3,7 +3,7 @@
  * pend, or suspend accounts (self-suspension is blocked by the backend).
  */
 
-import { Alert } from "../../components/ui";
+import { Alert } from "../../shared/ui/Alert";
 import { Card } from "../../shared/ui/Card";
 import { EmptyState } from "../../shared/ui/EmptyState";
 import { FormField, Input, Select } from "../../shared/ui/Form";

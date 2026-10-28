@@ -3,7 +3,7 @@
  * and processing refund requests.
  */
 
-import { Alert } from "../../components/ui";
+import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
 import { Cluster } from "../../shared/ui/Layout";
 import { Page, PageHeader } from "../../shared/ui/Page";

@@ -6,7 +6,7 @@ import {
   ToastProvider,
   useToast,
   type ToastItem,
-} from "../ui";
+} from "./ToastProvider";
 
 describe("Global Toast System (Step 13)", () => {
   it("renders an accessible, visible live region with dismissible toasts", () => {

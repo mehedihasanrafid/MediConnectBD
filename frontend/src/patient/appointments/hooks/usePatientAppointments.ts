@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { appointmentsApi } from "../../../api/appointments";
 import { reviewsApi } from "../../../api/reviews";
-import { useToast } from "../../../components/ui";
 import type { Appointment, CancellationOutcome, Review } from "../../../shared/types";
+import { useToast } from "../../../shared/ui";
 import { formatDhakaDateTime, formatMoney } from "../../../shared/utils/format";
 
 /**

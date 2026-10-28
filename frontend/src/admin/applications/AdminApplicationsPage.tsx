@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert } from "../../components/ui";
+import { Alert } from "../../shared/ui/Alert";
 import { api, ApiRequestError } from "../../shared/api";
 import { Badge } from "../../shared/ui/Badge";
 import { Button } from "../../shared/ui/Button";

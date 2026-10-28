@@ -1,6 +1,6 @@
 import { RefreshCw } from "lucide-react";
 
-import { Alert } from "../../components/ui";
+import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
 import { PageHeader } from "../../shared/ui/Page";
 import { SkeletonCard } from "../../shared/ui/Skeleton";

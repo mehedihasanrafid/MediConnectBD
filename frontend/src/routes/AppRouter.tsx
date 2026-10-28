@@ -21,6 +21,7 @@ import { FamilyMembersPage } from "../patient/family-members";
 import { PatientPrescriptionsPage } from "../patient/prescriptions";
 import { MedicalReportsPage } from "../patient/reports";
 import { DoctorDetailPage, DoctorSearchPage } from "../public/doctors";
+import { NotFoundPage } from "../public/not-found";
 import { VerifyPrescriptionPage } from "../public/verify-prescription";
 import { RoleRoute } from "./guards";
 
@@ -47,6 +48,8 @@ export function AppRouter() {
           <Route path="/doctor/appointments" element={<DoctorAppointmentsPage />} />
           <Route path="/doctor/prescriptions" element={<DoctorPrescriptionsPage />} />
         </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       <Route path="/admin" element={<RoleRoute roles={["ADMIN"]} />}>
@@ -59,8 +62,6 @@ export function AppRouter() {
           <Route path="operations" element={<AdminOperationsPage />} />
         </Route>
       </Route>
-
-      <Route path="*" element={<Navigate to="/doctors" replace />} />
     </Routes>
   );
 }

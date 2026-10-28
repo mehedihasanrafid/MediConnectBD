@@ -3,6 +3,7 @@ import { ExternalLink, LayoutDashboard, LogOut, Stethoscope } from "lucide-react
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../features/auth/AuthContext";
+import { ButtonLink, IconButton } from "../../../shared/ui";
 import styles from "./AdminHeader.module.css";
 
 /**
@@ -23,15 +24,15 @@ export const AdminHeader: React.FC = () => {
         </Link>
 
         <div className={styles.actions}>
-          <Link to="/doctors" className={`btn btn-ghost ${styles.dashboardLink}`}>
+          <ButtonLink to="/doctors" variant="ghost" size="sm" className={styles.dashboardLink}>
             <ExternalLink size={17} aria-hidden="true" />
             <span>Public Directory</span>
-          </Link>
+          </ButtonLink>
 
-          <Link to="/admin/overview" className={`btn btn-ghost ${styles.dashboardLink}`}>
+          <ButtonLink to="/admin/overview" variant="ghost" size="sm" className={styles.dashboardLink}>
             <LayoutDashboard size={18} aria-hidden="true" />
             <span>Overview</span>
-          </Link>
+          </ButtonLink>
 
           {user && (
             <div className={styles.userInfo}>
@@ -42,17 +43,18 @@ export const AdminHeader: React.FC = () => {
             </div>
           )}
 
-          <button
+          <IconButton
             type="button"
+            variant="ghost"
+            size="sm"
+            aria-label="Sign out"
+            title="Sign out"
             onClick={() => {
               void logout().then(() => navigate("/login"));
             }}
-            className="btn-icon"
-            title="Sign out"
-            aria-label="Sign out"
           >
             <LogOut size={19} />
-          </button>
+          </IconButton>
         </div>
       </div>
     </header>

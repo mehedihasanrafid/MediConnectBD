@@ -3,7 +3,6 @@ import {
   CalendarCheck,
   ClipboardList,
   FileSpreadsheet,
-  HeartPulse,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -17,6 +16,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../features/auth/AuthContext";
 import { isAdmin, isDoctor, isPatient } from "../../../shared/utils/roles";
+import { Button, ButtonLink } from "../../../shared/ui";
 import styles from "./PublicHeader.module.css";
 
 /**
@@ -54,12 +54,22 @@ export const PublicHeader: React.FC = () => {
 
   const closeMenu = () => setIsOpen(false);
 
+  const handleLogout = async () => {
+    closeMenu();
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.content}>
         <Link to="/doctors" className={styles.logo} onClick={closeMenu}>
-          <HeartPulse size={22} aria-hidden="true" />
-          <span>MediConnect BD</span>
+          <span className={styles.logoIcon} aria-hidden="true">
+            <Stethoscope size={18} />
+          </span>
+          <span>
+            MediConnect <strong>BD</strong>
+          </span>
         </Link>
 
         {/* Desktop primary navigation */}
@@ -121,6 +131,8 @@ export const PublicHeader: React.FC = () => {
 
         {/* Top-bar actions (desktop user menu & mobile menu toggle) */}
         <div className={styles.actions}>
+          {/* ThemeToggle placeholder slot for Phase 5 */}
+
           {user ? (
             <div className={styles.userMenu}>
               <div className={styles.userInfo}>
@@ -130,26 +142,25 @@ export const PublicHeader: React.FC = () => {
                 <span className={styles.roleBadge}>{user.roles.join(", ")}</span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  void logout().then(() => navigate("/login"));
-                }}
-                className="btn-icon"
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void handleLogout()}
                 title="Sign out"
                 aria-label="Sign out"
+                leftIcon={<LogOut size={16} />}
               >
-                <LogOut size={19} />
-              </button>
+                Sign out
+              </Button>
             </div>
           ) : (
             <div className={styles.authLinks}>
-              <Link className="btn btn-secondary" to="/register">
+              <ButtonLink variant="secondary" size="sm" to="/register">
                 Register
-              </Link>
-              <Link className="btn btn-primary" to="/login">
+              </ButtonLink>
+              <ButtonLink variant="primary" size="sm" to="/login">
                 Sign in
-              </Link>
+              </ButtonLink>
             </div>
           )}
 
@@ -186,7 +197,9 @@ export const PublicHeader: React.FC = () => {
       >
         <div className={styles.drawerHeader}>
           <div className={styles.drawerLogo}>
-            <HeartPulse size={20} aria-hidden="true" />
+            <span className={styles.logoIcon} aria-hidden="true">
+              <Stethoscope size={16} />
+            </span>
             <span>MediConnect BD</span>
           </div>
           <button
@@ -264,26 +277,24 @@ export const PublicHeader: React.FC = () => {
                 </span>
                 <span className={styles.roleBadge}>{user.roles.join(", ")}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  closeMenu();
-                  void logout().then(() => navigate("/login"));
-                }}
-                className={`btn btn-secondary ${styles.mobileSignOutButton}`}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => void handleLogout()}
+                className={styles.mobileSignOutButton}
+                leftIcon={<LogOut size={16} aria-hidden="true" />}
               >
-                <LogOut size={16} aria-hidden="true" />
-                <span>Sign out</span>
-              </button>
+                Sign out
+              </Button>
             </div>
           ) : (
             <div className={styles.mobileAuthActions}>
-              <Link className="btn btn-secondary" to="/register" onClick={closeMenu}>
+              <ButtonLink variant="secondary" size="md" to="/register" fullWidth onClick={closeMenu}>
                 Register
-              </Link>
-              <Link className="btn btn-primary" to="/login" onClick={closeMenu}>
+              </ButtonLink>
+              <ButtonLink variant="primary" size="md" to="/login" fullWidth onClick={closeMenu}>
                 Sign in
-              </Link>
+              </ButtonLink>
             </div>
           )}
         </div>

@@ -17,3 +17,4 @@ export * from "./Dialog";
 export * from "./Tabs";
 export * from "./DropdownMenu";
 export * from "./Toast";
+export * from "./ErrorBoundary";

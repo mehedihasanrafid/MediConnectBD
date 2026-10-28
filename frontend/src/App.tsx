@@ -3,13 +3,15 @@
  * wrapped in global application providers (Toast notification system).
  */
 
-import { ToastProvider } from "./components/ui";
+import { ErrorBoundary, ToastProvider } from "./shared/ui";
 import { AppRouter } from "./routes/AppRouter";
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AppRouter />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AppRouter />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

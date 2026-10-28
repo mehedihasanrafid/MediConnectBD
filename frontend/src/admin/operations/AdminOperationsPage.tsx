@@ -3,7 +3,11 @@
  * and processing refund requests.
  */
 
-import { Alert, Button, Spinner } from "../../components/ui";
+import { Alert } from "../../components/ui";
+import { Button } from "../../shared/ui/Button";
+import { Cluster } from "../../shared/ui/Layout";
+import { Page, PageHeader } from "../../shared/ui/Page";
+import { Spinner } from "../../shared/ui/Spinner";
 import { AdminAppointmentsTable } from "./components/AdminAppointmentsTable";
 import { AdminPaymentsTable } from "./components/AdminPaymentsTable";
 import { AdminRefundsTable } from "./components/AdminRefundsTable";
@@ -25,16 +29,14 @@ export function AdminOperationsPage() {
   } = useAdminOperations();
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Platform Operations</p>
-        <h1>Bookings, payments & refunds</h1>
-        <p className="muted">
-          Inspect platform transactions, commission splits, and process refund requests.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Platform Operations"
+        title="Bookings, payments & refunds"
+        description="Inspect platform transactions, commission splits, and process refund requests."
+      />
 
-      <div className="row">
+      <Cluster gap={2}>
         <Button
           variant={tab === "APPOINTMENTS" ? "primary" : "secondary"}
           onClick={() => setTab("APPOINTMENTS")}
@@ -53,7 +55,7 @@ export function AdminOperationsPage() {
         >
           Refunds ({refunds.length})
         </Button>
-      </div>
+      </Cluster>
 
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
@@ -76,6 +78,6 @@ export function AdminOperationsPage() {
           onSubmitRefund={handleSubmitRefund}
         />
       )}
-    </div>
+    </Page>
   );
 }

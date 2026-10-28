@@ -47,7 +47,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+  box-shadow: var(--shadow-sm);
 }
 
 .metricCard p {
@@ -127,12 +127,21 @@
   font-size: 0.76rem;
 }
 
+.eyebrow {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  color: var(--color-primary-600);
+}
+
 .rankTrack {
   height: 5px;
   display: block;
   overflow: hidden;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .rankTrack i {
@@ -140,6 +149,7 @@
   display: block;
   border-radius: inherit;
   background: var(--primary);
+  width: var(--bar, 0%);
 }
 
 .spinning {

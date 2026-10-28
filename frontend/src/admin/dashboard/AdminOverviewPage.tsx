@@ -1,6 +1,9 @@
 import { RefreshCw } from "lucide-react";
 
 import { Alert } from "../../components/ui";
+import { Button } from "../../shared/ui/Button";
+import { PageHeader } from "../../shared/ui/Page";
+import { SkeletonCard } from "../../shared/ui/Skeleton";
 import styles from "./AdminOverview.module.css";
 import { OverviewSummaryCards } from "./components/OverviewSummaryCards";
 import { TopSpecialtiesAndDoctors } from "./components/TopSpecialtiesAndDoctors";
@@ -14,32 +17,29 @@ export function AdminOverviewPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className="eyebrow">Platform Analytics</p>
-          <h1>Platform overview</h1>
-          <p>Real-time operational totals across MediConnect BD.</p>
-        </div>
-
-        <div className={styles.actions}>
-          <button
-            className="btn btn-ghost"
+      <PageHeader
+        eyebrow="Platform Analytics"
+        title="Platform overview"
+        description="Real-time operational totals across MediConnect BD."
+        actions={
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => void refresh()}
             disabled={loading}
+            leftIcon={<RefreshCw size={16} className={loading ? styles.spinning : ""} />}
           >
-            <RefreshCw size={16} className={loading ? styles.spinning : ""} />
-            <span>Refresh</span>
-          </button>
-        </div>
-      </header>
+            Refresh
+          </Button>
+        }
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
 
       {loading && !overview ? (
         <div className={styles.loadingGrid} aria-label="Loading platform metrics">
           {Array.from({ length: 4 }, (_, index) => (
-            <div key={index} className="skeleton-card" />
+            <SkeletonCard key={index} />
           ))}
         </div>
       ) : overview ? (

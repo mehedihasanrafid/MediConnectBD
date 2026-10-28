@@ -1,8 +1,12 @@
-import { Badge, Button, Card } from "../../../components/ui";
+import { Badge, type BadgeTone } from "../../../shared/ui/Badge";
+import { Button } from "../../../shared/ui/Button";
+import { Card } from "../../../shared/ui/Card";
+import { Cluster } from "../../../shared/ui/Layout";
+import { Table } from "../../../shared/ui/Table";
 import { formatDhakaDate } from "../../../shared/utils/format";
 import type { AdminUserItem } from "../hooks/useAdminUsers";
 
-function statusTone(status: string): string {
+function statusTone(status: string): BadgeTone {
   if (status === "ACTIVE") return "success";
   if (status === "PENDING") return "warning";
   return "danger";
@@ -24,7 +28,7 @@ export function AdminUsersTable({
 }: AdminUsersTableProps) {
   return (
     <Card>
-      <table className="table">
+      <Table>
         <thead>
           <tr>
             <th>Name</th>
@@ -48,10 +52,11 @@ export function AdminUsersTable({
                 <Badge tone={statusTone(u.status)}>{u.status}</Badge>
               </td>
               <td>
-                <div className="row">
+                <Cluster gap={2}>
                   {u.status !== "ACTIVE" && (
                     <Button
                       variant="secondary"
+                      size="sm"
                       disabled={busyId === u.id}
                       onClick={() => void onStatusChange(u.id, "ACTIVE")}
                     >
@@ -61,18 +66,19 @@ export function AdminUsersTable({
                   {u.status !== "SUSPENDED" && (
                     <Button
                       variant="danger"
+                      size="sm"
                       disabled={busyId === u.id}
                       onClick={() => void onStatusChange(u.id, "SUSPENDED")}
                     >
                       Suspend
                     </Button>
                   )}
-                </div>
+                </Cluster>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </Card>
   );
 }

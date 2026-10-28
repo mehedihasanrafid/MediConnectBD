@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-import { Badge, Button, Card, Field } from "../../../components/ui";
+import { Badge } from "../../../shared/ui/Badge";
+import { Button } from "../../../shared/ui/Button";
+import { Card } from "../../../shared/ui/Card";
+import { FormField, Input } from "../../../shared/ui/Form";
+import { Table } from "../../../shared/ui/Table";
+import { Text } from "../../../shared/ui/Text";
+import styles from "../AdminCatalog.module.css";
 import type { AdminHospitalItem } from "../hooks/useAdminCatalog";
 
 interface HospitalsPanelProps {
@@ -40,39 +46,38 @@ export function HospitalsPanel({
 
   return (
     <Card>
-      <h2>Hospitals ({hospitals.length})</h2>
-      <form
-        onSubmit={handleSubmit}
-        className="filters"
-        style={{ marginBottom: "0.75rem" }}
-      >
-        <Field
-          label="Hospital name"
-          value={hospName}
-          onChange={setHospName}
-          placeholder="Square Hospital"
-          required
-        />
-        <Field
-          label="Area"
-          value={hospArea}
-          onChange={setHospArea}
-          placeholder="Panthapath"
-          required
-        />
-        <Field
-          label="Address"
-          value={hospAddress}
-          onChange={setHospAddress}
-          placeholder="18/F, Bir Uttam Qazi Nuruzzaman Sarak, Dhaka"
-          required
-        />
+      <h2 className={styles.title}>Hospitals ({hospitals.length})</h2>
+      <form onSubmit={handleSubmit} className={styles.catalogForm}>
+        <FormField label="Hospital name" required>
+          <Input
+            value={hospName}
+            onChange={(e) => setHospName(e.target.value)}
+            placeholder="Square Hospital"
+            required
+          />
+        </FormField>
+        <FormField label="Area" required>
+          <Input
+            value={hospArea}
+            onChange={(e) => setHospArea(e.target.value)}
+            placeholder="Panthapath"
+            required
+          />
+        </FormField>
+        <FormField label="Address" required>
+          <Input
+            value={hospAddress}
+            onChange={(e) => setHospAddress(e.target.value)}
+            placeholder="18/F, Bir Uttam Qazi Nuruzzaman Sarak, Dhaka"
+            required
+          />
+        </FormField>
         <Button type="submit" disabled={busy}>
           Add hospital
         </Button>
       </form>
 
-      <table className="table">
+      <Table>
         <thead>
           <tr>
             <th>Hospital</th>
@@ -85,8 +90,10 @@ export function HospitalsPanel({
           {hospitals.map((h) => (
             <tr key={h.id}>
               <td>{h.name}</td>
-              <td className="muted small">
-                {h.area} — {h.address}
+              <td>
+                <Text tone="muted" size="sm">
+                  {h.area} — {h.address}
+                </Text>
               </td>
               <td>
                 <Badge tone={h.isActive ? "success" : "neutral"}>
@@ -96,6 +103,7 @@ export function HospitalsPanel({
               <td>
                 <Button
                   variant={h.isActive ? "danger" : "secondary"}
+                  size="sm"
                   disabled={busy}
                   onClick={() => void onToggleHospital(h)}
                 >
@@ -105,7 +113,7 @@ export function HospitalsPanel({
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </Card>
   );
 }

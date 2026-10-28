@@ -1,4 +1,8 @@
-import { Badge, Card, EmptyState } from "../../../components/ui";
+import { Badge } from "../../../shared/ui/Badge";
+import { Card } from "../../../shared/ui/Card";
+import { EmptyState } from "../../../shared/ui/EmptyState";
+import { Table } from "../../../shared/ui/Table";
+import { Text } from "../../../shared/ui/Text";
 import { formatDhakaDateTime, formatMoney, formatStatus } from "../../../shared/utils/format";
 import type { AdminPaymentRow } from "../hooks/useAdminOperations";
 
@@ -12,7 +16,7 @@ export function AdminPaymentsTable({ payments }: AdminPaymentsTableProps) {
       {payments.length === 0 ? (
         <EmptyState>No payments recorded.</EmptyState>
       ) : (
-        <table className="table">
+        <Table>
           <thead>
             <tr>
               <th>Transaction ID</th>
@@ -35,11 +39,15 @@ export function AdminPaymentsTable({ payments }: AdminPaymentsTableProps) {
                     {formatStatus(p.status)}
                   </Badge>
                 </td>
-                <td className="muted small">{formatDhakaDateTime(p.createdAt)}</td>
+                <td>
+                  <Text tone="muted" size="sm">
+                    {formatDhakaDateTime(p.createdAt)}
+                  </Text>
+                </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       )}
     </Card>
   );

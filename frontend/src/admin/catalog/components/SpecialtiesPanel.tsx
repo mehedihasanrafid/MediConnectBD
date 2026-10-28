@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-import { Badge, Button, Card, Field } from "../../../components/ui";
+import { Badge } from "../../../shared/ui/Badge";
+import { Button } from "../../../shared/ui/Button";
+import { Card } from "../../../shared/ui/Card";
+import { FormField, Input } from "../../../shared/ui/Form";
+import { Table } from "../../../shared/ui/Table";
+import { Text } from "../../../shared/ui/Text";
+import styles from "../AdminCatalog.module.css";
 import type { AdminSpecialtyItem } from "../hooks/useAdminCatalog";
 
 interface SpecialtiesPanelProps {
@@ -26,25 +32,22 @@ export function SpecialtiesPanel({
 
   return (
     <Card>
-      <h2>Specialties ({specialties.length})</h2>
-      <form
-        onSubmit={handleSubmit}
-        className="filters"
-        style={{ marginBottom: "0.75rem" }}
-      >
-        <Field
-          label="New specialty name"
-          value={specName}
-          onChange={setSpecName}
-          placeholder="e.g. Neurology"
-          required
-        />
+      <h2 className={styles.title}>Specialties ({specialties.length})</h2>
+      <form onSubmit={handleSubmit} className={styles.catalogForm}>
+        <FormField label="New specialty name" required>
+          <Input
+            value={specName}
+            onChange={(e) => setSpecName(e.target.value)}
+            placeholder="e.g. Neurology"
+            required
+          />
+        </FormField>
         <Button type="submit" disabled={busy}>
           Add specialty
         </Button>
       </form>
 
-      <table className="table">
+      <Table>
         <thead>
           <tr>
             <th>Name</th>
@@ -57,7 +60,11 @@ export function SpecialtiesPanel({
           {specialties.map((s) => (
             <tr key={s.id}>
               <td>{s.name}</td>
-              <td className="muted small">{s.slug}</td>
+              <td>
+                <Text tone="muted" size="sm">
+                  {s.slug}
+                </Text>
+              </td>
               <td>
                 <Badge tone={s.isActive ? "success" : "neutral"}>
                   {s.isActive ? "Active" : "Inactive"}
@@ -66,6 +73,7 @@ export function SpecialtiesPanel({
               <td>
                 <Button
                   variant={s.isActive ? "danger" : "secondary"}
+                  size="sm"
                   disabled={busy}
                   onClick={() => void onToggleSpecialty(s)}
                 >
@@ -75,7 +83,7 @@ export function SpecialtiesPanel({
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </Card>
   );
 }

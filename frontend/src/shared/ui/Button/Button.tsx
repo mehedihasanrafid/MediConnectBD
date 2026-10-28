@@ -13,11 +13,17 @@ interface CommonProps {
   rightIcon?: ReactNode;
   fullWidth?: boolean;
   loading?: boolean;
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 }
 
-export type ButtonProps = ComponentProps<"button"> & CommonProps;
+export type ButtonProps = (
+  | ({ as?: "button" } & ComponentProps<"button">)
+  | ({ as: "span" } & ComponentProps<"span">)
+) & CommonProps;
 
 export function Button({
+  as = "button",
   variant = "primary",
   size = "md",
   type = "button",
@@ -30,6 +36,29 @@ export function Button({
   children,
   ...rest
 }: ButtonProps) {
+  const content = (
+    <>
+      {loading ? <span className={styles.spinner} aria-hidden /> : leftIcon}
+      {children}
+      {rightIcon}
+    </>
+  );
+
+  if (as === "span") {
+    return (
+      <span
+        data-variant={variant}
+        data-size={size}
+        data-full-width={fullWidth || undefined}
+        aria-busy={loading || undefined}
+        className={clsx(styles.button, className)}
+        {...(rest as ComponentProps<"span">)}
+      >
+        {content}
+      </span>
+    );
+  }
+
   return (
     <button
       type={type}
@@ -39,11 +68,9 @@ export function Button({
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       className={clsx(styles.button, className)}
-      {...rest}
+      {...(rest as ComponentProps<"button">)}
     >
-      {loading ? <span className={styles.spinner} aria-hidden /> : leftIcon}
-      {children}
-      {rightIcon}
+      {content}
     </button>
   );
 }

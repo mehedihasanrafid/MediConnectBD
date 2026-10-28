@@ -4,8 +4,18 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Badge, Button, Card, EmptyState, Field, Spinner } from "../../components/ui";
+import { Alert } from "../../components/ui";
 import { api, ApiRequestError } from "../../shared/api";
+import { Badge } from "../../shared/ui/Badge";
+import { Button } from "../../shared/ui/Button";
+import { Card } from "../../shared/ui/Card";
+import { EmptyState } from "../../shared/ui/EmptyState";
+import { FormField, Input } from "../../shared/ui/Form";
+import { Cluster } from "../../shared/ui/Layout";
+import { Page, PageHeader } from "../../shared/ui/Page";
+import { Spinner } from "../../shared/ui/Spinner";
+import { Text } from "../../shared/ui/Text";
+import styles from "./AdminApplicationsPage.module.css";
 
 export interface DoctorApplication {
   id: string;
@@ -77,12 +87,12 @@ export function AdminApplicationsPage() {
   }
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Clinical Governance</p>
-        <h1>Doctor applications</h1>
-        <p className="muted">Review credentials and approve or reject pending applications.</p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Clinical Governance"
+        title="Doctor applications"
+        description="Review credentials and approve or reject pending applications."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
       {loading && <Spinner label="Loading applications…" />}
@@ -92,37 +102,50 @@ export function AdminApplicationsPage() {
 
       {applications.map((application) => (
         <Card key={application.id}>
-          <div className="row space-between">
+          <div className={styles.cardHeader}>
             <div>
               <h3>
                 {application.user
                   ? `${application.user.firstName} ${application.user.lastName}`
                   : "Doctor application"}
               </h3>
-              <p className="muted small">
+              <Text tone="muted" size="sm">
                 BMDC {application.bmdcNumber} · {application.experienceYears} years
-              </p>
-              {application.degrees && <p className="muted small">{application.degrees}</p>}
+              </Text>
+              {application.degrees && (
+                <Text tone="muted" size="sm">
+                  {application.degrees}
+                </Text>
+              )}
             </div>
             <Badge tone="warning">{application.applicationStatus.replaceAll("_", " ")}</Badge>
           </div>
 
           {rejectingId === application.id ? (
-            <div className="filters">
-              <Field label="Rejection reason" value={reason} onChange={setReason} required />
-              <Button
-                variant="danger"
-                disabled={reason.trim().length < 3}
-                onClick={() => void decide(application.id, "REJECTED", reason.trim())}
-              >
-                Confirm rejection
-              </Button>
-              <Button variant="secondary" onClick={() => setRejectingId(null)}>
-                Cancel
-              </Button>
+            <div className={styles.rejectionForm}>
+              <FormField label="Rejection reason" required>
+                <Input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Enter rejection reason"
+                  required
+                />
+              </FormField>
+              <Cluster gap={2}>
+                <Button
+                  variant="danger"
+                  disabled={reason.trim().length < 3}
+                  onClick={() => void decide(application.id, "REJECTED", reason.trim())}
+                >
+                  Confirm rejection
+                </Button>
+                <Button variant="secondary" onClick={() => setRejectingId(null)}>
+                  Cancel
+                </Button>
+              </Cluster>
             </div>
           ) : (
-            <div className="row">
+            <div className={styles.actionRow}>
               <Button onClick={() => void decide(application.id, "APPROVED")}>Approve</Button>
               <Button variant="danger" onClick={() => setRejectingId(application.id)}>
                 Reject
@@ -131,6 +154,6 @@ export function AdminApplicationsPage() {
           )}
         </Card>
       ))}
-    </div>
+    </Page>
   );
 }

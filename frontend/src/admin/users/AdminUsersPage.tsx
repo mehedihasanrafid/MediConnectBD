@@ -3,7 +3,13 @@
  * pend, or suspend accounts (self-suspension is blocked by the backend).
  */
 
-import { Alert, Card, EmptyState, Field, Spinner } from "../../components/ui";
+import { Alert } from "../../components/ui";
+import { Card } from "../../shared/ui/Card";
+import { EmptyState } from "../../shared/ui/EmptyState";
+import { FormField, Input, Select } from "../../shared/ui/Form";
+import { Page, PageHeader } from "../../shared/ui/Page";
+import { Spinner } from "../../shared/ui/Spinner";
+import styles from "./AdminUsersPage.module.css";
 import { AdminUsersTable } from "./components/AdminUsersTable";
 import { useAdminUsers } from "./hooks/useAdminUsers";
 
@@ -24,40 +30,39 @@ export function AdminUsersPage() {
   } = useAdminUsers();
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Platform Operations</p>
-        <h1>User accounts</h1>
-        <p className="muted">
-          Search and manage patient, doctor, and administrator accounts.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Platform Operations"
+        title="User accounts"
+        description="Search and manage patient, doctor, and administrator accounts."
+      />
 
-      <Card className="filters">
-        <Field
-          label="Search (email or name)"
-          value={search}
-          onChange={setSearch}
-          placeholder="Search users"
-        />
-        <label className="field">
-          <span>Role</span>
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="">All roles</option>
-            <option value="PATIENT">PATIENT</option>
-            <option value="DOCTOR">DOCTOR</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>Status</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All statuses</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="PENDING">PENDING</option>
-            <option value="SUSPENDED">SUSPENDED</option>
-          </select>
-        </label>
+      <Card>
+        <div className={styles.filterGrid}>
+          <FormField label="Search (email or name)">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users"
+            />
+          </FormField>
+          <FormField label="Role">
+            <Select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">All roles</option>
+              <option value="PATIENT">PATIENT</option>
+              <option value="DOCTOR">DOCTOR</option>
+              <option value="ADMIN">ADMIN</option>
+            </Select>
+          </FormField>
+          <FormField label="Status">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="PENDING">PENDING</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </Select>
+          </FormField>
+        </div>
       </Card>
 
       {error && <Alert kind="error">{error}</Alert>}
@@ -72,6 +77,6 @@ export function AdminUsersPage() {
           onStatusChange={handleStatusChange}
         />
       )}
-    </div>
+    </Page>
   );
 }

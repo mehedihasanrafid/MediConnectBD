@@ -1,6 +1,12 @@
-import { Badge, Button, Card, EmptyState } from "../../../components/ui";
+import { Badge } from "../../../shared/ui/Badge";
+import { Button } from "../../../shared/ui/Button";
+import { Card } from "../../../shared/ui/Card";
+import { EmptyState } from "../../../shared/ui/EmptyState";
+import { Table } from "../../../shared/ui/Table";
+import { Text } from "../../../shared/ui/Text";
 import { formatMoney, formatStatus } from "../../../shared/utils/format";
 import type { AdminRefundRow } from "../hooks/useAdminOperations";
+import styles from "./AdminRefundsTable.module.css";
 
 interface AdminRefundsTableProps {
   refunds: AdminRefundRow[];
@@ -15,9 +21,9 @@ export function AdminRefundsTable({
 }: AdminRefundsTableProps) {
   return (
     <Card>
-      <div style={{ marginBottom: "1rem" }}>
-        <h3 style={{ margin: "0 0 0.25rem 0" }}>Refund Requests</h3>
-        <p className="muted small" style={{ margin: 0 }}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Refund Requests</h3>
+        <p className={styles.notice}>
           Refunds must be processed manually via your payment provider (SSLCommerz) or bank portal.
           Marking a record here updates internal operational tracking and indicates manual payout has been initiated.
         </p>
@@ -26,7 +32,7 @@ export function AdminRefundsTable({
       {refunds.length === 0 ? (
         <EmptyState>No refund requests.</EmptyState>
       ) : (
-        <table className="table">
+        <Table>
           <thead>
             <tr>
               <th>Refund Tx ID</th>
@@ -41,7 +47,11 @@ export function AdminRefundsTable({
               <tr key={r.id}>
                 <td>{r.refundTransactionId}</td>
                 <td>{formatMoney(r.amount)}</td>
-                <td className="muted small">{r.reason}</td>
+                <td>
+                  <Text tone="muted" size="sm">
+                    {r.reason}
+                  </Text>
+                </td>
                 <td>
                   <Badge tone={r.status === "SUBMITTED" ? "success" : "warning"}>
                     {formatStatus(r.status)}
@@ -50,6 +60,7 @@ export function AdminRefundsTable({
                 <td>
                   {r.status === "REQUESTED" && (
                     <Button
+                      size="sm"
                       disabled={busyId === r.id}
                       onClick={() => void onSubmitRefund(r.id)}
                     >
@@ -60,7 +71,7 @@ export function AdminRefundsTable({
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       )}
     </Card>
   );

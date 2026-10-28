@@ -2,7 +2,9 @@
  * Admin catalog management page for Specialties and Hospitals (create, toggle active, soft-delete).
  */
 
-import { Alert, Spinner } from "../../components/ui";
+import { Alert } from "../../components/ui";
+import { Page, PageHeader } from "../../shared/ui/Page";
+import { Spinner } from "../../shared/ui/Spinner";
 import { HospitalsPanel } from "./components/HospitalsPanel";
 import { SpecialtiesPanel } from "./components/SpecialtiesPanel";
 import { useAdminCatalog } from "./hooks/useAdminCatalog";
@@ -24,14 +26,12 @@ export function AdminCatalogPage() {
   if (loading) return <Spinner label="Loading catalog…" />;
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <p className="eyebrow">Clinical Governance</p>
-        <h1>Catalog management</h1>
-        <p className="muted">
-          Manage medical specialties and partner hospitals across Bangladesh.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Clinical Governance"
+        title="Catalog management"
+        description="Manage medical specialties and partner hospitals across Bangladesh."
+      />
 
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
@@ -49,6 +49,6 @@ export function AdminCatalogPage() {
         onCreateHospital={createHospital}
         onToggleHospital={toggleHospital}
       />
-    </div>
+    </Page>
   );
 }

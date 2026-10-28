@@ -1,7 +1,12 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 
-import { Card } from "../../../components/ui";
 import type { AdminOverview } from "../../../shared/types";
+import { ButtonLink } from "../../../shared/ui/Button";
+import { Card } from "../../../shared/ui/Card";
+import { DescriptionList } from "../../../shared/ui/DescriptionList";
+import { Cluster, Grid } from "../../../shared/ui/Layout";
+import { Text } from "../../../shared/ui/Text";
 import { formatMoney } from "../../../shared/utils/format";
 import styles from "../AdminOverview.module.css";
 
@@ -24,145 +29,103 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
   );
 
   return (
-    <div className="grid">
+    <Grid min="320px" gap={4}>
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <h2>Users</h2>
-          <Link className="btn btn-secondary" to="/admin/users">
+          <ButtonLink variant="secondary" size="sm" to="/admin/users">
             Manage
-          </Link>
-        </div>
-        <dl className="facts">
-          <div>
-            <dt>Total</dt>
-            <dd>{overview.users.total}</dd>
-          </div>
-          <div>
-            <dt>Active</dt>
-            <dd>{overview.users.active}</dd>
-          </div>
-          <div>
-            <dt>Pending</dt>
-            <dd>{overview.users.pending}</dd>
-          </div>
-          <div>
-            <dt>Suspended</dt>
-            <dd>{overview.users.suspended}</dd>
-          </div>
-          <div>
-            <dt>New patients (this month)</dt>
-            <dd>{overview.patients?.newThisMonth ?? 0}</dd>
-          </div>
-        </dl>
+          </ButtonLink>
+        </Cluster>
+        <DescriptionList
+          columns={2}
+          items={[
+            { label: "Total", value: overview.users.total },
+            { label: "Active", value: overview.users.active },
+            { label: "Pending", value: overview.users.pending },
+            { label: "Suspended", value: overview.users.suspended },
+            { label: "New patients (this month)", value: overview.patients?.newThisMonth ?? 0 },
+          ]}
+        />
       </Card>
 
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <h2>Doctors</h2>
-          <Link className="btn btn-secondary" to="/admin/applications">
+          <ButtonLink variant="secondary" size="sm" to="/admin/applications">
             Review queue
-          </Link>
-        </div>
-        <dl className="facts">
-          <div>
-            <dt>Total</dt>
-            <dd>{overview.doctors.total}</dd>
-          </div>
-          <div>
-            <dt>Approved</dt>
-            <dd>{overview.doctors.approved}</dd>
-          </div>
-          <div>
-            <dt>Pending review</dt>
-            <dd>{overview.doctors.pendingReview}</dd>
-          </div>
-        </dl>
+          </ButtonLink>
+        </Cluster>
+        <DescriptionList
+          columns={2}
+          items={[
+            { label: "Total", value: overview.doctors.total },
+            { label: "Approved", value: overview.doctors.approved },
+            { label: "Pending review", value: overview.doctors.pendingReview },
+          ]}
+        />
       </Card>
 
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <h2>Appointments</h2>
-          <Link className="btn btn-secondary" to="/admin/operations">
+          <ButtonLink variant="secondary" size="sm" to="/admin/operations">
             View all
-          </Link>
-        </div>
-        <dl className="facts">
-          <div>
-            <dt>Total</dt>
-            <dd>{overview.appointments.total}</dd>
-          </div>
-          <div>
-            <dt>Today (Dhaka)</dt>
-            <dd>{overview.appointments.today ?? 0}</dd>
-          </div>
-          <div>
-            <dt>Confirmed</dt>
-            <dd>{overview.appointments.confirmed}</dd>
-          </div>
-          <div>
-            <dt>Completed</dt>
-            <dd>{overview.appointments.completed}</dd>
-          </div>
-          <div>
-            <dt>Cancelled</dt>
-            <dd>{overview.appointments.cancelled}</dd>
-          </div>
-        </dl>
+          </ButtonLink>
+        </Cluster>
+        <DescriptionList
+          columns={2}
+          items={[
+            { label: "Total", value: overview.appointments.total },
+            { label: "Today (Dhaka)", value: overview.appointments.today ?? 0 },
+            { label: "Confirmed", value: overview.appointments.confirmed },
+            { label: "Completed", value: overview.appointments.completed },
+            { label: "Cancelled", value: overview.appointments.cancelled },
+          ]}
+        />
       </Card>
 
       <Card>
         <h2>Payments & 10% Commission</h2>
-        <dl className="facts">
-          <div>
-            <dt>Succeeded</dt>
-            <dd>{overview.payments.succeeded}</dd>
-          </div>
-          <div>
-            <dt>Gross volume</dt>
-            <dd>{formatMoney(overview.payments.grossAmount)}</dd>
-          </div>
-          <div>
-            <dt>Commission (10%)</dt>
-            <dd>{formatMoney(overview.payments.commissionAmount)}</dd>
-          </div>
-          <div>
-            <dt>Doctor net</dt>
-            <dd>{formatMoney(overview.payments.netAmount)}</dd>
-          </div>
-        </dl>
+        <DescriptionList
+          columns={2}
+          items={[
+            { label: "Succeeded", value: overview.payments.succeeded },
+            { label: "Gross volume", value: formatMoney(overview.payments.grossAmount) },
+            { label: "Commission (10%)", value: formatMoney(overview.payments.commissionAmount) },
+            { label: "Doctor net", value: formatMoney(overview.payments.netAmount) },
+          ]}
+        />
       </Card>
 
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <h2>Refund requests</h2>
-          <Link className="btn btn-secondary" to="/admin/operations">
+          <ButtonLink variant="secondary" size="sm" to="/admin/operations">
             Process refunds
-          </Link>
-        </div>
-        <dl className="facts">
-          <div>
-            <dt>Requested</dt>
-            <dd>{overview.refunds.requested}</dd>
-          </div>
-          <div>
-            <dt>Total requested</dt>
-            <dd>{formatMoney(Number(overview.refunds.totalAmount))}</dd>
-          </div>
-        </dl>
+          </ButtonLink>
+        </Cluster>
+        <DescriptionList
+          columns={2}
+          items={[
+            { label: "Requested", value: overview.refunds.requested },
+            { label: "Total requested", value: formatMoney(Number(overview.refunds.totalAmount)) },
+          ]}
+        />
       </Card>
 
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <div>
-            <p className="eyebrow">Demand Leaderboard</p>
+            <p className={styles.eyebrow}>Demand Leaderboard</p>
             <h2>Most booked specialties</h2>
           </div>
-          <Link className="btn btn-secondary" to="/admin/catalog">
+          <ButtonLink variant="secondary" size="sm" to="/admin/catalog">
             Catalog
-          </Link>
-        </div>
+          </ButtonLink>
+        </Cluster>
         {!overview.mostBookedSpecialties || overview.mostBookedSpecialties.length === 0 ? (
-          <p className="muted small">No specialty bookings recorded yet.</p>
+          <Text tone="muted" size="sm">No specialty bookings recorded yet.</Text>
         ) : (
           <ol className={styles.rankList}>
             {overview.mostBookedSpecialties.map((spec, index) => (
@@ -176,9 +139,11 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
                   <p className={styles.rankMeta}>Slug: {spec.slug}</p>
                   <span className={styles.rankTrack}>
                     <i
-                      style={{
-                        width: `${(spec.appointmentsCount / maxSpecialtyCount) * 100}%`,
-                      }}
+                      style={
+                        {
+                          "--bar": `${(spec.appointmentsCount / maxSpecialtyCount) * 100}%`,
+                        } as CSSProperties
+                      }
                     />
                   </span>
                 </div>
@@ -189,17 +154,17 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
       </Card>
 
       <Card>
-        <div className="row space-between">
+        <Cluster justify="between" align="center">
           <div>
-            <p className="eyebrow">Clinical Leaderboard</p>
+            <p className={styles.eyebrow}>Clinical Leaderboard</p>
             <h2>Top doctors</h2>
           </div>
-          <Link className="btn btn-secondary" to="/doctors">
+          <ButtonLink variant="secondary" size="sm" to="/doctors">
             Directory
-          </Link>
-        </div>
+          </ButtonLink>
+        </Cluster>
         {!overview.topDoctors || overview.topDoctors.length === 0 ? (
-          <p className="muted small">No doctor bookings recorded yet.</p>
+          <Text tone="muted" size="sm">No doctor bookings recorded yet.</Text>
         ) : (
           <ol className={styles.rankList}>
             {overview.topDoctors.map((doc, index) => (
@@ -217,9 +182,11 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
                   </p>
                   <span className={styles.rankTrack}>
                     <i
-                      style={{
-                        width: `${(doc.appointmentsCount / maxDoctorCount) * 100}%`,
-                      }}
+                      style={
+                        {
+                          "--bar": `${(doc.appointmentsCount / maxDoctorCount) * 100}%`,
+                        } as CSSProperties
+                      }
                     />
                   </span>
                 </div>
@@ -228,6 +195,6 @@ export function TopSpecialtiesAndDoctors({ overview }: TopSpecialtiesAndDoctorsP
           </ol>
         )}
       </Card>
-    </div>
+    </Grid>
   );
 }

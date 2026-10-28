@@ -1,24 +1,158 @@
 /*
- * Design tokens for MediConnect BD — "Clinical Teal" theme.
- * Level 1 = primitives (raw palette, never used in components).
- * Level 2 = semantic tokens (what components use).
- * Level 3 = dark theme overrides (only semantic tokens change).
- * This is the ONLY file allowed to contain raw colour values.
+ * Design Tokens for MediConnect BD
+ * ==============================================================================
+ * This is the CENTRAL DESIGN TOKEN file for the entire application.
+ * It is the ONLY file where raw color codes (hex/rgb) are defined.
+ *
+ * All components in the app consume semantic CSS variables:
+ *   --color-primary, --color-bg, --color-surface, --color-border, --color-text
+ * ==============================================================================
  */
 
 :root {
-  /* ---------- 1. PRIMITIVES ---------- */
-  --teal-50: #effaf8;
-  --teal-100: #d5f2ee;
-  --teal-200: #aee5dd;
-  --teal-300: #7dd1c6;
-  --teal-400: #3fb5a7;
-  --teal-500: #14a394;
-  --teal-600: #0d7a6f;
-  --teal-700: #0a5f57;
-  --teal-800: #094b45;
-  --teal-900: #083b36;
+  /* ============================================================================
+   * 🎨 THEME PRESET LIBRARY (5 Distinct Color Schemes)
+   * ----------------------------------------------------------------------------
+   * You can add new palettes or tweak these values anytime.
+   * ============================================================================ */
 
+  /* ----------------------------------------------------------------------------
+   * PRESET 1: "Clinical Teal" (Default MediConnect BD Brand)
+   * Calm, professional healthcare teal with fresh mint highlights.
+   * ---------------------------------------------------------------------------- */
+  --preset-teal-primary: #0d7a6f;
+  --preset-teal-primary-hover: #0a5f57;
+  --preset-teal-primary-active: #094b45;
+  --preset-teal-primary-soft: #effaf8;
+  --preset-teal-primary-soft-hover: #d5f2ee;
+
+  --preset-teal-dark-bg: #0b1514;
+  --preset-teal-dark-bg-subtle: #0f1c1a;
+  --preset-teal-dark-surface: #111e1c;
+  --preset-teal-dark-surface-raised: #172826;
+  --preset-teal-dark-surface-sunken: #0d1817;
+  --preset-teal-dark-border: #233a37;
+  --preset-teal-dark-border-strong: #2f4b47;
+  --preset-teal-dark-primary: #3fb5a7;
+  --preset-teal-dark-primary-hover: #7dd1c6;
+  --preset-teal-dark-primary-active: #aee5dd;
+  --preset-teal-dark-primary-soft: #0f2e2a;
+  --preset-teal-dark-primary-soft-hover: #143a35;
+  --preset-teal-dark-on-primary: #04201d;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 2: "Midnight Navy" (Modern Tech / Digital Health)
+   * Deep space navy background with crisp sky-blue accents.
+   * ---------------------------------------------------------------------------- */
+  --preset-navy-primary: #0284c7;
+  --preset-navy-primary-hover: #0369a1;
+  --preset-navy-primary-active: #075985;
+  --preset-navy-primary-soft: #f0f9ff;
+  --preset-navy-primary-soft-hover: #e0f2fe;
+
+  --preset-navy-dark-bg: #0b0f19;
+  --preset-navy-dark-bg-subtle: #111827;
+  --preset-navy-dark-surface: #151e32;
+  --preset-navy-dark-surface-raised: #1e293b;
+  --preset-navy-dark-surface-sunken: #080c14;
+  --preset-navy-dark-border: #1e293b;
+  --preset-navy-dark-border-strong: #334155;
+  --preset-navy-dark-primary: #38bdf8;
+  --preset-navy-dark-primary-hover: #7dd3fc;
+  --preset-navy-dark-primary-active: #bae6fd;
+  --preset-navy-dark-primary-soft: #0c2838;
+  --preset-navy-dark-primary-soft-hover: #143d54;
+  --preset-navy-dark-on-primary: #082f49;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 3: "Emerald Healthcare" (Warm Botanical Medical)
+   * Natural healing emerald greens with deep organic dark tones.
+   * ---------------------------------------------------------------------------- */
+  --preset-emerald-primary: #059669;
+  --preset-emerald-primary-hover: #047857;
+  --preset-emerald-primary-active: #065f46;
+  --preset-emerald-primary-soft: #ecfdf5;
+  --preset-emerald-primary-soft-hover: #d1fae5;
+
+  --preset-emerald-dark-bg: #0a1511;
+  --preset-emerald-dark-bg-subtle: #0f1f1a;
+  --preset-emerald-dark-surface: #11211b;
+  --preset-emerald-dark-surface-raised: #172d25;
+  --preset-emerald-dark-surface-sunken: #0b1713;
+  --preset-emerald-dark-border: #1e3a2f;
+  --preset-emerald-dark-border-strong: #274d3e;
+  --preset-emerald-dark-primary: #34d399;
+  --preset-emerald-dark-primary-hover: #6ee7b7;
+  --preset-emerald-dark-primary-active: #a7f3d0;
+  --preset-emerald-dark-primary-soft: #0d2d22;
+  --preset-emerald-dark-primary-soft-hover: #133f30;
+  --preset-emerald-dark-on-primary: #022c22;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 4: "Royal Blue" (Classic Clinical Trust)
+   * Traditional hospital blue inspiring maximum patient trust and clarity.
+   * ---------------------------------------------------------------------------- */
+  --preset-blue-primary: #2563eb;
+  --preset-blue-primary-hover: #1d4ed8;
+  --preset-blue-primary-active: #1e40af;
+  --preset-blue-primary-soft: #eff6ff;
+  --preset-blue-primary-soft-hover: #dbeafe;
+
+  --preset-blue-dark-bg: #0b1120;
+  --preset-blue-dark-bg-subtle: #0f172a;
+  --preset-blue-dark-surface: #131c31;
+  --preset-blue-dark-surface-raised: #1e293b;
+  --preset-blue-dark-surface-sunken: #080d19;
+  --preset-blue-dark-border: #1e293b;
+  --preset-blue-dark-border-strong: #334155;
+  --preset-blue-dark-primary: #60a5fa;
+  --preset-blue-dark-primary-hover: #93c5fd;
+  --preset-blue-dark-primary-active: #bfdbfe;
+  --preset-blue-dark-primary-soft: #112445;
+  --preset-blue-dark-primary-soft-hover: #193663;
+  --preset-blue-dark-on-primary: #172554;
+
+  /* ----------------------------------------------------------------------------
+   * PRESET 5: "Charcoal Minimalist" (Pure Neutral Gray / OLED Friendly)
+   * High-contrast neutral graphite with a vibrant cyan-mint focal color.
+   * ---------------------------------------------------------------------------- */
+  --preset-charcoal-primary: #0f766e;
+  --preset-charcoal-primary-hover: #115e59;
+  --preset-charcoal-primary-active: #134e4a;
+  --preset-charcoal-primary-soft: #f0fdfa;
+  --preset-charcoal-primary-soft-hover: #ccfbf1;
+
+  --preset-charcoal-dark-bg: #121212;
+  --preset-charcoal-dark-bg-subtle: #181818;
+  --preset-charcoal-dark-surface: #1e1e1e;
+  --preset-charcoal-dark-surface-raised: #252525;
+  --preset-charcoal-dark-surface-sunken: #0d0d0d;
+  --preset-charcoal-dark-border: #2e2e2e;
+  --preset-charcoal-dark-border-strong: #404040;
+  --preset-charcoal-dark-primary: #2dd4bf;
+  --preset-charcoal-dark-primary-hover: #5eead4;
+  --preset-charcoal-dark-primary-active: #99f6e4;
+  --preset-charcoal-dark-primary-soft: #163230;
+  --preset-charcoal-dark-primary-soft-hover: #1f4845;
+  --preset-charcoal-dark-on-primary: #042f2e;
+
+  /* ============================================================================
+   * ⚡ ACTIVE THEME SWITCHER (METHOD 1)
+   * ----------------------------------------------------------------------------
+   * TO SWITCH THE LIGHT PALETTE:
+   * Replace "--preset-teal-..." below with:
+   *   --preset-navy-...
+   *   --preset-emerald-...
+   *   --preset-blue-...
+   *   --preset-charcoal-...
+   * ============================================================================ */
+  --active-primary:            var(--preset-teal-primary);
+  --active-primary-hover:      var(--preset-teal-primary-hover);
+  --active-primary-active:     var(--preset-teal-primary-active);
+  --active-primary-soft:       var(--preset-teal-primary-soft);
+  --active-primary-soft-hover: var(--preset-teal-primary-soft-hover);
+
+  /* Shared static primitive palettes */
   --slate-0: #ffffff;
   --slate-25: #fafcfc;
   --slate-50: #f4f7f7;
@@ -51,9 +185,12 @@
   --blue-200: #bee3f8;
   --blue-700: #095d92;
 
-  /* ---------- 2. SEMANTIC (light) ---------- */
+  /* ============================================================================
+   * ☀️ 1. LIGHT THEME SEMANTIC TOKENS
+   * ============================================================================ */
   color-scheme: light;
 
+  /* Backgrounds */
   --color-bg: var(--slate-50);
   --color-bg-subtle: var(--slate-100);
   --color-surface: var(--slate-0);
@@ -61,21 +198,25 @@
   --color-surface-sunken: var(--slate-25);
   --color-overlay: rgb(8 20 19 / 0.55);
 
+  /* Text */
   --color-text: var(--slate-900);
   --color-text-muted: var(--slate-600);
   --color-text-subtle: var(--slate-500);
   --color-text-inverse: var(--slate-0);
 
+  /* Borders */
   --color-border: var(--slate-200);
   --color-border-strong: var(--slate-300);
 
-  --color-primary: var(--teal-600);
-  --color-primary-hover: var(--teal-700);
-  --color-primary-active: var(--teal-800);
-  --color-primary-soft: var(--teal-50);
-  --color-primary-soft-hover: var(--teal-100);
+  /* Brand Primary (Consumed from Active Preset) */
+  --color-primary: var(--active-primary);
+  --color-primary-hover: var(--active-primary-hover);
+  --color-primary-active: var(--active-primary-active);
+  --color-primary-soft: var(--active-primary-soft);
+  --color-primary-soft-hover: var(--active-primary-soft-hover);
   --color-on-primary: var(--slate-0);
 
+  /* Feedback & Accents */
   --color-accent: var(--amber-500);
   --color-accent-hover: var(--amber-600);
   --color-on-accent: var(--slate-900);
@@ -99,11 +240,13 @@
   --color-info-border: var(--blue-200);
 
   --color-neutral-soft: var(--slate-100);
-  --color-focus-ring: var(--teal-500);
+  --color-focus-ring: var(--active-primary);
   --color-skeleton-base: var(--slate-100);
   --color-skeleton-shine: var(--slate-25);
 
-  /* ---------- SCALES ---------- */
+  /* ============================================================================
+   * 📐 SCALES & METRICS (Consistent across all themes)
+   * ============================================================================ */
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -163,7 +306,7 @@
   --container-xl: 1280px;
   --header-height: 4rem;
 
-  /* ---------- LEGACY ALIASES (TEMPORARY — delete in Step 7.3) ---------- */
+  /* Legacy compatibility aliases */
   --bg: var(--color-bg);
   --bg-color: var(--color-bg);
   --surface: var(--color-surface);
@@ -191,55 +334,70 @@
   --app-shadow-lifted: var(--shadow-md);
 }
 
-/* ---------- 3. DARK THEME ---------- */
+/* ==============================================================================
+ * 🌙 2. DARK THEME CONFIGURATION
+ * ------------------------------------------------------------------------------
+ * TO SWITCH THE DARK THEME:
+ * Replace "--preset-teal-dark-..." below with any of your presets:
+ *   --preset-navy-dark-...
+ *   --preset-emerald-dark-...
+ *   --preset-blue-dark-...
+ *   --preset-charcoal-dark-...
+ * ============================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --color-bg: #0b1514;
-  --color-bg-subtle: #0f1c1a;
-  --color-surface: #111e1c;
-  --color-surface-raised: #172826;
-  --color-surface-sunken: #0d1817;
-  --color-overlay: rgb(0 0 0 / 0.65);
+  /* Backgrounds */
+  --color-bg:             var(--preset-teal-dark-bg);
+  --color-bg-subtle:      var(--preset-teal-dark-bg-subtle);
+  --color-surface:        var(--preset-teal-dark-surface);
+  --color-surface-raised: var(--preset-teal-dark-surface-raised);
+  --color-surface-sunken: var(--preset-teal-dark-surface-sunken);
+  --color-overlay:        rgb(0 0 0 / 0.65);
 
-  --color-text: #e6f0ee;
-  --color-text-muted: #9fb3af;
-  --color-text-subtle: #7d928e;
-  --color-text-inverse: var(--slate-900);
+  /* Text */
+  --color-text:           #e6f0ee;
+  --color-text-muted:     #9fb3af;
+  --color-text-subtle:    #7d928e;
+  --color-text-inverse:   var(--slate-900);
 
-  --color-border: #233a37;
-  --color-border-strong: #2f4b47;
+  /* Borders */
+  --color-border:         var(--preset-teal-dark-border);
+  --color-border-strong:  var(--preset-teal-dark-border-strong);
 
-  --color-primary: var(--teal-400);
-  --color-primary-hover: var(--teal-300);
-  --color-primary-active: var(--teal-200);
-  --color-primary-soft: #0f2e2a;
-  --color-primary-soft-hover: #143a35;
-  --color-on-primary: #04201d;
+  /* Brand Primary */
+  --color-primary:            var(--preset-teal-dark-primary);
+  --color-primary-hover:      var(--preset-teal-dark-primary-hover);
+  --color-primary-active:     var(--preset-teal-dark-primary-active);
+  --color-primary-soft:       var(--preset-teal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-teal-dark-primary-soft-hover);
+  --color-on-primary:         var(--preset-teal-dark-on-primary);
 
-  --color-success: #4ade80;
-  --color-success-soft: #0f2a1a;
+  /* Status Colors (Adjusted for high dark contrast) */
+  --color-success:        #4ade80;
+  --color-success-soft:   #0f2a1a;
   --color-success-border: #1f4d31;
   --color-success-strong: #86efac;
 
-  --color-warning: #fbbf24;
-  --color-warning-soft: #2a2108;
+  --color-warning:        #fbbf24;
+  --color-warning-soft:   #2a2108;
   --color-warning-border: #4d3b0d;
 
-  --color-danger: #f87171;
-  --color-danger-hover: #fca5a5;
-  --color-danger-soft: #2d1414;
-  --color-danger-border: #5c2424;
+  --color-danger:         #f87171;
+  --color-danger-hover:   #fca5a5;
+  --color-danger-soft:    #2d1414;
+  --color-danger-border:  #5c2424;
 
-  --color-info: #60a5fa;
-  --color-info-soft: #0f1f33;
-  --color-info-border: #1e3a5f;
+  --color-info:           #60a5fa;
+  --color-info-soft:      #0f1f33;
+  --color-info-border:    #1e3a5f;
 
-  --color-neutral-soft: #1a2b29;
-  --color-focus-ring: var(--teal-300);
-  --color-skeleton-base: #16302c;
+  --color-neutral-soft:   #1a2b29;
+  --color-focus-ring:     var(--color-primary);
+  --color-skeleton-base:  #16302c;
   --color-skeleton-shine: #1d3b36;
 
+  /* Dark mode elevated shadows */
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5);
   --shadow-md: 0 8px 24px rgb(0 0 0 / 0.5);

@@ -15,7 +15,6 @@ export function AppointmentsPage() {
     reviewsByAppointment,
     loading,
     error,
-    notice,
     loadAll,
     handleRescheduled,
     handleCancelled,
@@ -35,7 +34,6 @@ export function AppointmentsPage() {
       </header>
 
       {error && <Alert kind="error">{error}</Alert>}
-      {notice && <Alert kind="success">{notice}</Alert>}
 
       <h2 className={styles.sectionTitle}>Active & Upcoming ({upcoming.length})</h2>
       {upcoming.length === 0 && <EmptyState>No active or upcoming appointments.</EmptyState>}

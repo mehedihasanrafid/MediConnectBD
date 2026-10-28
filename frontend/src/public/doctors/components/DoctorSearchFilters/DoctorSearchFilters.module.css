@@ -1,12 +1,18 @@
 .filtersCard {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
-  flex-wrap: wrap;
   align-items: flex-end;
   background-color: var(--surface, #ffffff);
 }
 
 .fieldWrapper {
-  flex: 1;
-  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.actionsWrapper {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 2px;
 }

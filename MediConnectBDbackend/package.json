@@ -19,6 +19,7 @@
     "dev:start": "concurrently -k -n redis,api,worker \"./.local/bin/redis-server --bind 127.0.0.1 --port 6379 --dir \\\"$PWD/.local/redis-data\\\" --appendonly yes\" \"npm run dev\" \"npm run dev:worker\"",
     "db:migrate": "npm run build && npm run migration:run",
     "db:seed": "npm run build && npm run seed",
+    "seed:demo-call": "node scripts/seed-demo-appointment.cjs",
     "db:setup:local": "node scripts/setup-local-database.cjs",
     "db:revert": "npm run build && npm run migration:revert"
   },

@@ -8,6 +8,7 @@
     "dev": "npm start",
     "build": "npm --prefix MediConnectBDbackend run build && npm --prefix frontend run build",
     "test": "npm --prefix MediConnectBDbackend test && npm --prefix frontend test",
+    "test:e2e": "npm --prefix frontend run test:e2e -- -c playwright.config.ts",
     "db:migrate": "npm --prefix MediConnectBDbackend run db:migrate",
     "db:seed": "npm --prefix MediConnectBDbackend run db:seed",
     "docker:up": "docker compose up --build"

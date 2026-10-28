@@ -17,4 +17,6 @@ mysql-data/
 redis-data/
 .local/
 mysql-run/
+test-results/
+playwright-report/
 MediConnectBD_Day1_Blueprint.zip

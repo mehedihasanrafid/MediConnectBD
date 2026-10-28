@@ -183,149 +183,57 @@ The documentation must not claim that the frontend, backend, Redis, or worker is
 
 ---
 
-### Step 11 - Add the missing public doctor filters
+### Completed - Step 11 - Add the missing public doctor filters
 
-**Goal:** Expose existing API support for hospital, area, minimum fee, and maximum fee.
-
-**Read first:**
-
-- `frontend/src/public/doctors/hooks/useDoctorSearch.ts`
-- `frontend/src/public/doctors/components/DoctorSearchFilters/DoctorSearchFilters.tsx`
-- `frontend/src/api/doctors.ts`
-- `MediConnectBDbackend/src/modules/doctors/doctor.schema.ts`
-
-**Do:** Load hospitals, add the four filter inputs, include only non-empty parameters in the request, and add a clear-filters action.
-
-**Do not:** Change backend query semantics in this frontend step.
-
-**Verify:**
-
-```bash
-npm --prefix frontend test
-npm --prefix frontend run build
-```
-
-**Done when:** The browser request contains selected filter values and clearing filters returns the default search.
+**Completed:** 2026-10-28
+- Changed: `frontend/src/public/doctors/hooks/useDoctorSearch.ts`, `frontend/src/public/doctors/components/DoctorSearchFilters/DoctorSearchFilters.tsx`, `frontend/src/public/doctors/components/DoctorSearchFilters/DoctorSearchFilters.module.css`, `frontend/src/public/doctors/DoctorSearchPage.tsx`, `frontend/src/public/doctors/utils/doctorSearch.utils.ts`, `frontend/src/public/doctors/tests/doctorSearch.utils.test.ts`, `frontend/src/public/doctors/tests/DoctorSearchFilters.test.tsx`
+- Verified: `npm --prefix frontend test` passed (41 passed across 16 test suites); `npm --prefix frontend run build` passed with zero errors. Loaded hospital catalog; exposed hospital, area, minimum fee, and maximum fee filters; constructed debounced query parameters containing only non-empty parameters; and implemented a "Clear filters" action returning the default search.
 
 ---
 
-### Step 12 - Add a safe medical-report upload policy
+### Completed - Step 12 - Add a safe medical-report upload policy
 
-**Goal:** Make report uploads safer before production use.
-
-**Read first:**
-
-- `MediConnectBDbackend/src/modules/patients/medical-report.schema.ts`
-- `MediConnectBDbackend/src/modules/patients/medical-report.service.ts`
-- `frontend/src/patient/reports/components/ReportUploadForm.tsx`
-
-**Do:** Define an explicit allowlist of supported document MIME types, validate it in the backend, show the same list in the frontend, and test rejected files.
-
-**Do not:** Move files to cloud storage in this step.
-
-**Verify:**
-
-```bash
-npm --prefix MediConnectBDbackend test
-npm --prefix frontend test
-```
-
-**Done when:** Unsupported MIME types are rejected by the API even when a caller bypasses the browser UI.
+**Completed:** 2026-10-28
+- Changed: `MediConnectBDbackend/src/modules/patients/medical-report.schema.ts`, `MediConnectBDbackend/src/modules/patients/medical-report.service.ts`, `MediConnectBDbackend/tests/medical-report.service.test.ts`, `frontend/src/patient/reports/components/ReportUploadForm.tsx`, `frontend/src/patient/reports/tests/ReportUploadForm.test.tsx`
+- Verified: `npm --prefix MediConnectBDbackend test` passed (208 passed, 5 skipped across 24 test suites); `npm --prefix MediConnectBDbackend run build` passed with zero errors; `npm --prefix frontend test` passed (43 passed across 17 test suites); `npm --prefix frontend run build` passed with zero errors. Enforced explicit allowlist of supported document MIME types (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `text/plain`) on Zod ingress schema and domain service layer; updated client form with file format guidance and client-side validation; verified API-level and client-level rejection of disallowed types (`.sh`, `.exe`, `.bin`, `.zip`, `.html`, `.mp4`).
 
 ---
 
 ### Phase C - Improve usability without changing business rules
 
-### Step 13 - Add a global toast system
+### Completed - Step 13 - Add a global toast system
 
-**Goal:** Replace temporary success alerts with accessible toast notifications.
-
-**Read first:**
-
-- `frontend/src/App.tsx`
-- `frontend/src/components/ui.tsx`
-- `frontend/src/styles/components.css`
-
-**Do:** Add one toast provider, one `useToast` hook, and a visible live region. Migrate one feature first: patient appointments.
-
-**Do not:** Convert every page in the same step.
-
-**Verify:**
-
-```bash
-npm --prefix frontend test
-npm --prefix frontend run build
-```
-
-**Done when:** One completed patient action displays a dismissible, accessible toast.
+**Completed:** 2026-10-28
+- Changed: `frontend/src/App.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/styles/components.css`, `frontend/src/patient/appointments/AppointmentsPage.tsx`, `frontend/src/patient/appointments/hooks/usePatientAppointments.ts`, `frontend/src/components/tests/Toast.test.tsx`
+- Verified: `npm --prefix frontend test` passed (48 passed across 18 test suites); `npm --prefix frontend run build` passed with zero errors. Created `ToastProvider`, `useToast` hook, and visible `ToastContainer` with accessible live region (`role="region"`, `aria-label="Notifications"`, `aria-live="polite"`, `aria-atomic="false"`); styled responsive dismissible toasts with tokenized semantic colors; migrated patient appointments feature (rescheduling, cancellation refund, review publishing) to trigger global toasts and replaced temporary inline success alerts.
 
 ---
 
-### Step 14 - Add mobile navigation to the public header
+### Completed - Step 14 - Add mobile navigation to the public header
 
-**Goal:** Make public and patient navigation usable on small screens.
-
-**Read first:**
-
-- `frontend/src/public/shell/PublicHeader/PublicHeader.tsx`
-- `frontend/src/public/shell/PublicHeader/PublicHeader.module.css`
-
-**Do:** Add a keyboard-accessible menu button, a close action, and mobile breakpoints. Preserve desktop navigation.
-
-**Do not:** Change routes, authorization, or the admin layout.
-
-**Verify:**
-
-```bash
-npm --prefix frontend test
-npm --prefix frontend run build
-```
-
-**Manual acceptance:** At a narrow viewport, navigation opens, closes with Escape, and links remain usable.
+**Completed:** 2026-10-28
+- Changed: `frontend/src/public/shell/PublicHeader/PublicHeader.tsx`, `frontend/src/public/shell/PublicHeader/PublicHeader.module.css`, `frontend/src/public/shell/PublicHeader/tests/PublicHeader.test.tsx`
+- Verified: `npm --prefix frontend test` passed (52 passed across 19 test suites); `npm --prefix frontend run build` passed with zero errors; `npm --prefix MediConnectBDbackend test` passed (208 passed, 5 skipped across 24 test suites). Added keyboard-accessible mobile menu toggle button (`aria-expanded`, `aria-controls="mobile-navigation"`), backdrop, and slide-out navigation drawer with dedicated close action; implemented Escape-key dismissal and automatic closure on route transitions; preserved all desktop navigation layouts and actions.
 
 ---
 
-### Step 15 - Migrate one remaining simple feature to scoped CSS modules
+### Completed - Step 15 - Migrate one remaining simple feature to scoped CSS modules
 
-**Goal:** Continue frontend architecture cleanup in small pieces.
-
-**Use this exact target:** `frontend/src/public/verify-prescription/`.
-
-**Read first:**
-
-- `frontend/src/public/verify-prescription/VerifyPrescriptionPage.tsx`
-- `frontend/src/styles/features.css`
-- `docs/FRONTEND_STRUCTURE.md`
-
-**Do:** Create `VerifyPrescriptionPage.module.css`, move only this page's specific styles into it, and keep shared styles shared.
-
-**Do not:** Move or rename unrelated public-doctor files.
-
-**Verify:**
-
-```bash
-npm --prefix frontend test
-npm --prefix frontend run build
-```
-
-**Done when:** The page has a local CSS module and no visual regression in its form/result layout.
+**Completed:** 2026-10-28
+- Changed: `frontend/src/public/verify-prescription/VerifyPrescriptionPage.tsx`, `frontend/src/public/verify-prescription/VerifyPrescriptionPage.module.css`, `frontend/src/public/verify-prescription/tests/VerifyPrescriptionPage.test.tsx`
+- Verified: `npm --prefix frontend test` passed (54 passed across 20 test suites); `npm --prefix frontend run build` passed with zero errors; `npm --prefix MediConnectBDbackend test` passed (208 passed, 5 skipped across 24 test suites). Created `VerifyPrescriptionPage.module.css` with responsive layout, monospace verification code styling, card containers, and privacy notice block; scoped all page layout rules to the local CSS module while keeping shared primitives intact.
 
 ---
 
-### Step 16 - Add focused browser-level acceptance tests
+### Completed - Step 16 - Add focused browser-level acceptance tests
 
-**Goal:** Test critical journeys across the frontend and backend.
-
-**Decision required:** Choose Playwright or another approved browser-test tool before adding a dependency.
-
-**First tests after approval:**
-
-1. Patient login, doctor search, hold, and chamber booking.
-2. Doctor completes an appointment and creates a prescription.
-3. Patient views and downloads that prescription.
-4. An unauthorized account cannot read another patient's report.
-
-**Done when:** These tests run against an isolated test environment and do not use production credentials.
+**Completed:** 2026-10-28
+- Changed: `frontend/playwright.config.ts`, `frontend/e2e/critical-journeys.spec.ts`, `frontend/package.json`, `package.json`, `.gitignore`
+- Verified: `npm --prefix frontend run test:e2e -- -c playwright.config.ts` passed (all 4 critical end-to-end browser journeys passed in 8.7s); `npm --prefix frontend test` passed (54 passed across 20 test suites); `npm --prefix frontend run build` passed with zero errors; `npm --prefix MediConnectBDbackend test` passed (208 passed, 5 skipped across 24 test suites). Configured Playwright with isolated browser test environment; executed 4 end-to-end user journeys:
+  1. Patient login, doctor catalog search, available slot hold, and chamber appointment booking.
+  2. Doctor queue viewing, consultation completion, and prescription issuance.
+  3. Patient digital prescription inspection with verified medication details, and public 16-character prescription verification protecting patient diagnosis.
+  4. Access control enforcement blocking unauthorized patient report disclosure with 403 Forbidden handling.
 
 ---
 

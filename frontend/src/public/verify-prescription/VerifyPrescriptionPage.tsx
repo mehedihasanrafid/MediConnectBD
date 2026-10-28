@@ -10,6 +10,7 @@ import { Alert, Badge, Button, Card, Field } from "../../components/ui";
 import type { VerifyPrescriptionResponse } from "../../shared/types";
 import { getErrorMessage } from "../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../shared/utils/format";
+import styles from "./VerifyPrescriptionPage.module.css";
 
 export function VerifyPrescriptionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,8 +56,8 @@ export function VerifyPrescriptionPage() {
   }
 
   return (
-    <div className="page">
-      <header className="page-header">
+    <div className={`page ${styles.page}`}>
+      <header className={`page-header ${styles.header}`}>
         <p className="eyebrow">Public Verification</p>
         <h1>Verify prescription</h1>
         <p className="muted">
@@ -64,8 +65,8 @@ export function VerifyPrescriptionPage() {
         </p>
       </header>
 
-      <Card>
-        <form onSubmit={handleSubmit} className="filters">
+      <Card className={styles.formCard}>
+        <form onSubmit={handleSubmit} className={styles.form}>
           <Field
             label="Verification code (16 characters)"
             value={code}
@@ -82,17 +83,17 @@ export function VerifyPrescriptionPage() {
       {error && <Alert kind="error">{error}</Alert>}
 
       {result && (
-        <Card>
+        <Card className={styles.resultCard}>
           {result.valid && result.prescription ? (
             <>
-              <div className="row space-between">
-                <h3>Authentic MediConnect BD Prescription</h3>
+              <div className={styles.resultHeader}>
+                <h3 className={styles.resultTitle}>Authentic MediConnect BD Prescription</h3>
                 <Badge tone="success">Verified</Badge>
               </div>
-              <dl className="facts" style={{ marginTop: "0.75rem" }}>
+              <dl className={`facts ${styles.facts}`}>
                 <div>
                   <dt>Verification Code</dt>
-                  <dd>{result.prescription.verificationCode}</dd>
+                  <dd className={styles.codeValue}>{result.prescription.verificationCode}</dd>
                 </div>
                 <div>
                   <dt>Prescribing Doctor</dt>
@@ -107,7 +108,7 @@ export function VerifyPrescriptionPage() {
                   <dd>{formatDhakaDateTime(result.prescription.issuedAt)}</dd>
                 </div>
               </dl>
-              <p className="muted small">
+              <p className={`muted small ${styles.privacyNotice}`}>
                 For patient privacy, clinical diagnosis and medication details are only visible to
                 the patient and prescribing doctor.
               </p>

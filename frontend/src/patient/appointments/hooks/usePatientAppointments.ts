@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { appointmentsApi } from "../../../api/appointments";
 import { reviewsApi } from "../../../api/reviews";
+import { useToast } from "../../../components/ui";
 import type { Appointment, CancellationOutcome, Review } from "../../../shared/types";
 import { formatDhakaDateTime, formatMoney } from "../../../shared/utils/format";
 
@@ -13,7 +14,7 @@ export function usePatientAppointments() {
   const [reviewsByAppointment, setReviewsByAppointment] = useState<Record<string, Review>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const loadAll = useCallback(async () => {
     try {
@@ -69,34 +70,40 @@ export function usePatientAppointments() {
   const handleRescheduled = useCallback(
     (updated: Appointment) => {
       replaceAppointment(updated);
-      setNotice(`Appointment rescheduled to ${formatDhakaDateTime(updated.scheduledStartAt)}.`);
+      showToast(`Appointment rescheduled to ${formatDhakaDateTime(updated.scheduledStartAt)}.`, {
+        kind: "success",
+      });
     },
-    [replaceAppointment],
+    [replaceAppointment, showToast],
   );
 
   const handleCancelled = useCallback(
     (outcome: CancellationOutcome) => {
       replaceAppointment(outcome.appointment);
-      setNotice(
+      showToast(
         outcome.refundId
           ? `Appointment cancelled. A refund of ${formatMoney(outcome.refundAmount)} has been requested.`
           : "Appointment cancelled.",
+        { kind: "success" },
       );
     },
-    [replaceAppointment],
+    [replaceAppointment, showToast],
   );
 
-  const handleReviewCreated = useCallback((review: Review) => {
-    setReviewsByAppointment((prev) => ({ ...prev, [review.appointmentId]: review }));
-    setNotice("Thank you! Your review has been published.");
-  }, []);
+  const handleReviewCreated = useCallback(
+    (review: Review) => {
+      setReviewsByAppointment((prev) => ({ ...prev, [review.appointmentId]: review }));
+      showToast("Thank you! Your review has been published.", { kind: "success" });
+    },
+    [showToast],
+  );
 
   return {
     appointments,
     reviewsByAppointment,
     loading,
     error,
-    notice,
+    notice: null,
     loadAll,
     handleRescheduled,
     handleCancelled,

@@ -4,6 +4,7 @@
  */
 
 import { AppError } from "../../utils/app-error";
+import { ALLOWED_REPORT_MIME_TYPES } from "./medical-report.schema";
 import type {
   MedicalReportDetail,
   MedicalReportRepository,
@@ -27,6 +28,14 @@ export class MedicalReportService {
     contentBase64: string;
     notes?: string | null | undefined;
   }): Promise<MedicalReportSummary> {
+    if (!ALLOWED_REPORT_MIME_TYPES.includes(input.mimeType as any)) {
+      throw new AppError(
+        400,
+        "UNSUPPORTED_REPORT_MIME_TYPE",
+        `Unsupported document format "${input.mimeType}". Allowed formats: application/pdf, image/jpeg, image/png, image/webp, text/plain`,
+      );
+    }
+
     const cleanedBase64 = input.contentBase64.includes(",")
       ? input.contentBase64.slice(input.contentBase64.indexOf(",") + 1).trim()
       : input.contentBase64.trim();

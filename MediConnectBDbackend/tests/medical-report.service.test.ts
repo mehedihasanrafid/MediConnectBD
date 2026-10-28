@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import {
+  ALLOWED_REPORT_MIME_TYPES,
+  createMedicalReportSchema,
+} from "../src/modules/patients/medical-report.schema";
 import type {
   CreateMedicalReportInput,
   MedicalReportDetail,
@@ -125,5 +129,64 @@ describe("MedicalReportService", () => {
         contentBase64: oversizedBase64,
       }),
     ).rejects.toMatchObject({ statusCode: 413, code: "REPORT_TOO_LARGE" });
+  });
+
+  it("enforces safe document MIME type allowlist on schema and service", async () => {
+    const repo = new FakeMedicalReportRepository();
+    const service = new MedicalReportService(repo);
+    const patientId = randomUUID();
+
+    // 1. Service-level rejection for unsupported MIME types
+    const unsafeMimeTypes = [
+      "application/x-msdownload",
+      "application/javascript",
+      "application/x-sh",
+      "application/zip",
+      "text/html",
+    ];
+
+    for (const unsafeMime of unsafeMimeTypes) {
+      await expect(
+        service.create({
+          patientProfileId: patientId,
+          title: "Unsafe File",
+          fileName: "file.bin",
+          mimeType: unsafeMime,
+          contentBase64: Buffer.from("content").toString("base64"),
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        code: "UNSUPPORTED_REPORT_MIME_TYPE",
+      });
+    }
+
+    // 2. Schema-level rejection
+    const schemaResult = createMedicalReportSchema.safeParse({
+      title: "Malicious Script",
+      fileName: "hack.sh",
+      mimeType: "application/x-sh",
+      contentBase64: Buffer.from("echo 1").toString("base64"),
+    });
+    expect(schemaResult.success).toBe(false);
+
+    // 3. Allowed MIME types pass both schema and service
+    for (const allowedMime of ALLOWED_REPORT_MIME_TYPES) {
+      const validParse = createMedicalReportSchema.safeParse({
+        title: "Valid Document",
+        fileName: "document.pdf",
+        mimeType: allowedMime,
+        contentBase64: Buffer.from("sample content").toString("base64"),
+      });
+      expect(validParse.success).toBe(true);
+
+      const created = await service.create({
+        patientProfileId: patientId,
+        title: `Valid ${allowedMime}`,
+        fileName: "valid.doc",
+        mimeType: allowedMime,
+        contentBase64: Buffer.from("sample content").toString("base64"),
+      });
+      expect(created.mimeType).toBe(allowedMime);
+    }
   });
 });

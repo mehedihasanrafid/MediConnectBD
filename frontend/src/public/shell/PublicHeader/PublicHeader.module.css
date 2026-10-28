@@ -58,7 +58,7 @@
 
 .activeNavLink {
   color: var(--primary);
-  background: var(--primary-soft);
+  background: var(--primary-soft, #e6f7f5);
 }
 
 .actions,
@@ -66,6 +66,10 @@
 .userMenu {
   display: flex;
   align-items: center;
+}
+
+.actions {
+  gap: 0.75rem;
 }
 
 .authLinks,
@@ -96,7 +100,173 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 900px) {
+/* Mobile navigation controls & drawer */
+.menuButton {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  padding: 0.45rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.menuButton:hover {
+  background: var(--bg-color);
+  border-color: var(--primary);
+}
+
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 45;
+}
+
+.mobileDrawer {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  background: var(--surface);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  flex-direction: column;
+  padding: 1.25rem;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobileDrawerOpen {
+  transform: translateX(0);
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.drawerLogo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--primary);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.drawerCloseButton {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.drawerCloseButton:hover {
+  background: var(--bg-color);
+  color: var(--danger);
+}
+
+.mobileNavLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.mobileNavLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.mobileNavLink:hover {
+  background: var(--bg-color);
+  color: var(--primary);
+}
+
+.mobileActiveNavLink {
+  background: var(--primary-soft, #e6f7f5);
+  color: var(--primary);
+}
+
+.mobileDrawerFooter {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.mobileUserSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobileUserInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mobileSignOutButton {
+  width: 100%;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.mobileAuthActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobileAuthActions a {
+  text-align: center;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 860px) {
+  .navLinks {
+    display: none;
+  }
+
+  .menuButton {
+    display: inline-flex;
+  }
+
+  .backdrop {
+    display: block;
+  }
+
+  .mobileDrawer {
+    display: flex;
+  }
+
   .userInfo {
     display: none;
   }
@@ -105,5 +275,9 @@
 @media (max-width: 640px) {
   .content {
     padding: 0.75rem 1rem;
+  }
+
+  .authLinks {
+    display: none;
   }
 }

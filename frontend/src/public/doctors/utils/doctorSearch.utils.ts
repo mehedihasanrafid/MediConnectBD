@@ -30,3 +30,50 @@ export function groupSlotsByDate(slots: AvailabilitySlot[]): Map<string, Availab
   }
   return grouped;
 }
+
+export interface DoctorSearchFilterValues {
+  search?: string;
+  specialty?: string;
+  hospital?: string;
+  area?: string;
+  minFee?: string | number;
+  maxFee?: string | number;
+}
+
+/**
+ * Builds URL query parameters containing only non-empty, validated filters.
+ */
+export function buildDoctorSearchParams(
+  filters: DoctorSearchFilterValues,
+  limit = 12,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.search && filters.search.trim()) {
+    params.set("search", filters.search.trim());
+  }
+  if (filters.specialty && filters.specialty.trim()) {
+    params.set("specialty", filters.specialty.trim());
+  }
+  if (filters.hospital && filters.hospital.trim()) {
+    params.set("hospital", filters.hospital.trim());
+  }
+  if (filters.area && filters.area.trim()) {
+    params.set("area", filters.area.trim());
+  }
+  if (
+    filters.minFee !== undefined &&
+    String(filters.minFee).trim() !== "" &&
+    !Number.isNaN(Number(filters.minFee))
+  ) {
+    params.set("minFee", String(Math.max(0, Number(filters.minFee))));
+  }
+  if (
+    filters.maxFee !== undefined &&
+    String(filters.maxFee).trim() !== "" &&
+    !Number.isNaN(Number(filters.maxFee))
+  ) {
+    params.set("maxFee", String(Math.max(0, Number(filters.maxFee))));
+  }
+  params.set("limit", String(limit));
+  return params;
+}

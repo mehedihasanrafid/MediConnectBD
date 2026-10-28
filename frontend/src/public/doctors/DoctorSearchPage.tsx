@@ -13,10 +13,21 @@ export function DoctorSearchPage() {
   const {
     doctors,
     specialties,
+    hospitals,
     search,
     setSearch,
     specialty,
     setSpecialty,
+    hospital,
+    setHospital,
+    area,
+    setArea,
+    minFee,
+    setMinFee,
+    maxFee,
+    setMaxFee,
+    clearFilters,
+    hasActiveFilters,
     loading,
     error,
   } = useDoctorSearch();
@@ -26,7 +37,9 @@ export function DoctorSearchPage() {
       <header className={`page-header ${styles.header}`}>
         <p className="eyebrow">Public Directory</p>
         <h1>Find a doctor</h1>
-        <p className="muted">Search by name or specialty, then view available slots.</p>
+        <p className="muted">
+          Search by doctor name, specialty, hospital, area, or consultation fee.
+        </p>
       </header>
 
       <DoctorSearchFilters
@@ -35,6 +48,17 @@ export function DoctorSearchPage() {
         specialty={specialty}
         onSpecialtyChange={setSpecialty}
         specialties={specialties}
+        hospital={hospital}
+        onHospitalChange={setHospital}
+        hospitals={hospitals}
+        area={area}
+        onAreaChange={setArea}
+        minFee={minFee}
+        onMinFeeChange={setMinFee}
+        maxFee={maxFee}
+        onMaxFeeChange={setMaxFee}
+        onClearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
       />
 
       {error && <Alert kind="error">{error}</Alert>}

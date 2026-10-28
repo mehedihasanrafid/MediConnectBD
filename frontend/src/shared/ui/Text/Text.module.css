@@ -1,0 +1,59 @@
+.text[data-tone="default"] {
+  color: var(--color-text);
+}
+
+.text[data-tone="muted"] {
+  color: var(--color-text-muted);
+}
+
+.text[data-tone="subtle"] {
+  color: var(--color-text-subtle);
+}
+
+.text[data-tone="primary"] {
+  color: var(--color-primary);
+}
+
+.text[data-tone="danger"] {
+  color: var(--color-danger);
+}
+
+.text[data-tone="success"] {
+  color: var(--color-success);
+}
+
+.text[data-size="xs"] {
+  font-size: var(--text-xs);
+}
+
+.text[data-size="sm"] {
+  font-size: var(--text-sm);
+}
+
+.text[data-size="base"] {
+  font-size: var(--text-base);
+}
+
+.text[data-size="lg"] {
+  font-size: var(--text-lg);
+}
+
+.text[data-weight="medium"] {
+  font-weight: var(--weight-medium);
+}
+
+.text[data-weight="semibold"] {
+  font-weight: var(--weight-semibold);
+}
+
+.text[data-weight="bold"] {
+  font-weight: var(--weight-bold);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}

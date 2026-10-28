@@ -37,7 +37,8 @@ describe("Global Toast System (Step 13)", () => {
     );
 
     // Live region container attributes
-    expect(html).toContain('class="toast-container"');
+    expect(html).toContain('data-testid="toast-container"');
+    expect(html).toContain("toast-container");
     expect(html).toContain('role="region"');
     expect(html).toContain('aria-label="Notifications"');
     expect(html).toContain('aria-live="polite"');
@@ -46,22 +47,20 @@ describe("Global Toast System (Step 13)", () => {
     // Success toast
     expect(html).toContain("Appointment rescheduled to 10:30 AM.");
     expect(html).toContain('role="status"');
-    expect(html).toContain('class="toast toast-success"');
     expect(html).toContain('data-testid="toast-success"');
 
     // Error toast
     expect(html).toContain("Could not process cancellation request.");
     expect(html).toContain('role="alert"');
-    expect(html).toContain('class="toast toast-error"');
     expect(html).toContain('data-testid="toast-error"');
 
     // Info toast
     expect(html).toContain("Review submitted.");
-    expect(html).toContain('class="toast toast-info"');
+    expect(html).toContain('data-testid="toast-info"');
 
     // Dismiss buttons
     expect(html).toContain('aria-label="Dismiss notification"');
-    expect(html).toContain('class="toast-close-btn"');
+    expect(html).toContain("toast-close-btn");
   });
 
   it("returns null when no toasts are active", () => {

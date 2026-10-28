@@ -348,11 +348,11 @@
   color-scheme: dark;
 
   /* Backgrounds */
-  --color-bg:             var(--preset-teal-dark-bg);
-  --color-bg-subtle:      var(--preset-teal-dark-bg-subtle);
-  --color-surface:        var(--preset-teal-dark-surface);
-  --color-surface-raised: var(--preset-teal-dark-surface-raised);
-  --color-surface-sunken: var(--preset-teal-dark-surface-sunken);
+  --color-bg:             var(--preset-charcoal-dark-bg);
+  --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
+  --color-surface:        var(--preset-charcoal-dark-surface);
+  --color-surface-raised: var(--preset-charcoal-dark-surface-raised);
+  --color-surface-sunken: var(--preset-charcoal-dark-surface-sunken);
   --color-overlay:        rgb(0 0 0 / 0.65);
 
   /* Text */
@@ -362,16 +362,16 @@
   --color-text-inverse:   var(--slate-900);
 
   /* Borders */
-  --color-border:         var(--preset-teal-dark-border);
-  --color-border-strong:  var(--preset-teal-dark-border-strong);
+  --color-border:         var(--preset-charcoal-dark-border);
+  --color-border-strong:  var(--preset-charcoal-dark-border-strong);
 
   /* Brand Primary */
-  --color-primary:            var(--preset-teal-dark-primary);
-  --color-primary-hover:      var(--preset-teal-dark-primary-hover);
-  --color-primary-active:     var(--preset-teal-dark-primary-active);
-  --color-primary-soft:       var(--preset-teal-dark-primary-soft);
-  --color-primary-soft-hover: var(--preset-teal-dark-primary-soft-hover);
-  --color-on-primary:         var(--preset-teal-dark-on-primary);
+  --color-primary:            var(--preset-charcoal-dark-primary);
+  --color-primary-hover:      var(--preset-charcoal-dark-primary-hover);
+  --color-primary-active:     var(--preset-charcoal-dark-primary-active);
+  --color-primary-soft:       var(--preset-charcoal-dark-primary-soft);
+  --color-primary-soft-hover: var(--preset-charcoal-dark-primary-soft-hover);
+  --color-on-primary:         var(--preset-charcoal-dark-on-primary);
 
   /* Status Colors (Adjusted for high dark contrast) */
   --color-success:        #4ade80;

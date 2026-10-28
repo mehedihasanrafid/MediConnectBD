@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { prescriptionsApi } from "../../api/prescriptions";
-import { Alert, Badge, Button, Card, Field } from "../../components/ui";
+import { Alert, Badge, Button, Card, Field, Page, PageHeader, Text } from "../../shared/ui";
 import type { VerifyPrescriptionResponse } from "../../shared/types";
 import { getErrorMessage } from "../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../shared/utils/format";
@@ -56,14 +56,12 @@ export function VerifyPrescriptionPage() {
   }
 
   return (
-    <div className={`page ${styles.page}`}>
-      <header className={`page-header ${styles.header}`}>
-        <p className="eyebrow">Public Verification</p>
-        <h1>Verify prescription</h1>
-        <p className="muted">
-          Enter a 16-character MediConnect BD verification code to confirm authenticity.
-        </p>
-      </header>
+    <Page className={styles.page}>
+      <PageHeader
+        eyebrow="Public Verification"
+        title="Verify prescription"
+        description="Enter a 16-character MediConnect BD verification code to confirm authenticity."
+      />
 
       <Card className={styles.formCard}>
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -90,7 +88,7 @@ export function VerifyPrescriptionPage() {
                 <h3 className={styles.resultTitle}>Authentic MediConnect BD Prescription</h3>
                 <Badge tone="success">Verified</Badge>
               </div>
-              <dl className={`facts ${styles.facts}`}>
+              <dl className={styles.facts}>
                 <div>
                   <dt>Verification Code</dt>
                   <dd className={styles.codeValue}>{result.prescription.verificationCode}</dd>
@@ -108,10 +106,10 @@ export function VerifyPrescriptionPage() {
                   <dd>{formatDhakaDateTime(result.prescription.issuedAt)}</dd>
                 </div>
               </dl>
-              <p className={`muted small ${styles.privacyNotice}`}>
+              <Text tone="muted" size="sm" className={styles.privacyNotice}>
                 For patient privacy, clinical diagnosis and medication details are only visible to
                 the patient and prescribing doctor.
-              </p>
+              </Text>
             </>
           ) : (
             <Alert kind="error">
@@ -120,6 +118,6 @@ export function VerifyPrescriptionPage() {
           )}
         </Card>
       )}
-    </div>
+    </Page>
   );
 }

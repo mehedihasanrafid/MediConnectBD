@@ -1,4 +1,4 @@
-import { Button, Card, Field } from "../../../../components/ui";
+import { Button, Card, Field, FormField, Select } from "../../../../shared/ui";
 import type { Hospital, Specialty } from "../../../../shared/types";
 import styles from "./DoctorSearchFilters.module.css";
 
@@ -48,7 +48,7 @@ export function DoctorSearchFilters({
     .sort();
 
   return (
-    <Card className={`filters ${styles.filtersCard}`}>
+    <Card className={styles.filtersCard}>
       <div className={styles.fieldWrapper}>
         <Field
           label="Search by name"
@@ -59,45 +59,42 @@ export function DoctorSearchFilters({
       </div>
 
       <div className={styles.fieldWrapper}>
-        <label className="field">
-          <span>Specialty</span>
-          <select value={specialty} onChange={(event) => onSpecialtyChange(event.target.value)}>
+        <FormField label="Specialty">
+          <Select value={specialty} onChange={(event) => onSpecialtyChange(event.target.value)}>
             <option value="">All specialties</option>
             {specialties.map((item) => (
               <option key={item.id} value={item.slug}>
                 {item.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </FormField>
       </div>
 
       <div className={styles.fieldWrapper}>
-        <label className="field">
-          <span>Hospital</span>
-          <select value={hospital} onChange={(event) => onHospitalChange(event.target.value)}>
+        <FormField label="Hospital">
+          <Select value={hospital} onChange={(event) => onHospitalChange(event.target.value)}>
             <option value="">All hospitals</option>
             {hospitals.map((item) => (
               <option key={item.id} value={item.slug}>
                 {`${item.name} (${item.area})`}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </FormField>
       </div>
 
       <div className={styles.fieldWrapper}>
-        <label className="field">
-          <span>Area / Location</span>
-          <select value={area} onChange={(event) => onAreaChange(event.target.value)}>
+        <FormField label="Area / Location">
+          <Select value={area} onChange={(event) => onAreaChange(event.target.value)}>
             <option value="">All areas</option>
             {availableAreas.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </FormField>
       </div>
 
       <div className={styles.fieldWrapper}>

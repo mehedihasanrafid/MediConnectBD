@@ -3,10 +3,9 @@
  * booking action requires authentication.
  */
 
-import { Alert, EmptyState, Spinner } from "../../components/ui";
+import { Alert, EmptyState, Grid, Page, PageHeader, Spinner } from "../../shared/ui";
 import { DoctorCard } from "./components/DoctorCard";
 import { DoctorSearchFilters } from "./components/DoctorSearchFilters";
-import styles from "./DoctorSearchPage.module.css";
 import { useDoctorSearch } from "./hooks/useDoctorSearch";
 
 export function DoctorSearchPage() {
@@ -33,14 +32,12 @@ export function DoctorSearchPage() {
   } = useDoctorSearch();
 
   return (
-    <div className={`page ${styles.page}`}>
-      <header className={`page-header ${styles.header}`}>
-        <p className="eyebrow">Public Directory</p>
-        <h1>Find a doctor</h1>
-        <p className="muted">
-          Search by doctor name, specialty, hospital, area, or consultation fee.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Public Directory"
+        title="Find a doctor"
+        description="Search by doctor name, specialty, hospital, area, or consultation fee."
+      />
 
       <DoctorSearchFilters
         search={search}
@@ -68,11 +65,11 @@ export function DoctorSearchPage() {
         <EmptyState>No doctors match your search.</EmptyState>
       )}
 
-      <div className={`grid ${styles.grid}`}>
+      <Grid min="320px" gap={5}>
         {doctors.map((doctor) => (
           <DoctorCard key={doctor.id} doctor={doctor} />
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Page>
   );
 }

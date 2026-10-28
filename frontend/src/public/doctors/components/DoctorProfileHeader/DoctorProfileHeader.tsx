@@ -1,4 +1,4 @@
-import { Card } from "../../../../components/ui";
+import { Avatar, Card, Text } from "../../../../shared/ui";
 import type { PublicDoctor, Review } from "../../../../shared/types";
 import { formatMoney } from "../../../../shared/utils/format";
 import { calculateAverageRating } from "../../utils/doctorSearch.utils";
@@ -18,23 +18,20 @@ export function DoctorProfileHeader({ doctor, reviews }: DoctorProfileHeaderProp
   return (
     <Card className={styles.container}>
       <div className={styles.head}>
-        <div className={styles.avatar}>
-          {doctor.firstName[0]}
-          {doctor.lastName[0]}
-        </div>
+        <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} size="xl" />
         <div>
           <h1 className={styles.title}>
             Dr. {doctor.firstName} {doctor.lastName}
           </h1>
-          <p className="muted">{doctor.specialties.map((s) => s.name).join(", ")}</p>
-          <p className="muted small">
+          <Text tone="muted">{doctor.specialties.map((s) => s.name).join(", ")}</Text>
+          <Text tone="muted" size="sm">
             {doctor.degrees ?? "—"} · {doctor.experienceYears} years experience
             {avgRating ? ` · ★ ${avgRating} (${reviews.length} reviews)` : ""}
-          </p>
+          </Text>
         </div>
       </div>
       {doctor.bio && <p>{doctor.bio}</p>}
-      <dl className={`facts ${styles.facts}`}>
+      <dl className={styles.facts}>
         <div>
           <dt>Video consultation</dt>
           <dd>{formatMoney(doctor.videoConsultationFee)}</dd>
@@ -47,9 +44,9 @@ export function DoctorProfileHeader({ doctor, reviews }: DoctorProfileHeaderProp
       {doctor.chambers.length > 0 && (
         <div className={styles.chambersList}>
           {doctor.chambers.map((chamber) => (
-            <p key={chamber.id} className="muted small">
+            <Text key={chamber.id} tone="muted" size="sm">
               {chamber.hospital.name}, {chamber.hospital.area} — {formatMoney(chamber.consultationFee)}
-            </p>
+            </Text>
           ))}
         </div>
       )}

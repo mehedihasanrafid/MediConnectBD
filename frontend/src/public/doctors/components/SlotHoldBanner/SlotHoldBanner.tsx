@@ -1,4 +1,4 @@
-import { Alert, Button, Card } from "../../../../components/ui";
+import { Alert, Button, Card, Cluster, FormField, Select } from "../../../../shared/ui";
 import type { FamilyMember, PublicUser, SlotHold } from "../../../../shared/types";
 import { formatDhakaTime } from "../../../../shared/utils/format";
 import styles from "./SlotHoldBanner.module.css";
@@ -26,35 +26,36 @@ export function SlotHoldBanner({
   onReleaseHold,
 }: SlotHoldBannerProps) {
   return (
-    <Card className={`hold-banner ${styles.banner}`}>
+    <Card className={styles.banner}>
       <Alert kind="info">
         Slot held until {formatDhakaTime(hold.expiresAt)} (Bangladesh time). Confirm before it
         expires.
       </Alert>
       {familyMembers.length > 0 && (
-        <label className={`field ${styles.selector}`}>
-          <span>Who is this appointment for?</span>
-          <select
-            value={selectedFamilyMemberId}
-            onChange={(e) => onSelectFamilyMember(e.target.value)}
-          >
-            <option value="">
-              Myself ({user?.firstName} {user?.lastName})
-            </option>
-            {familyMembers.map((fm) => (
-              <option key={fm.id} value={fm.id}>
-                {fm.name} ({fm.relationship})
+        <div className={styles.selector}>
+          <FormField label="Who is this appointment for?">
+            <Select
+              value={selectedFamilyMemberId}
+              onChange={(e) => onSelectFamilyMember(e.target.value)}
+            >
+              <option value="">
+                Myself ({user?.firstName} {user?.lastName})
               </option>
-            ))}
-          </select>
-        </label>
+              {familyMembers.map((fm) => (
+                <option key={fm.id} value={fm.id}>
+                  {fm.name} ({fm.relationship})
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
       )}
-      <div className={`row ${styles.actions}`}>
+      <Cluster gap={3} className={styles.actions}>
         <Button onClick={() => void onConfirmBook()}>Confirm booking</Button>
         <Button variant="secondary" onClick={() => void onReleaseHold()}>
           Release hold
         </Button>
-      </div>
+      </Cluster>
     </Card>
   );
 }

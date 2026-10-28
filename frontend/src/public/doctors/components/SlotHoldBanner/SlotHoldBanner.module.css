@@ -1,16 +1,13 @@
 .banner {
-  border-left: 4px solid var(--primary, #0284c7);
-  background-color: var(--surface, #ffffff);
+  border-left: 4px solid var(--color-primary);
+  background-color: var(--color-surface);
 }
 
 .selector {
   max-width: 360px;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }

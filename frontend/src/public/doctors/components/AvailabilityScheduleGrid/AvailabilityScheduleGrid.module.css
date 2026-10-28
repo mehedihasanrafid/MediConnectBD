@@ -1,41 +1,36 @@
 .sectionTitle {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .dayCard {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 .dayHeading {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary, #0f172a);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
 }
 
 .slotGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .slotButton {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.6rem 0.5rem;
-  background-color: var(--surface, #ffffff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 8px;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.slotButton:hover:not(:disabled) {
-  border-color: var(--primary, #0284c7);
-  background-color: var(--primary-subtle, #f0f9ff);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .slotButton:disabled {
@@ -43,7 +38,13 @@
   cursor: not-allowed;
 }
 
+.slotButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+}
+
 .slotTime {
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-text);
 }

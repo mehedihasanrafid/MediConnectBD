@@ -1,10 +1,10 @@
 .sectionTitle {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .reviewCard {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .reviewHeader {
@@ -16,11 +16,11 @@
 .reviewMeta {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .comment {
-  margin: 0.5rem 0 0;
-  color: var(--text-primary, #1e293b);
-  line-height: 1.5;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text);
+  line-height: var(--leading-normal);
 }

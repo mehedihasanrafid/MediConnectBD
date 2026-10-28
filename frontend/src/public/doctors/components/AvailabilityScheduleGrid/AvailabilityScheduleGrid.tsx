@@ -1,4 +1,4 @@
-import { Badge, Card, EmptyState } from "../../../../components/ui";
+import { Badge, Card, EmptyState, Text } from "../../../../shared/ui";
 import type { AvailabilitySlot } from "../../../../shared/types";
 import { formatDhakaDate, formatDhakaTime, formatMoney } from "../../../../shared/utils/format";
 import { groupSlotsByDate } from "../../utils/doctorSearch.utils";
@@ -30,17 +30,20 @@ export function AvailabilityScheduleGrid({
       {[...grouped.entries()].map(([day, daySlots]) => (
         <Card key={day} className={styles.dayCard}>
           <h3 className={styles.dayHeading}>{formatDhakaDate(`${day}T00:00:00.000Z`)}</h3>
-          <div className={`slot-grid ${styles.slotGrid}`}>
+          <div className={styles.slotGrid}>
             {daySlots.map((slot) => (
               <button
                 key={slot.id}
-                className={`slot ${styles.slotButton}`}
+                type="button"
+                className={styles.slotButton}
                 disabled={busySlotId === slot.id || hasActiveHold}
                 onClick={() => void onHoldSlot(slot)}
               >
                 <span className={styles.slotTime}>{formatDhakaTime(slot.startAt)}</span>
                 <Badge tone={slot.mode === "VIDEO" ? "info" : "neutral"}>{slot.mode}</Badge>
-                <span className="muted small">{formatMoney(slot.feeAmount)}</span>
+                <Text tone="muted" size="sm" as="span">
+                  {formatMoney(slot.feeAmount)}
+                </Text>
               </button>
             ))}
           </div>

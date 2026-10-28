@@ -1,9 +1,9 @@
 .filtersCard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: flex-end;
-  background-color: var(--surface, #ffffff);
+  background-color: var(--color-surface);
 }
 
 .fieldWrapper {

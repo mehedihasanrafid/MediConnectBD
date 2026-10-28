@@ -1,7 +1,5 @@
 import { ArrowRight, Award, Building2, Languages, Star, Video } from "lucide-react";
-import { Link } from "react-router-dom";
-
-import { Card } from "../../../../components/ui";
+import { Avatar, ButtonLink, Card, Text } from "../../../../shared/ui";
 import { formatMoney } from "../../../../shared/format";
 import type { PublicDoctor } from "../../../../shared/types";
 import styles from "./DoctorCard.module.css";
@@ -18,29 +16,26 @@ export function DoctorCard({ doctor }: DoctorCardProps) {
     <Card className={styles.card}>
       <div>
         <div className={styles.head}>
-          <div className={styles.avatar}>
-            {doctor.firstName[0]}
-            {doctor.lastName[0]}
-          </div>
+          <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} size="lg" />
           <div>
             <h2 className={styles.title}>
               Dr. {doctor.firstName} {doctor.lastName}
             </h2>
-            <p className="muted">{doctor.specialties.map((s) => s.name).join(", ")}</p>
+            <Text tone="muted">{doctor.specialties.map((s) => s.name).join(", ")}</Text>
           </div>
         </div>
 
-        <dl className={`facts ${styles.facts}`}>
+        <dl className={styles.facts}>
           <div>
             <dt>
-              <Award size={13} style={{ display: "inline", marginRight: 4 }} />
+              <Award size={13} className={styles.factIcon} aria-hidden />
               Experience
             </dt>
             <dd>{doctor.experienceYears} years</dd>
           </div>
           <div>
             <dt>
-              <Star size={13} style={{ display: "inline", marginRight: 4 }} />
+              <Star size={13} className={styles.factIcon} aria-hidden />
               Rating
             </dt>
             <dd>
@@ -51,7 +46,7 @@ export function DoctorCard({ doctor }: DoctorCardProps) {
           </div>
           <div>
             <dt>
-              <Video size={13} style={{ display: "inline", marginRight: 4 }} />
+              <Video size={13} className={styles.factIcon} aria-hidden />
               Video fee
             </dt>
             <dd>{formatMoney(doctor.videoConsultationFee)}</dd>
@@ -62,7 +57,7 @@ export function DoctorCard({ doctor }: DoctorCardProps) {
           </div>
           <div>
             <dt>
-              <Languages size={13} style={{ display: "inline", marginRight: 4 }} />
+              <Languages size={13} className={styles.factIcon} aria-hidden />
               Languages
             </dt>
             <dd>{doctor.languages?.join(", ") ?? "—"}</dd>
@@ -70,22 +65,22 @@ export function DoctorCard({ doctor }: DoctorCardProps) {
         </dl>
 
         {doctor.chambers.length > 0 && (
-          <p className={`muted small ${styles.chamberInfo}`}>
-            <Building2 size={14} />
-            <span>
+          <p className={styles.chamberInfo}>
+            <Building2 size={14} aria-hidden />
+            <Text tone="muted" size="sm" as="span">
               {doctor.chambers[0].hospital.name}, {doctor.chambers[0].hospital.area}
-            </span>
+            </Text>
           </p>
         )}
       </div>
 
-      <Link
-        className={`btn btn-primary ${styles.viewSlotsBtn}`}
+      <ButtonLink
         to={`/doctors/${doctor.id}`}
+        fullWidth
+        rightIcon={<ArrowRight size={16} />}
       >
-        <span>View slots</span>
-        <ArrowRight size={16} />
-      </Link>
+        View slots
+      </ButtonLink>
     </Card>
   );
 }

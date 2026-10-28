@@ -1,4 +1,4 @@
-import { Badge, Button, Card, EmptyState } from "../../../../components/ui";
+import { Badge, Button, Card, Cluster, EmptyState, Text } from "../../../../shared/ui";
 import type { Review } from "../../../../shared/types";
 import { formatDhakaDate } from "../../../../shared/utils/format";
 import { renderStars } from "../../utils/doctorSearch.utils";
@@ -26,19 +26,21 @@ export function DoctorReviewsList({
       ) : (
         reviews.map((rev) => (
           <Card key={rev.id} className={styles.reviewCard}>
-            <div className={`row space-between ${styles.reviewHeader}`}>
+            <Cluster justify="between" className={styles.reviewHeader}>
               <Badge tone="success">
                 {renderStars(rev.rating)} ({rev.rating}/5)
               </Badge>
-              <div className={`row ${styles.reviewMeta}`}>
-                <span className="muted small">{formatDhakaDate(rev.createdAt)}</span>
+              <Cluster gap={3} className={styles.reviewMeta}>
+                <Text tone="muted" size="sm">
+                  {formatDhakaDate(rev.createdAt)}
+                </Text>
                 {canModerate && (
-                  <Button variant="danger" onClick={() => void onRemoveReview(rev.id)}>
+                  <Button variant="danger" size="sm" onClick={() => void onRemoveReview(rev.id)}>
                     Hide review
                   </Button>
                 )}
-              </div>
-            </div>
+              </Cluster>
+            </Cluster>
             {rev.comment && <p className={styles.comment}>{rev.comment}</p>}
           </Card>
         ))

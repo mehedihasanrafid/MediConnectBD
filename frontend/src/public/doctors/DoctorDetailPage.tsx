@@ -4,8 +4,7 @@
  */
 
 import { useNavigate, useParams } from "react-router-dom";
-
-import { Alert, Button, Card, Spinner } from "../../components/ui";
+import { Alert, Button, Card, Page, Spinner } from "../../shared/ui";
 import { useAuth } from "../../features/auth/AuthContext";
 import { isAdmin } from "../../shared/utils/roles";
 import { AvailabilityScheduleGrid } from "./components/AvailabilityScheduleGrid";
@@ -42,7 +41,7 @@ export function DoctorDetailPage() {
   if (!doctor) return <Alert kind="error">{error ?? "Doctor not found."}</Alert>;
 
   return (
-    <div className={`page ${styles.page}`}>
+    <Page>
       <DoctorProfileHeader doctor={doctor} reviews={reviews} />
 
       {error && <Alert kind="error">{error}</Alert>}
@@ -83,6 +82,6 @@ export function DoctorDetailPage() {
         canModerate={isAdmin(user)}
         onRemoveReview={handleRemoveReview}
       />
-    </div>
+    </Page>
   );
 }

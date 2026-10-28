@@ -338,16 +338,17 @@
  * 🌙 2. DARK THEME CONFIGURATION
  * ------------------------------------------------------------------------------
  * TO SWITCH THE DARK THEME:
- * Replace "--preset-teal-dark-..." below with any of your presets:
- *   --preset-navy-dark-...
- *   --preset-emerald-dark-...
- *   --preset-blue-dark-...
- *   --preset-charcoal-dark-...
+ * Replace "charcoal" below with: teal, navy, emerald, or blue
+ * (Example: change "--preset-charcoal-dark-bg" to "--preset-navy-dark-bg")
  * ============================================================================== */
 [data-theme="dark"] {
+  /* ⚠️ DO NOT CHANGE THIS LINE (it tells the browser to use dark scrollbars) */
   color-scheme: dark;
 
-  /* Backgrounds */
+  /* ==========================================================================
+   * 🎨 ACTIVE DARK PALETTE — Currently set to: CHARCOAL
+   * To switch: replace "charcoal" with "teal", "navy", "emerald", or "blue"
+   * ========================================================================== */
   --color-bg:             var(--preset-charcoal-dark-bg);
   --color-bg-subtle:      var(--preset-charcoal-dark-bg-subtle);
   --color-surface:        var(--preset-charcoal-dark-surface);

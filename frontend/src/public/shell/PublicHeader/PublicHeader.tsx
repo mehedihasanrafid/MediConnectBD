@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   Search,
   ShieldCheck,
   Stethoscope,
@@ -90,6 +91,10 @@ export const PublicHeader: React.FC = () => {
                 <CalendarCheck size={16} aria-hidden="true" />
                 <span>My appointments</span>
               </NavLink>
+              <NavLink to="/communication" className={linkClass}>
+                <MessageSquare size={16} aria-hidden="true" />
+                <span>Communication</span>
+              </NavLink>
               <NavLink to="/prescriptions" className={linkClass}>
                 <ClipboardList size={16} aria-hidden="true" />
                 <span>My prescriptions</span>
@@ -114,6 +119,10 @@ export const PublicHeader: React.FC = () => {
               <NavLink to="/doctor/appointments" className={linkClass}>
                 <CalendarCheck size={16} aria-hidden="true" />
                 <span>Appointment queue</span>
+              </NavLink>
+              <NavLink to="/communication" className={linkClass}>
+                <MessageSquare size={16} aria-hidden="true" />
+                <span>Communication</span>
               </NavLink>
               <NavLink to="/doctor/prescriptions" className={linkClass}>
                 <ClipboardList size={16} aria-hidden="true" />
@@ -229,6 +238,10 @@ export const PublicHeader: React.FC = () => {
                 <CalendarCheck size={18} aria-hidden="true" />
                 <span>My appointments</span>
               </NavLink>
+              <NavLink to="/communication" className={mobileLinkClass} onClick={closeMenu}>
+                <MessageSquare size={18} aria-hidden="true" />
+                <span>Communication</span>
+              </NavLink>
               <NavLink to="/prescriptions" className={mobileLinkClass} onClick={closeMenu}>
                 <ClipboardList size={18} aria-hidden="true" />
                 <span>My prescriptions</span>
@@ -253,6 +266,10 @@ export const PublicHeader: React.FC = () => {
               <NavLink to="/doctor/appointments" className={mobileLinkClass} onClick={closeMenu}>
                 <CalendarCheck size={18} aria-hidden="true" />
                 <span>Appointment queue</span>
+              </NavLink>
+              <NavLink to="/communication" className={mobileLinkClass} onClick={closeMenu}>
+                <MessageSquare size={18} aria-hidden="true" />
+                <span>Communication</span>
               </NavLink>
               <NavLink to="/doctor/prescriptions" className={mobileLinkClass} onClick={closeMenu}>
                 <ClipboardList size={18} aria-hidden="true" />

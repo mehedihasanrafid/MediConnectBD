@@ -23,6 +23,7 @@ import { MedicalReportsPage } from "../patient/reports";
 import { DoctorDetailPage, DoctorSearchPage } from "../public/doctors";
 import { NotFoundPage } from "../public/not-found";
 import { VerifyPrescriptionPage } from "../public/verify-prescription";
+import { CommunicationPage } from "../communication";
 import { RoleRoute } from "./guards";
 
 export function AppRouter() {
@@ -35,6 +36,11 @@ export function AppRouter() {
         <Route path="/doctors" element={<DoctorSearchPage />} />
         <Route path="/doctors/:doctorId" element={<DoctorDetailPage />} />
         <Route path="/verify-prescription" element={<VerifyPrescriptionPage />} />
+
+        <Route element={<RoleRoute roles={["PATIENT", "DOCTOR"]} />}>
+          <Route path="/communication" element={<CommunicationPage />} />
+          <Route path="/messages" element={<Navigate to="/communication" replace />} />
+        </Route>
 
         <Route element={<RoleRoute roles={["PATIENT"]} />}>
           <Route path="/appointments" element={<AppointmentsPage />} />

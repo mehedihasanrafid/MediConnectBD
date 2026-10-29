@@ -25,6 +25,7 @@ import { DailyVideoProvider, MockVideoProvider } from "./modules/appointments/vi
 import { PaymentService } from "./modules/payments/payment.service";
 import { TypeOrmPaymentRepository } from "./modules/payments/typeorm-payment.repository";
 import { SslcommerzPaymentProvider } from "./modules/payments/sslcommerz-payment-provider";
+import { MockPaymentProvider } from "./modules/payments/mock-payment-provider";
 import { FamilyMemberService } from "./modules/patients/family-member.service";
 import { MedicalReportService } from "./modules/patients/medical-report.service";
 import { TypeOrmFamilyMemberRepository } from "./modules/patients/typeorm-family-member.repository";
@@ -108,7 +109,7 @@ async function main(): Promise<void> {
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource, notificationService),
       env.SSLCOMMERZ_STORE_ID && env.SSLCOMMERZ_STORE_PASSWORD && env.PUBLIC_API_URL
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
-        : null),
+        : new MockPaymentProvider(env.APP_URL)),
     familyMemberService,
     medicalReportService,
     reviewService,

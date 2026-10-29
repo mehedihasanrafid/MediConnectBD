@@ -1,9 +1,11 @@
 /**
  * Online payment checkout & reconciliation panel for video consultations in PENDING_PAYMENT state.
  * Sends a stable Idempotency-Key per appointment so retries reuse the same payment record.
+ * Includes an interactive Bangladeshi Payment Gateway Sandbox Simulator (bKash / Nagad / Rocket / Cards).
  */
 
 import { useState } from "react";
+import { CheckCircle2, CreditCard, ShieldCheck, Smartphone, XCircle } from "lucide-react";
 
 import { paymentsApi } from "../../../../api/payments";
 import { Alert, Badge, Button, Cluster, Field, Text } from "../../../../shared/ui";
@@ -12,6 +14,8 @@ import type { Appointment, Payment } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatMoney, formatStatus } from "../../../../shared/utils/format";
 import styles from "./PaymentPanel.module.css";
+
+type PaymentMethod = "BKASH" | "NAGAD" | "ROCKET" | "CARD";
 
 export function PaymentPanel({
   appointment,
@@ -41,10 +45,19 @@ export function PaymentPanel({
     text: string;
   } | null>(null);
 
+  // Simulator method & test inputs
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("BKASH");
+  const [simWalletNumber, setSimWalletNumber] = useState("01700123456");
+  const [simOtp, setSimOtp] = useState("123456");
+  const [simPin, setSimPin] = useState("12345");
+  const [simCardNumber, setSimCardNumber] = useState("4242 4242 4242 4242");
+  const [simCardExpiry, setSimCardExpiry] = useState("12/28");
+  const [simCardCvc, setSimCardCvc] = useState("123");
+
   const idempotencyKey = `checkout_${appointment.id.replaceAll("-", "")}`;
 
-  async function handleInitiate(event: React.FormEvent) {
-    event.preventDefault();
+  async function handleInitiate(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     setBusy(true);
     setError(null);
     setStatusMessage(null);
@@ -81,7 +94,7 @@ export function PaymentPanel({
     }
   }
 
-  async function handleReconcile() {
+  async function handleReconcile(customSuccessText?: string) {
     if (!payment) return;
     setBusy(true);
     setError(null);
@@ -92,7 +105,9 @@ export function PaymentPanel({
       if (refreshed.status === "SUCCEEDED") {
         setStatusMessage({
           kind: "success",
-          text: "Payment verified successfully! Your consultation slot is confirmed.",
+          text:
+            customSuccessText ||
+            "Payment verified successfully! Your consultation slot is confirmed.",
         });
         onPaymentUpdated();
       } else if (refreshed.status === "FAILED") {
@@ -109,6 +124,60 @@ export function PaymentPanel({
       setError(getErrorMessage(caught, "Could not verify payment status with provider."));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleSimulateSuccess() {
+    if (!payment) {
+      // First initiate if not yet initiated
+      await handleInitiate();
+    }
+    const methodName =
+      selectedMethod === "BKASH"
+        ? "bKash"
+        : selectedMethod === "NAGAD"
+        ? "Nagad"
+        : selectedMethod === "ROCKET"
+        ? "Rocket"
+        : "Card";
+    await handleReconcile(
+      `Payment verified successfully via ${methodName}! Your consultation slot is confirmed.`,
+    );
+  }
+
+  function handleSimulateFail() {
+    setError(
+      "Simulated Payment Failed: The transaction was declined by the mobile provider or issuing bank (Insufficient balance or authentication timeout). You can try again.",
+    );
+    setStatusMessage(null);
+  }
+
+  function handleSimulateCancel() {
+    setStatusMessage({
+      kind: "info",
+      text: "Payment checkout cancelled by user. Your booking hold remains active until expiration.",
+    });
+    setError(null);
+  }
+
+  function autoFillDemo(method: PaymentMethod) {
+    setSelectedMethod(method);
+    if (method === "BKASH") {
+      setSimWalletNumber("01700123456");
+      setSimOtp("123456");
+      setSimPin("12345");
+    } else if (method === "NAGAD") {
+      setSimWalletNumber("01800654321");
+      setSimOtp("654321");
+      setSimPin("1234");
+    } else if (method === "ROCKET") {
+      setSimWalletNumber("019009876543");
+      setSimOtp("987654");
+      setSimPin("1234");
+    } else {
+      setSimCardNumber("4242 4242 4242 4242");
+      setSimCardExpiry("12/28");
+      setSimCardCvc("123");
     }
   }
 
@@ -149,6 +218,143 @@ export function PaymentPanel({
             </Button>
           </div>
         </form>
+      )}
+
+      {/* =========================================================================
+       * 🇧🇩 BANGLADESHI PAYMENT GATEWAY SANDBOX SIMULATOR
+       * ========================================================================= */}
+      {open && (payment?.status !== "SUCCEEDED") && (
+        <div className={styles.simulatorCard}>
+          <div className={styles.simulatorHeader}>
+            <h4 className={styles.simulatorTitle}>
+              <ShieldCheck size={18} />
+              <span>Bangladeshi Payment Gateway Simulator</span>
+            </h4>
+            <Badge tone="warning">🧪 Sandbox Demo Mode</Badge>
+          </div>
+
+          <Text tone="muted" size="sm" style={{ marginBottom: "var(--space-3)" }}>
+            Select your preferred mobile wallet or card below to test the instant consultation
+            confirmation flow:
+          </Text>
+
+          {/* Payment Method Tabs */}
+          <div className={styles.paymentTabs} role="tablist" aria-label="Payment methods">
+            <button
+              type="button"
+              className={`${styles.tabButton} ${selectedMethod === "BKASH" ? styles.tabButtonActive : ""}`}
+              onClick={() => autoFillDemo("BKASH")}
+            >
+              <Smartphone size={16} />
+              <span>🌸 bKash (বিকাশ)</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.tabButton} ${selectedMethod === "NAGAD" ? styles.tabButtonActive : ""}`}
+              onClick={() => autoFillDemo("NAGAD")}
+            >
+              <Smartphone size={16} />
+              <span>🍊 Nagad (নগদ)</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.tabButton} ${selectedMethod === "ROCKET" ? styles.tabButtonActive : ""}`}
+              onClick={() => autoFillDemo("ROCKET")}
+            >
+              <Smartphone size={16} />
+              <span>🚀 Rocket (রকেট)</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.tabButton} ${selectedMethod === "CARD" ? styles.tabButtonActive : ""}`}
+              onClick={() => autoFillDemo("CARD")}
+            >
+              <CreditCard size={16} />
+              <span>💳 Visa / Mastercard</span>
+            </button>
+          </div>
+
+          {/* Method Body */}
+          <div className={styles.methodBody}>
+            <div className={styles.methodHeader}>
+              <span className={styles.methodName}>
+                {selectedMethod === "BKASH" && "bKash Online Payment Sandbox"}
+                {selectedMethod === "NAGAD" && "Nagad Direct Pay Sandbox"}
+                {selectedMethod === "ROCKET" && "DBBL Rocket Payment Sandbox"}
+                {selectedMethod === "CARD" && "Credit / Debit Card Gateway (SSLCommerz Demo)"}
+              </span>
+              <button
+                type="button"
+                className={styles.autoFillButton}
+                onClick={() => autoFillDemo(selectedMethod)}
+              >
+                Reset demo credentials
+              </button>
+            </div>
+
+            {selectedMethod !== "CARD" ? (
+              <div className={styles.simulatorGrid}>
+                <Field
+                  label={`${selectedMethod === "BKASH" ? "bKash" : selectedMethod === "NAGAD" ? "Nagad" : "Rocket"} Number`}
+                  value={simWalletNumber}
+                  onChange={setSimWalletNumber}
+                />
+                <Field label="Demo OTP Code" value={simOtp} onChange={setSimOtp} />
+                <Field label="Wallet PIN" value={simPin} onChange={setSimPin} type="password" />
+              </div>
+            ) : (
+              <div className={styles.simulatorGrid}>
+                <Field label="Test Card Number" value={simCardNumber} onChange={setSimCardNumber} />
+                <Field label="Expiry (MM/YY)" value={simCardExpiry} onChange={setSimCardExpiry} />
+                <Field label="CVC" value={simCardCvc} onChange={setSimCardCvc} type="password" />
+              </div>
+            )}
+
+            {/* Simulation Action Triggers */}
+            <div className={styles.simulationActions}>
+              <span className={styles.actionLabel}>Test Simulation Triggers</span>
+              <div className={styles.actionButtonGroup}>
+                <Button
+                  variant="primary"
+                  disabled={busy}
+                  onClick={() => void handleSimulateSuccess()}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>
+                    {busy
+                      ? "Verifying payment…"
+                      : `Pay ${formatMoney(appointment.feeAmount)} (Simulate Success)`}
+                  </span>
+                </Button>
+
+                <Button
+                  variant="danger"
+                  disabled={busy}
+                  onClick={handleSimulateFail}
+                >
+                  <XCircle size={16} />
+                  <span>Simulate Failed (Declined)</span>
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={handleSimulateCancel}
+                >
+                  <span>Simulate Cancel</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.sandboxNotice}>
+            <ShieldCheck size={14} />
+            <span>
+              Demo Sandbox Mode: No real funds are deducted. Simulates full SSLCommerz WebRTC
+              handshake and slot booking confirmation.
+            </span>
+          </div>
+        </div>
       )}
 
       {payment && (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Video } from "lucide-react";
+import { Search } from "lucide-react";
 import { Avatar } from "../../../shared/ui";
 import type { Conversation, ConversationFilter } from "../../types";
 import styles from "./ConversationList.module.css";
@@ -19,7 +19,6 @@ export function ConversationList({
   const [filter, setFilter] = useState<ConversationFilter>("ALL");
 
   const filtered = conversations.filter((c) => {
-    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = c.participantName.toLowerCase().includes(q);
@@ -28,12 +27,8 @@ export function ConversationList({
       if (!matchName && !matchSub && !matchMsg) return false;
     }
 
-    // Category filter
     if (filter === "ACTIVE") {
-      return c.status === "LIVE_CONSULTATION";
-    }
-    if (filter === "FOLLOWUP") {
-      return c.status === "ACTIVE_FOLLOWUP";
+      return c.status === "LIVE_CONSULTATION" || c.status === "ACTIVE_FOLLOWUP";
     }
     if (filter === "SUPPORT") {
       return c.status === "SUPPORT";
@@ -41,14 +36,11 @@ export function ConversationList({
     return true;
   });
 
-  const liveCount = conversations.filter((c) => c.status === "LIVE_CONSULTATION").length;
-  const followupCount = conversations.filter((c) => c.status === "ACTIVE_FOLLOWUP").length;
-
   return (
     <div className={styles.container}>
       <div className={styles.searchHeader}>
         <div className={styles.searchBar}>
-          <Search size={16} color="var(--color-text-subtle)" aria-hidden="true" />
+          <Search size={15} color="var(--color-text-subtle)" aria-hidden="true" />
           <input
             type="text"
             className={styles.searchInput}
@@ -64,23 +56,14 @@ export function ConversationList({
             className={`${styles.filterTab} ${filter === "ALL" ? styles.filterTabActive : ""}`}
             onClick={() => setFilter("ALL")}
           >
-            All ({conversations.length})
+            All
           </button>
-          {liveCount > 0 && (
-            <button
-              type="button"
-              className={`${styles.filterTab} ${filter === "ACTIVE" ? styles.filterTabActive : ""}`}
-              onClick={() => setFilter("ACTIVE")}
-            >
-              Live Calls ({liveCount})
-            </button>
-          )}
           <button
             type="button"
-            className={`${styles.filterTab} ${filter === "FOLLOWUP" ? styles.filterTabActive : ""}`}
-            onClick={() => setFilter("FOLLOWUP")}
+            className={`${styles.filterTab} ${filter === "ACTIVE" ? styles.filterTabActive : ""}`}
+            onClick={() => setFilter("ACTIVE")}
           >
-            Follow-ups ({followupCount})
+            Active
           </button>
           <button
             type="button"
@@ -121,32 +104,19 @@ export function ConversationList({
                 </div>
 
                 <div className={styles.itemContent}>
-                  <div className={styles.itemHeader}>
+                  <div className={styles.topRow}>
                     <span className={styles.name}>{conv.participantName}</span>
                     <span className={styles.time}>{conv.lastMessageAt}</span>
                   </div>
 
-                  <div className={styles.subtitle}>{conv.participantSubtitle}</div>
-
-                  <div className={styles.previewRow}>
+                  <div className={styles.bottomRow}>
                     <span className={styles.previewText}>{conv.lastMessage}</span>
-                    {conv.unreadCount > 0 && (
-                      <span className={styles.unreadChip}>{conv.unreadCount}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.badgeRow}>
-                    {isLive && (
-                      <span className={styles.liveBadge}>
-                        <Video size={10} aria-hidden="true" />
-                        <span>LIVE CALL</span>
-                      </span>
-                    )}
-                    {conv.status === "ACTIVE_FOLLOWUP" && (
-                      <span className={styles.followupBadge}>
-                        Follow-up ({conv.linkedConsultation?.followUpDaysLeft ?? 4}d left)
-                      </span>
-                    )}
+                    <div className={styles.pillRow}>
+                      {isLive && <span className={styles.liveTag}>LIVE CALL</span>}
+                      {conv.unreadCount > 0 && (
+                        <span className={styles.unreadDot}>{conv.unreadCount}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </li>

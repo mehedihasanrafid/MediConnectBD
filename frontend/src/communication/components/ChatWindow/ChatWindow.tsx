@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Check,
   CheckCheck,
   FileText,
   Info,
@@ -24,20 +23,6 @@ interface ChatWindowProps {
   isDrawerOpen: boolean;
 }
 
-const PATIENT_QUICK_REPLIES = [
-  "Can I take this medicine before meals?",
-  "How many days should I continue this dose?",
-  "Attaching my latest CBC blood report.",
-  "Fever is 99°F this morning.",
-];
-
-const DOCTOR_QUICK_REPLIES = [
-  "Take Paracetamol 500mg 1 tablet after meals, 3 times daily.",
-  "Continue this dosage for 5 days.",
-  "Please get a routine CBC blood test done.",
-  "Stay well hydrated and take adequate rest.",
-];
-
 export function ChatWindow({
   conversation,
   messages,
@@ -60,14 +45,13 @@ export function ChatWindow({
   if (!conversation) {
     return (
       <div className={styles.emptySelection}>
-        <p>Select a consultation conversation from the left to start messaging.</p>
+        <p>Select a consultation from the left to start messaging.</p>
       </div>
     );
   }
 
   const isLive = conversation.status === "LIVE_CONSULTATION";
   const appointmentId = conversation.linkedConsultation?.appointmentId;
-  const quickReplies = currentUserRole === "DOCTOR" ? DOCTOR_QUICK_REPLIES : PATIENT_QUICK_REPLIES;
 
   function handleSend() {
     if (!inputText.trim()) return;
@@ -75,12 +59,8 @@ export function ChatWindow({
     setInputText("");
   }
 
-  function handleQuickReply(reply: string) {
-    onSendMessage(reply);
-  }
-
-  function handleSimulateAttachReport() {
-    onSendMessage("Sharing clinical file for review:", [
+  function handleAttachSimulatedReport() {
+    onSendMessage("Attached consultation document for review:", [
       {
         id: `att-sim-${Date.now()}`,
         name: currentUserRole === "DOCTOR" ? "Clinical_Summary_Note.pdf" : "Blood_Test_Report_Oct2026.pdf",
@@ -92,7 +72,7 @@ export function ChatWindow({
 
   return (
     <div className={styles.container}>
-      {/* Chat Header */}
+      {/* Sleek Chat Header */}
       <div className={styles.chatHeader}>
         <div className={styles.headerInfo}>
           <Avatar name={conversation.participantName} size="md" />
@@ -100,7 +80,7 @@ export function ChatWindow({
             <h3 className={styles.participantName}>
               <span>{conversation.participantName}</span>
               {conversation.participantRole === "DOCTOR" && (
-                <ShieldCheck size={16} color="var(--color-primary)" title="BMDC Verified Specialist" />
+                <ShieldCheck size={14} color="var(--color-primary)" title="BMDC Verified Specialist" />
               )}
             </h3>
             <p className={styles.participantSubtitle}>{conversation.participantSubtitle}</p>
@@ -111,22 +91,22 @@ export function ChatWindow({
           {appointmentId && (
             <button
               type="button"
-              className={styles.callButton}
+              className={styles.videoBtn}
               onClick={() => onOpenVideoCall(appointmentId)}
             >
-              <Video size={16} aria-hidden="true" />
-              <span>{isLive ? "Join Video Call" : "Open Video Room"}</span>
+              <Video size={14} aria-hidden="true" />
+              <span>{isLive ? "Join Video Call" : "Video Room"}</span>
             </button>
           )}
 
           <button
             type="button"
-            className={styles.drawerToggleBtn}
+            className={styles.detailsBtn}
             onClick={onToggleDrawer}
-            title={isDrawerOpen ? "Hide details panel" : "Show details panel"}
+            title={isDrawerOpen ? "Hide clinical details" : "Show clinical details"}
           >
-            <Info size={16} aria-hidden="true" />
-            <span>{isDrawerOpen ? "Hide Details" : "Details"}</span>
+            <Info size={14} aria-hidden="true" />
+            <span>{isDrawerOpen ? "Close Details" : "Clinical Context"}</span>
           </button>
         </div>
       </div>
@@ -150,11 +130,9 @@ export function ChatWindow({
                   <div className={styles.attachmentList}>
                     {msg.attachments.map((att) => (
                       <div key={att.id} className={styles.attachmentCard}>
-                        <div className={styles.attachmentInfo}>
-                          <FileText size={16} color="var(--color-primary)" aria-hidden="true" />
-                          <span className={styles.attachmentName}>{att.name}</span>
-                          {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
-                        </div>
+                        <FileText size={14} color="var(--color-primary)" aria-hidden="true" />
+                        <span className={styles.attachmentName}>{att.name}</span>
+                        {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
                       </div>
                     ))}
                   </div>
@@ -178,11 +156,9 @@ export function ChatWindow({
                   <div className={styles.attachmentList}>
                     {msg.attachments.map((att) => (
                       <div key={att.id} className={styles.attachmentCard}>
-                        <div className={styles.attachmentInfo}>
-                          <FileText size={14} aria-hidden="true" />
-                          <span className={styles.attachmentName}>{att.name}</span>
-                          {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
-                        </div>
+                        <FileText size={14} aria-hidden="true" />
+                        <span className={styles.attachmentName}>{att.name}</span>
+                        {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
                       </div>
                     ))}
                   </div>
@@ -193,7 +169,7 @@ export function ChatWindow({
                 <span>{msg.timestamp}</span>
                 {isSent && (
                   <span title="Delivered">
-                    <CheckCheck size={14} color="var(--color-primary)" aria-hidden="true" />
+                    <CheckCheck size={13} color="var(--color-primary)" aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -202,22 +178,7 @@ export function ChatWindow({
         })}
       </div>
 
-      {/* Quick Replies Bar */}
-      <div className={styles.quickRepliesBar}>
-        <span className={styles.quickReplyLabel}>Quick:</span>
-        {quickReplies.map((reply, i) => (
-          <button
-            key={i}
-            type="button"
-            className={styles.quickChip}
-            onClick={() => handleQuickReply(reply)}
-          >
-            {reply}
-          </button>
-        ))}
-      </div>
-
-      {/* Composer */}
+      {/* Sleek Composer Bar */}
       <form
         className={styles.composer}
         onSubmit={(e) => {
@@ -227,9 +188,9 @@ export function ChatWindow({
       >
         <button
           type="button"
-          className={styles.attachButton}
-          onClick={handleSimulateAttachReport}
-          title="Attach medical report or file"
+          className={styles.attachBtn}
+          onClick={handleAttachSimulatedReport}
+          title="Attach medical document"
         >
           <Paperclip size={18} aria-hidden="true" />
         </button>
@@ -244,11 +205,11 @@ export function ChatWindow({
 
         <button
           type="submit"
-          className={styles.sendButton}
+          className={styles.sendBtn}
           disabled={!inputText.trim()}
           title="Send message"
         >
-          <Send size={16} aria-hidden="true" />
+          <Send size={14} aria-hidden="true" />
           <span>Send</span>
         </button>
       </form>

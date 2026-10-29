@@ -41,7 +41,7 @@ describe("CommunicationPage Component", () => {
 
     const html = renderToString(
       <MemoryRouter initialEntries={["/communication"]}>
-        <CommunicationPage />
+        <CommunicationPage initialDrawerOpen={true} />
       </MemoryRouter>,
     );
 
@@ -86,7 +86,7 @@ describe("CommunicationPage Component", () => {
 
     const html = renderToString(
       <MemoryRouter initialEntries={["/communication"]}>
-        <CommunicationPage />
+        <CommunicationPage initialDrawerOpen={true} />
       </MemoryRouter>,
     );
 

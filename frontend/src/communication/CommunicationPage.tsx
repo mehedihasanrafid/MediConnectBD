@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Video } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { isDoctor } from "../shared/utils/roles";
-import { Page, PageHeader } from "../shared/ui";
+import { Page } from "../shared/ui";
 import type { ChatMessage, Conversation } from "./types";
 import {
   DOCTOR_DEMO_CONVERSATIONS,
@@ -11,11 +12,14 @@ import {
 import { ConversationList } from "./components/ConversationList/ConversationList";
 import { ChatWindow } from "./components/ChatWindow/ChatWindow";
 import { ContextDrawer } from "./components/ContextDrawer/ContextDrawer";
-import { QuickCallBanner } from "./components/QuickCallBanner/QuickCallBanner";
 import { VideoModal } from "./components/VideoModal/VideoModal";
 import styles from "./CommunicationPage.module.css";
 
-export function CommunicationPage() {
+export function CommunicationPage({
+  initialDrawerOpen = false,
+}: {
+  initialDrawerOpen?: boolean;
+} = {}) {
   const { user } = useAuth();
   const userIsDoctor = isDoctor(user);
   const currentUserRole: "DOCTOR" | "PATIENT" = userIsDoctor ? "DOCTOR" : "PATIENT";
@@ -25,7 +29,7 @@ export function CommunicationPage() {
   const [conversations, setConversations] = useState<Conversation[]>(initialList);
   const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [activeConvId, setActiveConvId] = useState<string>(initialList[0]?.id ?? "");
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(initialDrawerOpen);
   const [videoAppointmentId, setVideoAppointmentId] = useState<string | null>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
@@ -36,7 +40,6 @@ export function CommunicationPage() {
 
   function handleSelectConversation(id: string) {
     setActiveConvId(id);
-    // Mark as read
     setConversations((prev) =>
       prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)),
     );
@@ -119,24 +122,37 @@ export function CommunicationPage() {
 
   return (
     <Page>
-      <div className={styles.pageContainer}>
-        <PageHeader
-          eyebrow="Connected Care & Telemedicine"
-          title="Consultation Communication Hub"
-          description="Direct clinical messaging with verified BMDC doctors, real-time telehealth video rooms, and follow-up care."
-        />
+      <div className={styles.pageWrapper}>
+        {/* Sleek Top Navigation & Live Consultation Status Bar */}
+        <div className={styles.topBar}>
+          <div className={styles.topTitleGroup}>
+            <h2 className={styles.title}>Consultation Communication Hub</h2>
+            <span className={styles.eyebrowBadge}>Connected Care &amp; Telemedicine</span>
+          </div>
 
-        {liveConv?.linkedConsultation && (
-          <QuickCallBanner
-            doctorOrPatientName={liveConv.participantName}
-            role={currentUserRole}
-            appointmentId={liveConv.linkedConsultation.appointmentId}
-            onJoinCall={handleOpenVideoCall}
-          />
-        )}
+          {liveConv?.linkedConsultation && (
+            <div className={styles.liveCallAlert}>
+              <span className={styles.liveDot} aria-hidden="true" />
+              <span className={styles.liveCallText}>
+                {currentUserRole === "PATIENT"
+                  ? `Live Video Call Ready with ${liveConv.participantName}`
+                  : `Consultation Slot Active for ${liveConv.participantName}`}
+              </span>
+              <button
+                type="button"
+                className={styles.joinBannerBtn}
+                onClick={() => handleOpenVideoCall(liveConv.linkedConsultation!.appointmentId)}
+              >
+                <Video size={13} aria-hidden="true" />
+                <span>Join Video Room</span>
+              </button>
+            </div>
+          )}
+        </div>
 
-        <div className={styles.hubCard}>
-          <div className={styles.leftColumn}>
+        {/* Spacious 2-Column (or 3-Column when Details is opened) Hub */}
+        <div className={styles.mainHub}>
+          <div className={styles.sidebarColumn}>
             <ConversationList
               conversations={conversations}
               activeConversationId={activeConvId}
@@ -144,7 +160,7 @@ export function CommunicationPage() {
             />
           </div>
 
-          <div className={styles.centerColumn}>
+          <div className={styles.chatColumn}>
             <ChatWindow
               conversation={activeConversation}
               messages={currentMessages}
@@ -155,15 +171,15 @@ export function CommunicationPage() {
               onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
               isDrawerOpen={isDrawerOpen}
             />
-          </div>
 
-          {isDrawerOpen && (
-            <ContextDrawer
-              consultation={activeConversation?.linkedConsultation}
-              onClose={() => setIsDrawerOpen(false)}
-              onOpenVideoCall={handleOpenVideoCall}
-            />
-          )}
+            {isDrawerOpen && (
+              <ContextDrawer
+                consultation={activeConversation?.linkedConsultation}
+                onClose={() => setIsDrawerOpen(false)}
+                onOpenVideoCall={handleOpenVideoCall}
+              />
+            )}
+          </div>
         </div>
       </div>
 

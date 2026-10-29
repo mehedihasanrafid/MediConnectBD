@@ -20,8 +20,25 @@
 .headerInfo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-width: 0;
+}
+
+.mobileBackBtn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  align-items: center;
+  justify-content: center;
+}
+
+.mobileBackBtn:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-subtle);
 }
 
 .participantDetails {
@@ -318,4 +335,36 @@
   height: 100%;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+@media (max-width: 768px) {
+  .mobileBackBtn {
+    display: inline-flex;
+  }
+
+  .bubbleRow {
+    max-width: 88%;
+  }
+
+  .chatHeader {
+    padding: var(--space-2);
+    gap: var(--space-1);
+  }
+
+  .participantSubtitle {
+    display: none;
+  }
+
+  .detailsBtn span {
+    display: none;
+  }
+
+  .videoBtn span {
+    display: none;
+  }
+
+  .videoBtn {
+    padding: var(--space-1);
+    border-radius: var(--radius-md);
+  }
 }

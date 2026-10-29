@@ -30,6 +30,7 @@ export function CommunicationPage({
   const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [activeConvId, setActiveConvId] = useState<string>(initialList[0]?.id ?? "");
   const [isDrawerOpen, setIsDrawerOpen] = useState(initialDrawerOpen);
+  const [mobileView, setMobileView] = useState<"LIST" | "CHAT">("LIST");
   const [videoAppointmentId, setVideoAppointmentId] = useState<string | null>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
@@ -40,6 +41,7 @@ export function CommunicationPage({
 
   function handleSelectConversation(id: string) {
     setActiveConvId(id);
+    setMobileView("CHAT");
     setConversations((prev) =>
       prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)),
     );
@@ -150,9 +152,13 @@ export function CommunicationPage({
           )}
         </div>
 
-        {/* Spacious 2-Column (or 3-Column when Details is opened) Hub */}
+        {/* Responsive 2-Column Hub (Full height on mobile with slide back/forward) */}
         <div className={styles.mainHub}>
-          <div className={styles.sidebarColumn}>
+          <div
+            className={`${styles.sidebarColumn} ${
+              mobileView === "CHAT" ? styles.sidebarHiddenOnMobile : ""
+            }`}
+          >
             <ConversationList
               conversations={conversations}
               activeConversationId={activeConvId}
@@ -160,7 +166,11 @@ export function CommunicationPage({
             />
           </div>
 
-          <div className={styles.chatColumn}>
+          <div
+            className={`${styles.chatColumn} ${
+              mobileView === "LIST" ? styles.chatHiddenOnMobile : ""
+            }`}
+          >
             <ChatWindow
               conversation={activeConversation}
               messages={currentMessages}
@@ -170,6 +180,7 @@ export function CommunicationPage({
               onOpenVideoCall={handleOpenVideoCall}
               onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
               isDrawerOpen={isDrawerOpen}
+              onBackToList={() => setMobileView("LIST")}
             />
 
             {isDrawerOpen && (

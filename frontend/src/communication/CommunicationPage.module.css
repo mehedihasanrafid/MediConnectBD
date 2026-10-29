@@ -125,24 +125,62 @@
   display: flex;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .pageWrapper {
-    height: auto;
-    min-height: 90vh;
+    height: calc(100vh - 65px);
+    padding: var(--space-2);
+  }
+
+  .topBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .topTitleGroup {
+    flex-wrap: wrap;
+  }
+
+  .liveCallAlert {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .liveCallText {
+    font-size: var(--text-xs);
+    text-align: center;
+  }
+
+  .joinBannerBtn {
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-2);
   }
 
   .mainHub {
-    flex-direction: column;
-    height: 750px;
+    position: relative;
+    height: 100%;
   }
 
   .sidebarColumn {
     width: 100%;
-    height: 40%;
+    height: 100%;
+  }
+
+  .sidebarHiddenOnMobile {
+    display: none;
   }
 
   .chatColumn {
     width: 100%;
-    height: 60%;
+    height: 100%;
+  }
+
+  .chatHiddenOnMobile {
+    display: none;
   }
 }

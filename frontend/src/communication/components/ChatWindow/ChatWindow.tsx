@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   CheckCheck,
   FileText,
   Info,
@@ -21,6 +22,7 @@ interface ChatWindowProps {
   onOpenVideoCall: (appointmentId: string) => void;
   onToggleDrawer: () => void;
   isDrawerOpen: boolean;
+  onBackToList?: () => void;
 }
 
 export function ChatWindow({
@@ -32,6 +34,7 @@ export function ChatWindow({
   onOpenVideoCall,
   onToggleDrawer,
   isDrawerOpen,
+  onBackToList,
 }: ChatWindowProps) {
   const [inputText, setInputText] = useState("");
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
@@ -75,6 +78,16 @@ export function ChatWindow({
       {/* Sleek Chat Header */}
       <div className={styles.chatHeader}>
         <div className={styles.headerInfo}>
+          {onBackToList && (
+            <button
+              type="button"
+              className={styles.mobileBackBtn}
+              onClick={onBackToList}
+              aria-label="Back to conversations list"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+            </button>
+          )}
           <Avatar name={conversation.participantName} size="md" />
           <div className={styles.participantDetails}>
             <h3 className={styles.participantName}>

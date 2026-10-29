@@ -63,3 +63,18 @@
   overflow-y: auto;
   padding: var(--space-4);
 }
+
+@media (max-width: 600px) {
+  .overlay {
+    padding: var(--space-1);
+  }
+
+  .modal {
+    max-height: 98vh;
+    border-radius: var(--radius-md);
+  }
+
+  .modalBody {
+    padding: var(--space-2);
+  }
+}

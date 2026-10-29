@@ -160,11 +160,15 @@
   padding: var(--space-5);
   overflow-y: auto;
   transform: translateX(100%);
-  transition: transform var(--duration-base) var(--ease-out);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform var(--duration-base) var(--ease-out), visibility var(--duration-base) var(--ease-out);
 }
 
 .mobileDrawerOpen {
   transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .drawerHeader {

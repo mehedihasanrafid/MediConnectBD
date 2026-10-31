@@ -3,7 +3,8 @@
  * and completed consultations) along with daily and monthly breakdowns.
  */
 
-import { Card, EmptyState, Stack, Text } from "../../../../shared/ui";
+import { Wallet } from "lucide-react";
+import { EmptyState, Text } from "../../../../shared/ui";
 import type { DoctorEarningsSummary } from "../../../../shared/types";
 import { formatMoney } from "../../../../shared/utils/format";
 import styles from "./DoctorEarningsSection.module.css";
@@ -15,83 +16,97 @@ interface DoctorEarningsSectionProps {
 export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) {
   if (!earnings) return null;
 
+  const netAmount = Number(earnings.totals.netAmount);
+  const grossAmount = Number(earnings.totals.grossAmount);
+  const commissionAmount = Number(earnings.totals.commissionAmount);
+
   return (
-    <Card className={styles.section}>
-      <h2>Earnings & Payout Summary</h2>
-      <dl className={styles.facts}>
-        <div>
-          <dt>Completed visits</dt>
-          <dd>{earnings.totals.completedConsultations}</dd>
+    <div className={styles.section}>
+      <div className={styles.headerRow}>
+        <div className={styles.titleGroup}>
+          <div className={styles.iconWrap}>
+            <Wallet size={16} aria-hidden="true" />
+          </div>
+          <h3 className={styles.cardTitle}>Earnings & Payout Summary</h3>
         </div>
-        <div>
-          <dt>Paid video visits</dt>
-          <dd>{earnings.totals.succeededPayments}</dd>
-        </div>
-        <div>
-          <dt>Gross earnings</dt>
-          <dd>{formatMoney(Number(earnings.totals.grossAmount))}</dd>
-        </div>
-        <div>
-          <dt>Platform fee (10%)</dt>
-          <dd>{formatMoney(Number(earnings.totals.commissionAmount))}</dd>
-        </div>
-        <div>
-          <dt>Net doctor payout (90%)</dt>
-          <dd>
-            <strong className={styles.payoutHighlight}>
-              {formatMoney(Number(earnings.totals.netAmount))}
-            </strong>
-          </dd>
-        </div>
-      </dl>
+        <span className={styles.payoutBadge}>Weekly Direct Settlement</span>
+      </div>
 
-      <div className={styles.breakdownGrid}>
-        <div>
-          <h3>By Month</h3>
-          {earnings.byMonth.length === 0 ? (
-            <EmptyState>No monthly online payment records yet.</EmptyState>
-          ) : (
-            <Stack gap={2}>
-              {earnings.byMonth.map((row) => (
-                <div key={row.period} className={styles.historyRow}>
-                  <span>
-                    <strong>{row.period}</strong> ({row.appointmentsCount} paid)
-                  </span>
-                  <span>
-                    Net: <strong>{formatMoney(Number(row.netAmount))}</strong>{" "}
-                    <Text tone="muted" size="sm" as="span">
-                      (Gross {formatMoney(Number(row.grossAmount))})
-                    </Text>
-                  </span>
-                </div>
-              ))}
-            </Stack>
-          )}
+      <div className={styles.heroPayoutBox}>
+        <div className={styles.heroPayoutTop}>
+          <span className={styles.heroLabel}>Net Doctor Payout (90%)</span>
+          <span className={styles.payoutBadge}>bKash / Bank</span>
         </div>
-
-        <div>
-          <h3>By Day (Recent)</h3>
-          {earnings.byDay.length === 0 ? (
-            <EmptyState>No daily online payment records yet.</EmptyState>
-          ) : (
-            <Stack gap={2}>
-              {earnings.byDay.slice(0, 7).map((row) => (
-                <div key={row.period} className={styles.historyRow}>
-                  <span>
-                    <strong>{row.period}</strong> ({row.appointmentsCount} paid)
-                  </span>
-                  <span>
-                    Net: <strong>{formatMoney(Number(row.netAmount))}</strong>{" "}
-                    <Text tone="muted" size="sm" as="span">
-                      (Gross {formatMoney(Number(row.grossAmount))})
-                    </Text>
-                  </span>
-                </div>
-              ))}
-            </Stack>
-          )}
+        <div className={styles.heroAmount}>{formatMoney(netAmount)}</div>
+        <div className={styles.ratioBar} aria-hidden="true">
+          <div className={styles.ratioDoctor} />
+          <div className={styles.ratioPlatform} />
+        </div>
+        <div className={styles.ratioLegend}>
+          <span>Doctor Share (90%)</span>
+          <span>Platform Fee (10%)</span>
         </div>
       </div>
-    </Card>
+
+      <div className={styles.facts}>
+        <div className={styles.factItem}>
+          <span className={styles.factLabel}>Gross Revenue</span>
+          <span className={styles.factValue}>{formatMoney(grossAmount)}</span>
+        </div>
+        <div className={styles.factItem}>
+          <span className={styles.factLabel}>Platform Fee (10%)</span>
+          <span className={styles.factValue}>{formatMoney(commissionAmount)}</span>
+        </div>
+        <div className={styles.factItem}>
+          <span className={styles.factLabel}>Completed Visits</span>
+          <span className={styles.factValue}>{earnings.totals.completedConsultations}</span>
+        </div>
+        <div className={styles.factItem}>
+          <span className={styles.factLabel}>Paid Video Visits</span>
+          <span className={styles.factValue}>{earnings.totals.succeededPayments}</span>
+        </div>
+      </div>
+
+      <div className={styles.breakdownTabs}>
+        <h4 className={styles.subTitle}>Monthly Summary</h4>
+        {earnings.byMonth.length === 0 ? (
+          <EmptyState>No monthly records yet.</EmptyState>
+        ) : (
+          <div className={styles.historyList}>
+            {earnings.byMonth.slice(0, 3).map((row) => (
+              <div key={row.period} className={styles.historyRow}>
+                <span>
+                  <strong>{row.period}</strong> ({row.appointmentsCount} visits)
+                </span>
+                <span>
+                  Net: <strong>{formatMoney(Number(row.netAmount))}</strong>{" "}
+                  <Text tone="muted" size="sm" as="span">
+                    ({formatMoney(Number(row.grossAmount))})
+                  </Text>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h4 className={styles.subTitle}>Recent Daily Consultations</h4>
+        {earnings.byDay.length === 0 ? (
+          <EmptyState>No daily records yet.</EmptyState>
+        ) : (
+          <div className={styles.historyList}>
+            {earnings.byDay.slice(0, 4).map((row) => (
+              <div key={row.period} className={styles.historyRow}>
+                <span>
+                  <strong>{row.period}</strong> ({row.appointmentsCount} visits)
+                </span>
+                <span>
+                  Net: <strong>{formatMoney(Number(row.netAmount))}</strong>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

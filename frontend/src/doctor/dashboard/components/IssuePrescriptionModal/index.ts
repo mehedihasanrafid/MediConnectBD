@@ -1,0 +1,1 @@
+export { IssuePrescriptionModal } from "./IssuePrescriptionModal";

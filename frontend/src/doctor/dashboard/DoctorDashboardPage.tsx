@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import type { DoctorAppointment } from "../../shared/types";
 import { Alert, EmptyState, Page, Spinner } from "../../shared/ui";
 import { ClinicalStatusBar } from "./components/ClinicalStatusBar";
 import { ContextualPatientDrawer } from "./components/ContextualPatientDrawer";
@@ -17,6 +18,7 @@ import { DoctorScheduleSection } from "./components/DoctorScheduleSection";
 import { DoctorViewSwitcher, type DoctorDashboardTab } from "./components/DoctorViewSwitcher";
 import { EmergencyLeaveModal } from "./components/EmergencyLeaveModal";
 import { FastRxModal, type FastRxBundle } from "./components/FastRxModal";
+import { IssuePrescriptionModal } from "./components/IssuePrescriptionModal";
 import { QuickPracticeTools } from "./components/QuickPracticeTools";
 import { TodayPatientRadar } from "./components/TodayPatientRadar";
 import { useDoctorDashboard } from "./hooks/useDoctorDashboard";
@@ -39,6 +41,7 @@ export function DoctorDashboardPage() {
   const [activeTab, setActiveTab] = useState<DoctorDashboardTab>("queue");
   const [inspectingPatientId, setInspectingPatientId] = useState<string | null>(null);
   const [selectedFastRxBundle, setSelectedFastRxBundle] = useState<FastRxBundle | null>(null);
+  const [prescribingAppointment, setPrescribingAppointment] = useState<DoctorAppointment | null>(null);
   const [isEmergencyLeaveOpen, setIsEmergencyLeaveOpen] = useState(false);
 
   if (loading) return <Spinner label="Loading doctor clinical command center…" />;
@@ -93,7 +96,9 @@ export function DoctorDashboardPage() {
               <div className={styles.leftWing}>
                 <TodayPatientRadar
                   appointments={appointments}
+                  prescriptions={prescriptions}
                   onInspectPatientHistory={setInspectingPatientId}
+                  onOpenIssuePrescription={(appt) => setPrescribingAppointment(appt)}
                   onAppointmentUpdated={loadDashboard}
                 />
               </div>
@@ -151,6 +156,13 @@ export function DoctorDashboardPage() {
         <FastRxModal
           bundle={selectedFastRxBundle}
           onClose={() => setSelectedFastRxBundle(null)}
+        />
+
+        <IssuePrescriptionModal
+          appointment={prescribingAppointment}
+          isOpen={!!prescribingAppointment}
+          onClose={() => setPrescribingAppointment(null)}
+          onPrescriptionIssued={loadDashboard}
         />
 
         <EmergencyLeaveModal

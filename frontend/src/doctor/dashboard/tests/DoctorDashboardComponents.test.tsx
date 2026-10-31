@@ -12,8 +12,10 @@ import { DoctorViewSwitcher } from "../components/DoctorViewSwitcher";
 import { EmergencyLeaveModal } from "../components/EmergencyLeaveModal";
 import { FastRxModal } from "../components/FastRxModal";
 import type { FastRxBundle } from "../components/FastRxModal";
+import { IssuePrescriptionModal } from "../components/IssuePrescriptionModal";
 import { QuickPracticeTools } from "../components/QuickPracticeTools";
 import { TodayPatientRadar } from "../components/TodayPatientRadar";
+import { playChimeSound } from "../../../shared/utils/sound";
 
 vi.mock("../../../features/auth/AuthContext", () => ({
   useAuth: () => ({
@@ -307,5 +309,33 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     expect(html).toContain("BMDC #");
     expect(html).toContain("A-54321");
     expect(html).toContain("v1.4.0 (.deb)");
+  });
+
+  it("renders IssuePrescriptionModal with Fast-RX presets ribbon and medicine input rows", () => {
+    const html = renderToString(
+      <IssuePrescriptionModal
+        appointment={dummyAppointments[0]}
+        isOpen={true}
+        onClose={vi.fn()}
+        onPrescriptionIssued={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Issue Digital E-Prescription");
+    expect(html).toContain("Fast-RX Protocol Templates");
+    expect(html).toContain("Respiratory Viral Flu Bundle");
+    expect(html).toContain("Clinical Diagnosis");
+    expect(html).toContain("Prescribed Medicines");
+    expect(html).toContain("Sign &amp; Issue Prescription");
+    expect(html).toContain("BMDC seal");
+  });
+
+  it("safely executes synthetic Web Audio chime sounds without throwing in node environment", () => {
+    expect(() => {
+      playChimeSound("notification");
+      playChimeSound("success");
+      playChimeSound("call");
+      playChimeSound("complete");
+    }).not.toThrow();
   });
 });

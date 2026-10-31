@@ -10,92 +10,10 @@ import {
   Sliders,
   Video,
 } from "lucide-react";
-import type { FastRxBundle } from "../FastRxModal";
+import { FAST_RX_PRESET_BUNDLES, type FastRxBundle } from "../../data/fastRxPresets";
 import styles from "./QuickPracticeTools.module.css";
 
-const PRESET_BUNDLES: FastRxBundle[] = [
-  {
-    id: "bundle-flu",
-    title: "Respiratory Viral Flu Bundle",
-    category: "Internal Medicine / Pulmonology",
-    diagnosis: "Acute Upper Respiratory Tract Infection (Viral Pharyngitis)",
-    medicines: [
-      {
-        name: "Tab. Napa Extra (Paracetamol 500mg + Caffeine 65mg)",
-        dosage: "1 tablet",
-        frequency: "1+1+1",
-        duration: "5 days",
-        instruction: "After meals, for fever or body ache",
-      },
-      {
-        name: "Tab. Montair 10 (Montelukast)",
-        dosage: "10mg",
-        frequency: "0+0+1",
-        duration: "14 days",
-        instruction: "At bedtime with water",
-      },
-      {
-        name: "Tab. Fexo (Fexofenadine HCl)",
-        dosage: "120mg",
-        frequency: "1+0+0",
-        duration: "7 days",
-        instruction: "Morning after meal for rhinorrhea",
-      },
-    ],
-    advice:
-      "Warm water steam inhalation twice daily. Adequate hydration (>2.5L warm fluid). Rest and avoid cold beverages.",
-    tests: ["Complete Blood Count (CBC) with ESR (if fever >101°F persists >3 days)"],
-  },
-  {
-    id: "bundle-diabetes",
-    title: "Type 2 Diabetes Mellitus Follow-up",
-    category: "Endocrinology & Diabetology",
-    diagnosis: "Type 2 Diabetes Mellitus with Mild Hyperglycemia",
-    medicines: [
-      {
-        name: "Tab. Comet (Metformin HCl)",
-        dosage: "500mg",
-        frequency: "1+0+1",
-        duration: "30 days",
-        instruction: "With or immediately after main meals",
-      },
-      {
-        name: "Tab. Jardiance (Empagliflozin)",
-        dosage: "10mg",
-        frequency: "1+0+0",
-        duration: "30 days",
-        instruction: "Morning with water",
-      },
-    ],
-    advice:
-      "Strict low-glycemic dietary discipline. 30 minutes daily brisk walking. Regular self-monitoring of blood glucose (SMBG).",
-    tests: ["Fasting Plasma Glucose (FPG)", "2-hour Postprandial Glucose (2h-PPG)", "HbA1c"],
-  },
-  {
-    id: "bundle-gastritis",
-    title: "Gastritis & Acid Peptic Bundle",
-    category: "Gastroenterology",
-    diagnosis: "Gastroesophageal Reflux Disease (GERD) & Dyspepsia",
-    medicines: [
-      {
-        name: "Cap. Sergel (Esomeprazole Magnesium)",
-        dosage: "20mg",
-        frequency: "1+0+1",
-        duration: "14 days",
-        instruction: "30 minutes before meals",
-      },
-      {
-        name: "Suspension Entacyd Plus (AlOH3 + MgOH2 + Simethicone)",
-        dosage: "2 tsp",
-        frequency: "1+1+1",
-        duration: "7 days",
-        instruction: "1 hour after meals and at bedtime",
-      },
-    ],
-    advice:
-      "Avoid excess red meat, spicy, fried oily foods and citrus. Maintain 2 hours gap between dinner and sleeping.",
-  },
-];
+const PRESET_BUNDLES: FastRxBundle[] = FAST_RX_PRESET_BUNDLES;
 
 interface QuickPracticeToolsProps {
   onSelectFastRxBundle?: (bundle: FastRxBundle) => void;

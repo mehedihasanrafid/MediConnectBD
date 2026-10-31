@@ -1,22 +1,9 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, FileText, Pill, Stethoscope, X } from "lucide-react";
+import type { FastRxBundle } from "../../data/fastRxPresets";
 import styles from "./FastRxModal.module.css";
 
-export interface FastRxBundle {
-  id: string;
-  title: string;
-  category: string;
-  diagnosis: string;
-  medicines: Array<{
-    name: string;
-    dosage: string;
-    frequency: string;
-    duration: string;
-    instruction: string;
-  }>;
-  advice: string;
-  tests?: string[];
-}
+export type { FastRxBundle };
 
 interface FastRxModalProps {
   bundle: FastRxBundle | null;

@@ -1,1 +1,91 @@
-/* DoctorPrescriptionsPage (layout handled by shared Page primitive) */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.draftBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-soft-hover);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.draftInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.draftIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  flex-shrink: 0;
+}
+
+.draftTitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.draftDiagnosis {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.draftActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.applyDraftLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.applyDraftLink:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.clearDraftBtn {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clearDraftBtn:hover {
+  background-color: var(--color-bg-subtle);
+  border-color: var(--color-border-strong);
+}

@@ -3,6 +3,7 @@ import { Video } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { isDoctor } from "../shared/utils/roles";
 import { Page } from "../shared/ui";
+import { playChimeSound } from "../shared/utils/sound";
 import type { ChatMessage, Conversation } from "./types";
 import {
   DOCTOR_DEMO_CONVERSATIONS,
@@ -119,6 +120,7 @@ export function CommunicationPage({
   }
 
   function handleOpenVideoCall(appointmentId: string) {
+    playChimeSound("call");
     setVideoAppointmentId(appointmentId);
   }
 

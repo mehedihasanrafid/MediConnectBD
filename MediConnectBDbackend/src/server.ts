@@ -40,6 +40,8 @@ import { PrescriptionService } from "./modules/prescriptions/prescription.servic
 import { TypeOrmPrescriptionRepository } from "./modules/prescriptions/typeorm-prescription.repository";
 import { AdminService } from "./modules/admin/admin.service";
 import { TypeOrmAdminRepository } from "./modules/admin/typeorm-admin.repository";
+import { InAppNotificationService } from "./modules/notifications/in-app-notification.service";
+import { TypeOrmInAppNotificationRepository } from "./modules/notifications/typeorm-in-app-notification.repository";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -104,6 +106,9 @@ async function main(): Promise<void> {
   const adminService = new AdminService(
     new TypeOrmAdminRepository(AppDataSource),
   );
+  const inAppNotificationService = new InAppNotificationService(
+    new TypeOrmInAppNotificationRepository(AppDataSource),
+  );
 
   const apiRouter = createApiRouter({
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource, notificationService),
@@ -115,6 +120,7 @@ async function main(): Promise<void> {
     reviewService,
     prescriptionService,
     adminService,
+    inAppNotificationService,
     authService,
     authRepository,
     accessTokens,

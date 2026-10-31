@@ -35,6 +35,8 @@ import type { PrescriptionService } from "../modules/prescriptions/prescription.
 import { createPrescriptionRouter } from "../modules/prescriptions/prescription.routes";
 import type { AdminService } from "../modules/admin/admin.service";
 import { createAdminRouter } from "../modules/admin/admin.routes";
+import type { InAppNotificationService } from "../modules/notifications/in-app-notification.service";
+import { createInAppNotificationRouter } from "../modules/notifications/in-app-notification.routes";
 
 export interface ApiRouterOptions {
   authService: AuthService;
@@ -49,6 +51,7 @@ export interface ApiRouterOptions {
   reviewService?: ReviewService;
   prescriptionService?: PrescriptionService;
   adminService?: AdminService;
+  inAppNotificationService?: InAppNotificationService;
   secureCookies: boolean;
 }
 
@@ -126,6 +129,13 @@ export function createApiRouter(options: ApiRouterOptions): Router {
       adminService: options.adminService,
       authenticate,
     }));
+  }
+
+  if (options.inAppNotificationService) {
+    router.use(
+      "/notifications",
+      createInAppNotificationRouter(options.inAppNotificationService, authenticate),
+    );
   }
 
   return router;

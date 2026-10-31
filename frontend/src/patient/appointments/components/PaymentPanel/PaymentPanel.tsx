@@ -233,10 +233,12 @@ export function PaymentPanel({
             <Badge tone="warning">🧪 Sandbox Demo Mode</Badge>
           </div>
 
-          <Text tone="muted" size="sm" style={{ marginBottom: "var(--space-3)" }}>
-            Select your preferred mobile wallet or card below to test the instant consultation
-            confirmation flow:
-          </Text>
+          <div style={{ marginBottom: "var(--space-3)" }}>
+            <Text tone="muted" size="sm">
+              Select your preferred mobile wallet or card below to test the instant consultation
+              confirmation flow:
+            </Text>
+          </div>
 
           {/* Payment Method Tabs */}
           <div className={styles.paymentTabs} role="tablist" aria-label="Payment methods">

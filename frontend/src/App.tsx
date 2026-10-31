@@ -5,6 +5,7 @@
 
 import { ErrorBoundary, ToastProvider } from "./shared/ui";
 import { ThemeProvider } from "./shared/theme";
+import { NotificationProvider } from "./notifications";
 import { AppRouter } from "./routes/AppRouter";
 
 export default function App() {
@@ -12,7 +13,9 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <ToastProvider>
-          <AppRouter />
+          <NotificationProvider>
+            <AppRouter />
+          </NotificationProvider>
         </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>

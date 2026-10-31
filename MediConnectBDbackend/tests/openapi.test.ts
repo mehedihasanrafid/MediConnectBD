@@ -33,6 +33,8 @@ import { createFamilyMemberSchema, updateFamilyMemberSchema } from "../src/modul
 import { createMedicalReportRouter } from "../src/modules/patients/medical-report.routes";
 import type { MedicalReportService } from "../src/modules/patients/medical-report.service";
 import { createMedicalReportSchema } from "../src/modules/patients/medical-report.schema";
+import { createInAppNotificationRouter } from "../src/modules/notifications/in-app-notification.routes";
+import type { InAppNotificationService } from "../src/modules/notifications/in-app-notification.service";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -78,6 +80,7 @@ describe("OpenAPI and Swagger", () => {
     const adminService = {} as AdminService;
     const familyMemberService = {} as FamilyMemberService;
     const medicalReportService = {} as MedicalReportService;
+    const inAppNotificationService = {} as InAppNotificationService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -93,6 +96,7 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createReviewRouter({ reviewService, authenticate }), "/api/v1/reviews"),
       ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/api/v1/prescriptions"),
       ...collect(createAdminRouter({ adminService, authenticate }), "/api/v1/admin"),
+      ...collect(createInAppNotificationRouter(inAppNotificationService, authenticate), "/api/v1/notifications"),
     ];
     const documented = Object.entries(openApiDocument.paths).flatMap(([path, item]) => methods.filter(method => item?.[method]).map(method => `${method.toUpperCase()} ${path}`));
     expect(documented.sort()).toEqual(actual.sort());

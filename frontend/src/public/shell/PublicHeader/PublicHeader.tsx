@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Bell,
   CalendarCheck,
   ClipboardList,
   FileSpreadsheet,
@@ -19,6 +20,7 @@ import { useAuth } from "../../../features/auth/AuthContext";
 import { isAdmin, isDoctor, isPatient } from "../../../shared/utils/roles";
 import { Button, ButtonLink } from "../../../shared/ui";
 import { ThemeToggle } from "../../../shared/theme";
+import { NotificationBell } from "../../../notifications";
 import styles from "./PublicHeader.module.css";
 
 /**
@@ -141,6 +143,7 @@ export const PublicHeader: React.FC = () => {
 
         {/* Top-bar actions (desktop user menu & mobile menu toggle) */}
         <div className={styles.actions}>
+          {user && <NotificationBell />}
           <ThemeToggle />
 
           {user ? (
@@ -282,6 +285,13 @@ export const PublicHeader: React.FC = () => {
             <NavLink to="/admin/overview" className={mobileLinkClass} onClick={closeMenu}>
               <LayoutDashboard size={18} aria-hidden="true" />
               <span>Admin console</span>
+            </NavLink>
+          )}
+
+          {user && (
+            <NavLink to="/notifications" className={mobileLinkClass} onClick={closeMenu}>
+              <Bell size={18} aria-hidden="true" />
+              <span>Notifications</span>
             </NavLink>
           )}
         </div>

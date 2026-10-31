@@ -248,6 +248,11 @@ for (const kind of ["ipn", "success", "fail", "cancel"] as const) {
   });
 }
 
+const notifications = "/api/v1/notifications";
+add("get", notifications, "listInAppNotifications", "Notifications", "List in-app notifications for authenticated user", "InAppNotificationsList", 200, { access: "bearer" });
+add("post", `${notifications}/mark-read`, "markAllNotificationsRead", "Notifications", "Mark all notifications as read", "MarkNotificationsReadResult", 200, { access: "bearer" });
+add("patch", `${notifications}/{id}/read`, "markNotificationRead", "Notifications", "Mark specific notification as read", "MarkSingleNotificationReadResult", 200, { access: "bearer", parameters: [id("id")] });
+
 const errorDescriptions: Record<number, string> = {
   400: "Malformed request payload or empty content.",
   401: "Missing, invalid, expired, or reused authentication/session token.", 403: "Wrong role, inactive account, unapproved doctor, or forbidden ownership.",
@@ -265,7 +270,7 @@ export const openApiDocument: OpenAPIV3.Document = {
     description: "Interactive documentation for implemented backend endpoints. Start with patient registration/login, copy accessToken into Authorize, then test the protected routes. Examples are synthetic; replace example IDs with actual API results. All server timestamps are UTC; scheduling input uses Asia/Dhaka. Swagger does not bypass database readiness, authorization, or sandbox provider verification.",
   },
   servers: [{ url: "/", description: "This API server (same origin as Swagger UI)" }],
-  tags: ["Platform", "Health", "Authentication", "Account", "Catalog", "Doctors", "Doctor profile", "Scheduling", "Admin", "Appointments", "Payments", "Provider callbacks"].map(name => ({ name })),
+  tags: ["Platform", "Health", "Authentication", "Account", "Catalog", "Doctors", "Doctor profile", "Scheduling", "Admin", "Appointments", "Payments", "Provider callbacks", "Notifications"].map(name => ({ name })),
   paths,
   components: {
     securitySchemes: {

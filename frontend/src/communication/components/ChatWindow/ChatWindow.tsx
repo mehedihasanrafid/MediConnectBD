@@ -93,7 +93,9 @@ export function ChatWindow({
             <h3 className={styles.participantName}>
               <span>{conversation.participantName}</span>
               {conversation.participantRole === "DOCTOR" && (
-                <ShieldCheck size={14} color="var(--color-primary)" title="BMDC Verified Specialist" />
+                <span title="BMDC Verified Specialist" aria-label="BMDC Verified Specialist">
+                  <ShieldCheck size={14} color="var(--color-primary)" />
+                </span>
               )}
             </h3>
             <p className={styles.participantSubtitle}>{conversation.participantSubtitle}</p>

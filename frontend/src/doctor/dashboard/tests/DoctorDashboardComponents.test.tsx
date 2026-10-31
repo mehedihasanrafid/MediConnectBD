@@ -5,6 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { DoctorAppointment, DoctorEarningsSummary, Prescription } from "../../../shared/types";
 import { DoctorDashboardHeader } from "../components/DoctorDashboardHeader";
 import { DoctorKpiCards } from "../components/DoctorKpiCards";
+import { DoctorPracticeAnalytics } from "../components/DoctorPracticeAnalytics";
+import { EmergencyLeaveModal } from "../components/EmergencyLeaveModal";
+import { FastRxBundle, FastRxModal } from "../components/FastRxModal";
 import { QuickPracticeTools } from "../components/QuickPracticeTools";
 import { TodayPatientRadar } from "../components/TodayPatientRadar";
 
@@ -106,6 +109,24 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     },
   ] as unknown as Prescription[];
 
+  const dummyBundle: FastRxBundle = {
+    id: "bundle-flu",
+    title: "Respiratory Viral Flu Bundle",
+    category: "Internal Medicine",
+    diagnosis: "Acute Viral Pharyngitis",
+    medicines: [
+      {
+        name: "Tab. Napa Extra",
+        dosage: "1 tab",
+        frequency: "1+1+1",
+        duration: "5 days",
+        instruction: "After meals",
+      },
+    ],
+    advice: "Drink warm fluids and steam inhalation.",
+    tests: ["Complete Blood Count (CBC)"],
+  };
+
   it("renders DoctorDashboardHeader with BMDC badge and specialty pill", () => {
     const html = renderToString(
       <MemoryRouter>
@@ -146,7 +167,7 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     expect(html).toContain("Prescriptions Issued");
   });
 
-  it("renders TodayPatientRadar with patient queue cards and direct actions", () => {
+  it("renders TodayPatientRadar with search toolbar, triage pills, and patient cards", () => {
     const html = renderToString(
       <MemoryRouter>
         <TodayPatientRadar
@@ -158,16 +179,75 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
 
     expect(html).toContain("Patient Radar");
     expect(html).toContain("in Queue");
+    expect(html).toContain("Search today&#x27;s queue");
+    expect(html).toContain("All (");
+    expect(html).toContain("Video (");
+    expect(html).toContain("Chamber (");
     expect(html).toContain("Tariqul Islam");
     expect(html).toContain("Nasreen Akter");
     expect(html).toContain("Telehealth Video");
     expect(html).toContain("Chamber Visit");
     expect(html).toContain("Launch Telehealth Call");
     expect(html).toContain("Clinical History");
+    expect(html).toContain("Mark Done");
     expect(html).toContain("Write E-Prescription");
   });
 
-  it("renders QuickPracticeTools with chamber delay and Fast-RX bundles", () => {
+  it("renders DoctorPracticeAnalytics with 7-day influx chart and efficiency metrics", () => {
+    const html = renderToString(
+      <DoctorPracticeAnalytics
+        appointments={dummyAppointments}
+        earnings={dummyEarnings}
+      />,
+    );
+
+    expect(html).toContain("Clinical Practice Analytics");
+    expect(html).toContain("Daily Clinical Volume");
+    expect(html).toContain("Telehealth Video");
+    expect(html).toContain("Chamber Visit");
+    expect(html).toContain("Completion Rate");
+    expect(html).toContain("Avg. Consult Time");
+    expect(html).toContain("Peak Clinical Hours");
+    expect(html).toContain("17:00 – 21:00");
+  });
+
+  it("renders FastRxModal with drug dosages, instructions, and tests", () => {
+    const html = renderToString(
+      <MemoryRouter>
+        <FastRxModal
+          bundle={dummyBundle}
+          onClose={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(html).toContain("Respiratory Viral Flu Bundle");
+    expect(html).toContain("Internal Medicine");
+    expect(html).toContain("Acute Viral Pharyngitis");
+    expect(html).toContain("Tab. Napa Extra");
+    expect(html).toContain("1 tab");
+    expect(html).toContain("Drink warm fluids");
+    expect(html).toContain("Complete Blood Count (CBC)");
+    expect(html).toContain("Apply to New Prescription");
+  });
+
+  it("renders EmergencyLeaveModal with blackout presets", () => {
+    const html = renderToString(
+      <EmergencyLeaveModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onScheduleChanged={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Emergency Practice Blackout");
+    expect(html).toContain("Block Rest of Today");
+    expect(html).toContain("Emergency Hospital Duty (+2 Hours)");
+    expect(html).toContain("Tomorrow Full Day Leave");
+    expect(html).toContain("Apply Blackout Now");
+  });
+
+  it("renders QuickPracticeTools with chamber delay, Fast-RX presets, and emergency button", () => {
     const html = renderToString(
       <MemoryRouter>
         <QuickPracticeTools />
@@ -178,8 +258,9 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     expect(html).toContain("Chamber Delay Broadcast");
     expect(html).toContain("+15m Delay");
     expect(html).toContain("+30m Delay");
-    expect(html).toContain("Fast-RX Bundles");
+    expect(html).toContain("Fast-RX Protocol Presets");
     expect(html).toContain("Respiratory Viral Flu Bundle");
+    expect(html).toContain("Emergency Chamber Blackout");
     expect(html).toContain("Telehealth Audio/Video Check");
   });
 });

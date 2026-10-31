@@ -8,8 +8,12 @@ import { Alert, EmptyState, Page, Spinner } from "../../shared/ui";
 import { DoctorDashboardHeader } from "./components/DoctorDashboardHeader";
 import { DoctorEarningsSection } from "./components/DoctorEarningsSection";
 import { DoctorKpiCards } from "./components/DoctorKpiCards";
+import { DoctorPracticeAnalytics } from "./components/DoctorPracticeAnalytics";
 import { DoctorProfileSection } from "./components/DoctorProfileSection";
 import { DoctorScheduleSection } from "./components/DoctorScheduleSection";
+import { EmergencyLeaveModal } from "./components/EmergencyLeaveModal";
+import { FastRxModal } from "./components/FastRxModal";
+import type { FastRxBundle } from "./components/FastRxModal";
 import { PatientHistoryPanel } from "./components/PatientHistoryPanel";
 import { QuickPracticeTools } from "./components/QuickPracticeTools";
 import { TodayPatientRadar } from "./components/TodayPatientRadar";
@@ -31,6 +35,8 @@ export function DoctorDashboardPage() {
   } = useDoctorDashboard();
 
   const [inspectingPatientId, setInspectingPatientId] = useState<string | null>(null);
+  const [selectedFastRxBundle, setSelectedFastRxBundle] = useState<FastRxBundle | null>(null);
+  const [isEmergencyLeaveOpen, setIsEmergencyLeaveOpen] = useState(false);
 
   if (loading) return <Spinner label="Loading doctor clinical command center…" />;
   if (error) return <Alert kind="error">{error}</Alert>;
@@ -56,7 +62,7 @@ export function DoctorDashboardPage() {
 
       {/* 3. Balanced 2-Column Clinical Command Center Grid */}
       <div className={styles.dashboardGrid}>
-        {/* Left Clinical Column (Queue, Patient Radar, Schedule & Profile) */}
+        {/* Left Clinical Column (Queue, Patient Radar, Analytics, Schedule & Profile) */}
         <div className={styles.leftColumn}>
           {inspectingPatientId && (
             <div className={styles.historyDrawerWrapper}>
@@ -70,6 +76,12 @@ export function DoctorDashboardPage() {
           <TodayPatientRadar
             appointments={appointments}
             onInspectPatientHistory={setInspectingPatientId}
+            onAppointmentUpdated={loadDashboard}
+          />
+
+          <DoctorPracticeAnalytics
+            appointments={appointments}
+            earnings={earnings}
           />
 
           <DoctorScheduleSection schedule={schedule} onScheduleChanged={loadDashboard} />
@@ -83,11 +95,26 @@ export function DoctorDashboardPage() {
 
         {/* Right Operations Column (Practice Tools, Earnings & Settlement) */}
         <div className={styles.rightColumn}>
-          <QuickPracticeTools />
+          <QuickPracticeTools
+            onSelectFastRxBundle={setSelectedFastRxBundle}
+            onOpenEmergencyLeave={() => setIsEmergencyLeaveOpen(true)}
+          />
 
           <DoctorEarningsSection earnings={earnings} />
         </div>
       </div>
+
+      {/* 4. Interactive Modals */}
+      <FastRxModal
+        bundle={selectedFastRxBundle}
+        onClose={() => setSelectedFastRxBundle(null)}
+      />
+
+      <EmergencyLeaveModal
+        isOpen={isEmergencyLeaveOpen}
+        onClose={() => setIsEmergencyLeaveOpen(false)}
+        onScheduleChanged={loadDashboard}
+      />
     </Page>
   );
 }

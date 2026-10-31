@@ -1,15 +1,19 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
   Activity,
   ArrowRight,
+  CheckCircle2,
   Clock,
   FileSpreadsheet,
   FileText,
   MapPin,
+  Search,
   Sparkles,
   Video,
 } from "lucide-react";
+import { appointmentsApi } from "../../../../api/appointments";
 import type { DoctorAppointment } from "../../../../shared/types";
 import { formatDhakaTime, formatMoney } from "../../../../shared/utils/format";
 import styles from "./TodayPatientRadar.module.css";
@@ -17,16 +21,52 @@ import styles from "./TodayPatientRadar.module.css";
 interface TodayPatientRadarProps {
   appointments: DoctorAppointment[];
   onInspectPatientHistory: (patientProfileId: string) => void;
+  onAppointmentUpdated?: () => void;
 }
 
 export function TodayPatientRadar({
   appointments,
   onInspectPatientHistory,
+  onAppointmentUpdated,
 }: TodayPatientRadarProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [modeFilter, setModeFilter] = useState<"ALL" | "VIDEO" | "CHAMBER">("ALL");
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
   // Filter active and upcoming consultations
   const activeAppointments = appointments.filter(
     (a) => a.status === "CONFIRMED" || a.status === "PENDING_PAYMENT",
   );
+
+  const videoCount = activeAppointments.filter((a) => a.mode === "VIDEO").length;
+  const chamberCount = activeAppointments.filter((a) => a.mode === "CHAMBER").length;
+
+  const filteredAppointments = activeAppointments.filter((appt) => {
+    if (modeFilter === "VIDEO" && appt.mode !== "VIDEO") return false;
+    if (modeFilter === "CHAMBER" && appt.mode !== "CHAMBER") return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const patientName = `${appt.patient?.firstName ?? ""} ${appt.patient?.lastName ?? ""}`.toLowerCase();
+      const phone = (appt.patient?.phone ?? "").toLowerCase();
+      const familyName = (appt.familyMember?.name ?? "").toLowerCase();
+      return patientName.includes(q) || phone.includes(q) || familyName.includes(q);
+    }
+
+    return true;
+  });
+
+  const handleComplete = async (appointmentId: string) => {
+    setCompletingId(appointmentId);
+    try {
+      await appointmentsApi.completeAppointment(appointmentId);
+      onAppointmentUpdated?.();
+    } catch {
+      // ignore
+    } finally {
+      setCompletingId(null);
+    }
+  };
 
   return (
     <div className={styles.radarCard}>
@@ -50,19 +90,63 @@ export function TodayPatientRadar({
         </div>
       </div>
 
+      {/* Filter and Search Toolbar */}
+      {activeAppointments.length > 0 && (
+        <div className={styles.filterToolbar}>
+          <div className={styles.searchBox}>
+            <Search size={14} style={{ color: "var(--color-text-muted)" }} aria-hidden="true" />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search today's queue by patient name or phone…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Filter patient queue"
+            />
+          </div>
+
+          <div className={styles.filterPills}>
+            <button
+              type="button"
+              className={clsx(styles.filterPill, modeFilter === "ALL" && styles.filterPillActive)}
+              onClick={() => setModeFilter("ALL")}
+            >
+              All ({activeAppointments.length})
+            </button>
+            <button
+              type="button"
+              className={clsx(styles.filterPill, modeFilter === "VIDEO" && styles.filterPillActive)}
+              onClick={() => setModeFilter("VIDEO")}
+            >
+              Video ({videoCount})
+            </button>
+            <button
+              type="button"
+              className={clsx(styles.filterPill, modeFilter === "CHAMBER" && styles.filterPillActive)}
+              onClick={() => setModeFilter("CHAMBER")}
+            >
+              Chamber ({chamberCount})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Patient Queue Cards */}
       <div className={styles.patientList}>
-        {activeAppointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <div className={styles.emptyState}>
             <Sparkles size={28} className={styles.emptyIcon} aria-hidden="true" />
-            <span className={styles.emptyTitle}>Queue all caught up!</span>
+            <span className={styles.emptyTitle}>
+              {searchQuery ? "No matching patients found" : "Queue all caught up!"}
+            </span>
             <span className={styles.emptyText}>
-              No pending consultations scheduled right now. New patient bookings will appear here
-              in real time.
+              {searchQuery
+                ? "Try adjusting your search terms or filter mode."
+                : "No pending consultations scheduled right now. New patient bookings will appear here in real time."}
             </span>
           </div>
         ) : (
-          activeAppointments.slice(0, 5).map((appt) => {
+          filteredAppointments.slice(0, 6).map((appt) => {
             const patientName = appt.patient
               ? `${appt.patient.firstName} ${appt.patient.lastName}`
               : "Demo Patient";
@@ -72,6 +156,7 @@ export function TodayPatientRadar({
             const isVideo = appt.mode === "VIDEO";
             const startTimeStr = formatDhakaTime(appt.scheduledStartAt);
             const endTimeStr = formatDhakaTime(appt.scheduledEndAt);
+            const isCompleting = completingId === appt.id;
 
             return (
               <div
@@ -141,6 +226,17 @@ export function TodayPatientRadar({
                     >
                       <FileSpreadsheet size={14} aria-hidden="true" />
                       <span>Clinical History & Reports</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={styles.completeBtn}
+                      onClick={() => handleComplete(appt.id)}
+                      disabled={isCompleting}
+                      title="Mark consultation completed and proceed to post-visit Rx"
+                    >
+                      <CheckCircle2 size={13} aria-hidden="true" />
+                      <span>{isCompleting ? "Completing…" : "Mark Done"}</span>
                     </button>
                   </div>
 

@@ -1,20 +1,22 @@
 /**
- * Doctor workspace overview: coordinates clinical profile editing, application submission,
- * weekly schedule/time-off management, and quick navigation to the appointment queue & prescriptions.
+ * Doctor workspace overview: coordinates clinical command center, active consultation queue,
+ * practice analytics, weekly schedule, and contextual patient inspector.
  */
 
 import { useState } from "react";
 import { Alert, EmptyState, Page, Spinner } from "../../shared/ui";
+import { ClinicalStatusBar } from "./components/ClinicalStatusBar";
+import { ContextualPatientDrawer } from "./components/ContextualPatientDrawer";
+import { DoctorBreadcrumbs } from "./components/DoctorBreadcrumbs";
 import { DoctorDashboardHeader } from "./components/DoctorDashboardHeader";
 import { DoctorEarningsSection } from "./components/DoctorEarningsSection";
 import { DoctorKpiCards } from "./components/DoctorKpiCards";
 import { DoctorPracticeAnalytics } from "./components/DoctorPracticeAnalytics";
 import { DoctorProfileSection } from "./components/DoctorProfileSection";
 import { DoctorScheduleSection } from "./components/DoctorScheduleSection";
+import { DoctorViewSwitcher, type DoctorDashboardTab } from "./components/DoctorViewSwitcher";
 import { EmergencyLeaveModal } from "./components/EmergencyLeaveModal";
-import { FastRxModal } from "./components/FastRxModal";
-import type { FastRxBundle } from "./components/FastRxModal";
-import { PatientHistoryPanel } from "./components/PatientHistoryPanel";
+import { FastRxModal, type FastRxBundle } from "./components/FastRxModal";
 import { QuickPracticeTools } from "./components/QuickPracticeTools";
 import { TodayPatientRadar } from "./components/TodayPatientRadar";
 import { useDoctorDashboard } from "./hooks/useDoctorDashboard";
@@ -34,6 +36,7 @@ export function DoctorDashboardPage() {
     loadDashboard,
   } = useDoctorDashboard();
 
+  const [activeTab, setActiveTab] = useState<DoctorDashboardTab>("queue");
   const [inspectingPatientId, setInspectingPatientId] = useState<string | null>(null);
   const [selectedFastRxBundle, setSelectedFastRxBundle] = useState<FastRxBundle | null>(null);
   const [isEmergencyLeaveOpen, setIsEmergencyLeaveOpen] = useState(false);
@@ -42,79 +45,123 @@ export function DoctorDashboardPage() {
   if (error) return <Alert kind="error">{error}</Alert>;
   if (!profile) return <EmptyState>No doctor profile found.</EmptyState>;
 
+  // Count active queue items
+  const activeQueueCount = appointments.filter(
+    (a) => a.status === "CONFIRMED" || a.status === "PENDING_PAYMENT",
+  ).length;
+
+  const tabLabels: Record<DoctorDashboardTab, string> = {
+    queue: "Today's Patient Queue",
+    analytics: "Practice Analytics & Revenue",
+    schedule: "Weekly Schedule & Chambers",
+  };
+
   return (
     <Page>
-      {/* 1. Executive Doctor Hero Header */}
-      <DoctorDashboardHeader
-        bmdcNumber={profile.bmdcNumber}
-        degrees={profile.degrees}
-        experienceYears={profile.experienceYears}
-        specialties={profile.specialties}
-        todayAppointmentsCount={appointments.length}
-      />
+      <div className={styles.dashboardContainer}>
+        {/* 1. Desktop Breadcrumbs Bar & Realtime Dhaka Clock */}
+        <DoctorBreadcrumbs activeTabLabel={tabLabels[activeTab]} />
 
-      {/* 2. Executive KPI Stat Cards */}
-      <DoctorKpiCards
-        appointments={appointments}
-        earnings={earnings}
-        prescriptions={prescriptions}
-      />
+        {/* 2. Executive Doctor Hero Header */}
+        <DoctorDashboardHeader
+          bmdcNumber={profile.bmdcNumber}
+          degrees={profile.degrees}
+          experienceYears={profile.experienceYears}
+          specialties={profile.specialties}
+          todayAppointmentsCount={appointments.length}
+        />
 
-      {/* 3. Balanced 2-Column Clinical Command Center Grid */}
-      <div className={styles.dashboardGrid}>
-        {/* Left Clinical Column (Queue, Patient Radar, Analytics, Schedule & Profile) */}
-        <div className={styles.leftColumn}>
-          {inspectingPatientId && (
-            <div className={styles.historyDrawerWrapper}>
-              <PatientHistoryPanel
-                patientProfileId={inspectingPatientId}
-                onClose={() => setInspectingPatientId(null)}
-              />
+        {/* 3. Executive KPI Metric Cards */}
+        <DoctorKpiCards
+          appointments={appointments}
+          earnings={earnings}
+          prescriptions={prescriptions}
+        />
+
+        {/* 4. Desktop View Switcher (3 Workspace Tabs) */}
+        <DoctorViewSwitcher
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
+          activeQueueCount={activeQueueCount}
+        />
+
+        {/* 5. Tab Content: Symmetric 2-Wing Canvas */}
+        <div className={styles.tabContentWrapper}>
+          {/* TAB 1: Today's Queue (Active Clinical Intake) */}
+          {activeTab === "queue" && (
+            <div className={styles.twoWingGrid}>
+              <div className={styles.leftWing}>
+                <TodayPatientRadar
+                  appointments={appointments}
+                  onInspectPatientHistory={setInspectingPatientId}
+                  onAppointmentUpdated={loadDashboard}
+                />
+              </div>
+
+              <div className={styles.rightWing}>
+                <QuickPracticeTools
+                  onSelectFastRxBundle={setSelectedFastRxBundle}
+                  onOpenEmergencyLeave={() => setIsEmergencyLeaveOpen(true)}
+                />
+              </div>
             </div>
           )}
 
-          <TodayPatientRadar
-            appointments={appointments}
-            onInspectPatientHistory={setInspectingPatientId}
-            onAppointmentUpdated={loadDashboard}
-          />
+          {/* TAB 2: Practice Analytics & Financials */}
+          {activeTab === "analytics" && (
+            <div className={styles.twoWingGrid}>
+              <div className={styles.leftWing}>
+                <DoctorPracticeAnalytics
+                  appointments={appointments}
+                  earnings={earnings}
+                />
+              </div>
 
-          <DoctorPracticeAnalytics
-            appointments={appointments}
-            earnings={earnings}
-          />
+              <div className={styles.rightWing}>
+                <DoctorEarningsSection earnings={earnings} />
+              </div>
+            </div>
+          )}
 
-          <DoctorScheduleSection schedule={schedule} onScheduleChanged={loadDashboard} />
+          {/* TAB 3: Weekly Schedule & Profile Setup */}
+          {activeTab === "schedule" && (
+            <div className={styles.twoWingGrid}>
+              <div className={styles.leftWing}>
+                <DoctorScheduleSection schedule={schedule} onScheduleChanged={loadDashboard} />
+              </div>
 
-          <DoctorProfileSection
-            profile={profile}
-            allSpecialties={specialties}
-            onProfileUpdated={setProfile}
-          />
+              <div className={styles.rightWing}>
+                <DoctorProfileSection
+                  profile={profile}
+                  allSpecialties={specialties}
+                  onProfileUpdated={setProfile}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Operations Column (Practice Tools, Earnings & Settlement) */}
-        <div className={styles.rightColumn}>
-          <QuickPracticeTools
-            onSelectFastRxBundle={setSelectedFastRxBundle}
-            onOpenEmergencyLeave={() => setIsEmergencyLeaveOpen(true)}
-          />
+        {/* 6. Contextual Patient Inspector (Slide-out Right Drawer) */}
+        <ContextualPatientDrawer
+          patientProfileId={inspectingPatientId}
+          onClose={() => setInspectingPatientId(null)}
+        />
 
-          <DoctorEarningsSection earnings={earnings} />
-        </div>
+        {/* 7. Dialog Modals */}
+        <FastRxModal
+          bundle={selectedFastRxBundle}
+          onClose={() => setSelectedFastRxBundle(null)}
+        />
+
+        <EmergencyLeaveModal
+          isOpen={isEmergencyLeaveOpen}
+          onClose={() => setIsEmergencyLeaveOpen(false)}
+          onScheduleChanged={loadDashboard}
+        />
+
+        {/* 8. Docked Desktop Clinical Status Bar */}
+        <ClinicalStatusBar bmdcNumber={profile.bmdcNumber} />
       </div>
-
-      {/* 4. Interactive Modals */}
-      <FastRxModal
-        bundle={selectedFastRxBundle}
-        onClose={() => setSelectedFastRxBundle(null)}
-      />
-
-      <EmergencyLeaveModal
-        isOpen={isEmergencyLeaveOpen}
-        onClose={() => setIsEmergencyLeaveOpen(false)}
-        onScheduleChanged={loadDashboard}
-      />
     </Page>
   );
 }

@@ -1,40 +1,48 @@
-.dashboardGrid {
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  width: 100%;
+}
+
+.twoWingGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-6);
   min-width: 0;
   width: 100%;
+  align-items: start;
 }
 
 @media (min-width: 1024px) {
-  .dashboardGrid {
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    align-items: start;
+  .twoWingGrid {
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
   }
 }
 
-.leftColumn {
+.leftWing {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   min-width: 0;
 }
 
-.rightColumn {
+.rightWing {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   min-width: 0;
 }
 
-.historyDrawerWrapper {
-  animation: fade-in 200ms ease-out;
+.tabContentWrapper {
+  animation: fade-in 180ms var(--ease-out);
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(3px);
   }
 
   to {

@@ -16,7 +16,7 @@ export function MainLayout() {
     <div className={styles.root}>
       <PublicHeader />
       <main className={styles.main}>
-        <Container size="lg">
+        <Container size={user?.roles?.includes("DOCTOR") ? "2xl" : "lg"}>
           <Outlet />
         </Container>
       </main>

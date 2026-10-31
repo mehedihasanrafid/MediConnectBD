@@ -3,11 +3,15 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import type { DoctorAppointment, DoctorEarningsSummary, Prescription } from "../../../shared/types";
+import { ClinicalStatusBar } from "../components/ClinicalStatusBar";
+import { DoctorBreadcrumbs } from "../components/DoctorBreadcrumbs";
 import { DoctorDashboardHeader } from "../components/DoctorDashboardHeader";
 import { DoctorKpiCards } from "../components/DoctorKpiCards";
 import { DoctorPracticeAnalytics } from "../components/DoctorPracticeAnalytics";
+import { DoctorViewSwitcher } from "../components/DoctorViewSwitcher";
 import { EmergencyLeaveModal } from "../components/EmergencyLeaveModal";
-import { FastRxBundle, FastRxModal } from "../components/FastRxModal";
+import { FastRxModal } from "../components/FastRxModal";
+import type { FastRxBundle } from "../components/FastRxModal";
 import { QuickPracticeTools } from "../components/QuickPracticeTools";
 import { TodayPatientRadar } from "../components/TodayPatientRadar";
 
@@ -262,5 +266,46 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     expect(html).toContain("Respiratory Viral Flu Bundle");
     expect(html).toContain("Emergency Chamber Blackout");
     expect(html).toContain("Telehealth Audio/Video Check");
+  });
+
+  it("renders DoctorBreadcrumbs with trail and Dhaka timezone indicators", () => {
+    const html = renderToString(
+      <MemoryRouter>
+        <DoctorBreadcrumbs activeTabLabel="Today's Patient Queue" />
+      </MemoryRouter>,
+    );
+
+    expect(html).toContain("Doctor Workspace");
+    expect(html).toContain("Clinical Command Center");
+    expect(html).toContain("Today&#x27;s Patient Queue");
+    expect(html).toContain("Realtime Synced");
+    expect(html).toContain("BMDC Encrypted");
+  });
+
+  it("renders DoctorViewSwitcher with all 3 workspace tabs and active count", () => {
+    const html = renderToString(
+      <DoctorViewSwitcher
+        activeTab="queue"
+        onChangeTab={vi.fn()}
+        activeQueueCount={3}
+      />,
+    );
+
+    expect(html).toContain("Today&#x27;s Queue");
+    expect(html).toContain("Practice Analytics &amp; Revenue");
+    expect(html).toContain("Weekly Schedule &amp; Chambers");
+    expect(html).toContain("3");
+  });
+
+  it("renders ClinicalStatusBar with WebRTC status and BMDC badge", () => {
+    const html = renderToString(
+      <ClinicalStatusBar bmdcNumber="A-54321" />,
+    );
+
+    expect(html).toContain("Daily.co WebRTC HD: Connected");
+    expect(html).toContain("Sync Gateway: Active");
+    expect(html).toContain("BMDC #");
+    expect(html).toContain("A-54321");
+    expect(html).toContain("v1.4.0 (.deb)");
   });
 });

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import styles from "./Layout.module.css";
 
 export interface ContainerProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
   children: ReactNode;
 }

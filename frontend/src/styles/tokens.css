@@ -411,6 +411,7 @@
   --container-md: 880px;
   --container-lg: 1120px;
   --container-xl: 1280px;
+  --container-2xl: 1560px;
   --header-height: 4rem;
 
   /* Legacy aliases */

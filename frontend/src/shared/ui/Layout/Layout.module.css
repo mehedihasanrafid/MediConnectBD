@@ -80,6 +80,10 @@
   max-width: var(--container-xl);
 }
 
+.container[data-size="2xl"] {
+  max-width: var(--container-2xl);
+}
+
 @media (min-width: 768px) {
   .container {
     padding-inline: var(--space-6);

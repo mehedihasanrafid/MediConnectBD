@@ -23,12 +23,14 @@ interface ReportUploadFormProps {
   onUploaded: () => Promise<void>;
   onError: (error: string | null) => void;
   onNotice: (notice: string | null) => void;
+  onCancel?: () => void;
 }
 
 export function ReportUploadForm({
   onUploaded,
   onError,
   onNotice,
+  onCancel,
 }: ReportUploadFormProps) {
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -38,13 +40,9 @@ export function ReportUploadForm({
     contentBase64: string;
   } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setSelectedFile(null);
-      return;
-    }
+  function processFile(file: File) {
     if (file.size > 2 * 1024 * 1024) {
       onError("Selected file exceeds the 2 MB maximum size limit.");
       setSelectedFile(null);
@@ -71,6 +69,34 @@ export function ReportUploadForm({
       });
     };
     reader.readAsDataURL(file);
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    processFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
   }
 
   async function handleUpload(event: React.FormEvent) {
@@ -127,24 +153,71 @@ export function ReportUploadForm({
             placeholder="e.g. Fasting sample from Popular Diagnostic"
           />
         </div>
+
+        <div
+          className={`${styles.dropzone} ${isDragging ? styles.dropzoneDragging : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <svg className={styles.dropzoneIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+          <span className={styles.dropzonePrompt}>
+            {selectedFile
+              ? `Ready to upload: ${selectedFile.fileName}`
+              : "Drag & drop your diagnostic report here, or choose below"}
+          </span>
+        </div>
+
         <label className={styles.fileLabel}>
-          <span className={styles.fileLabelText}>Select file (Supported formats: PDF, JPEG, PNG, WEBP, TXT · max 2 MB)</span>
+          <span className={styles.fileLabelText}>
+            Select file (Supported formats: PDF, JPEG, PNG, WEBP, TXT · max 2 MB)
+          </span>
           <input
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain"
             onChange={handleFileChange}
             className={styles.fileInput}
-            required
+            required={!selectedFile}
           />
         </label>
+
+        {selectedFile && (
+          <div className={styles.fileSelectedBadge}>
+            <span>
+              Selected: <strong>{selectedFile.fileName}</strong> ({selectedFile.mimeType})
+            </span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedFile(null)}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+
         <Text tone="muted" size="sm" className={styles.helpText}>
           Allowed file formats: <code>.pdf</code>, <code>.jpg</code>, <code>.png</code>,{" "}
           <code>.webp</code>, <code>.txt</code> (up to 2 MB)
         </Text>
-        <Cluster gap={2}>
+
+        <Cluster gap={2} className={styles.actions}>
           <Button type="submit" disabled={uploading || !selectedFile}>
             {uploading ? "Uploading…" : "Upload report"}
           </Button>
+          {onCancel && (
+            <Button type="button" variant="secondary" onClick={onCancel} disabled={uploading}>
+              Cancel
+            </Button>
+          )}
         </Cluster>
       </form>
     </Card>

@@ -9,7 +9,6 @@ import clsx from "clsx";
 import {
   Activity,
   Calendar,
-  CheckCircle2,
   Clock,
   CreditCard,
   Database,

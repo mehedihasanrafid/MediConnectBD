@@ -489,9 +489,9 @@ export function VideoSessionPanel({
                                 onChange={(e) => handleNotesChange(e.target.value)}
                                 placeholder="Record patient symptoms, blood pressure, temperature, or diagnostic notes…"
                               />
-                              <Text size="sm" tone="muted" style={{ fontStyle: "italic" }}>
+                              <p className={styles.notesSaveHint}>
                                 ✓ Notes auto-saved locally for appointment {appointmentId.slice(0, 8)}…
-                              </Text>
+                              </p>
                             </div>
                           )}
                         </div>

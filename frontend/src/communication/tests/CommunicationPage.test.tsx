@@ -67,6 +67,12 @@ describe("CommunicationPage Component", () => {
     expect(html).toContain("Clinical Context");
     expect(html).toContain("Linked Appointment");
     expect(html).toContain("MCBD2026DEMO0001");
+
+    // Desktop Breadcrumbs & Docked Status Bar
+    expect(html).toContain("Patient Portal");
+    expect(html).toContain("Telehealth Gateway: Connected (18ms)");
+    expect(html).toContain("AES-256 Encrypted Clinical Messaging");
+    expect(html).toContain("Daily.co WebRTC Ready");
   });
 
   it("renders doctor perspective with booked patients and clinical queue", () => {
@@ -90,10 +96,12 @@ describe("CommunicationPage Component", () => {
       </MemoryRouter>,
     );
 
-    // Doctor sees patient name in list and call banner
+    // Doctor sees patient name in list, breadcrumb, and call banner
+    expect(html).toContain("Doctor Workspace");
     expect(html).toContain("Demo Patient");
     expect(html).toContain("Tanvir Hasan");
     expect(html).toContain("Consultation Slot Active for Demo Patient");
     expect(html).toContain("Clinical Context");
+    expect(html).toContain("Telehealth Gateway: Connected (18ms)");
   });
 });

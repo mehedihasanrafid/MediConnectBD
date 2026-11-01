@@ -1,7 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import type { VideoSession } from "../../../../../../shared/types";
+import type { VideoSession } from "../../../../../../../shared/types";
 import { VideoPreCallLobby } from "../VideoPreCallLobby";
 
 describe("VideoPreCallLobby", () => {

@@ -278,6 +278,10 @@
     display: none;
   }
 
+  .userMenu {
+    display: none;
+  }
+
   .userInfo {
     display: none;
   }
@@ -290,11 +294,7 @@
     display: inline-flex;
   }
 
-  .backdrop {
-    display: block;
-  }
-
-  .mobileDrawer {
+  .mobileDrawerOpen {
     display: flex;
   }
 }

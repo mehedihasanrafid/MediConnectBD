@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Video } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, ShieldCheck, Video, Wifi } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { isDoctor } from "../shared/utils/roles";
 import { Page } from "../shared/ui";
 import { playChimeSound } from "../shared/utils/sound";
+import { DoctorBreadcrumbs } from "../doctor/dashboard/components/DoctorBreadcrumbs/DoctorBreadcrumbs";
+import { PatientBreadcrumbs } from "../patient/components/PatientBreadcrumbs/PatientBreadcrumbs";
 import type { ChatMessage, Conversation } from "./types";
 import {
   DOCTOR_DEMO_CONVERSATIONS,
@@ -33,6 +35,26 @@ export function CommunicationPage({
   const [isDrawerOpen, setIsDrawerOpen] = useState(initialDrawerOpen);
   const [mobileView, setMobileView] = useState<"LIST" | "CHAT">("LIST");
   const [videoAppointmentId, setVideoAppointmentId] = useState<string | null>(null);
+  const [dhakaTime, setDhakaTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setDhakaTime(
+        now.toLocaleTimeString("en-US", {
+          timeZone: "Asia/Dhaka",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      );
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
   const currentMessages = activeConvId ? messagesMap[activeConvId] ?? [] : [];
@@ -127,6 +149,13 @@ export function CommunicationPage({
   return (
     <Page>
       <div className={styles.pageWrapper}>
+        {/* Role-based Desktop Navigation Breadcrumbs */}
+        {userIsDoctor ? (
+          <DoctorBreadcrumbs activeTabLabel="Consultation Communication Hub" />
+        ) : (
+          <PatientBreadcrumbs activePageLabel="Consultation Communication Hub" />
+        )}
+
         {/* Sleek Top Navigation & Live Consultation Status Bar */}
         <div className={styles.topBar}>
           <div className={styles.topTitleGroup}>
@@ -194,6 +223,36 @@ export function CommunicationPage({
             )}
           </div>
         </div>
+
+        {/* Docked Desktop Communication Status Bar */}
+        <footer className={styles.statusBar} aria-label="Telehealth Communication Status">
+          <div className={styles.statusLeft}>
+            <span className={styles.statusPill}>
+              <span className={styles.statusSuccessDot} aria-hidden="true" />
+              <span>Telehealth Gateway: Connected (18ms)</span>
+            </span>
+            <span className={styles.statusPill}>
+              <span>{conversations.length} Active Conversations</span>
+            </span>
+            <span className={styles.statusPill}>
+              <ShieldCheck size={12} style={{ color: "var(--color-success)" }} aria-hidden="true" />
+              <span>AES-256 Encrypted Clinical Messaging</span>
+            </span>
+          </div>
+
+          <div className={styles.statusRight}>
+            <span className={styles.statusPill}>
+              <Wifi size={12} style={{ color: "var(--color-primary)" }} aria-hidden="true" />
+              <span>Daily.co WebRTC Ready</span>
+            </span>
+            {dhakaTime && (
+              <span className={styles.statusPill}>
+                <Clock size={12} aria-hidden="true" />
+                <span>Asia/Dhaka {dhakaTime} (BST)</span>
+              </span>
+            )}
+          </div>
+        </footer>
       </div>
 
       {videoAppointmentId && (

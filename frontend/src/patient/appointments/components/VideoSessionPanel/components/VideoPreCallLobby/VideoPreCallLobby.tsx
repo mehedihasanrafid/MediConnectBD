@@ -238,9 +238,9 @@ export function VideoPreCallLobby({ session, onJoinRoom, onCancel }: VideoPreCal
             </div>
           </div>
 
-          <Text tone="muted" size="sm" style={{ textAlign: "center" }}>
+          <p className={styles.participantNotice}>
             You will join as <strong>{session.participantName}</strong> ({session.participantRole === "DOCTOR" ? "Doctor" : "Patient"})
-          </Text>
+          </p>
         </div>
 
         {/* Right: Device Diagnostics & Action */}

@@ -75,4 +75,18 @@ describe("VideoSessionPanel", () => {
     expect(html).not.toContain("Live Video Active");
     expect(html).not.toContain("Secure WebRTC");
   });
+
+  it("renders clinical view controls and pre-call device check trigger", () => {
+    const html = renderToString(
+      <VideoSessionPanel
+        appointmentId="appt-video-123"
+        initialSession={dummyDailySession}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(html).toContain("Device Check");
+    expect(html).toContain("Clinical Split-View");
+    expect(html).toContain("Theater Mode");
+  });
 });

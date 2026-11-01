@@ -5,10 +5,19 @@
  */
 
 import { useEffect, useState } from "react";
-import { Maximize2, Minimize2, Sliders } from "lucide-react";
+import {
+  Columns2,
+  FileText,
+  Maximize2,
+  Minimize2,
+  Pill,
+  Sliders,
+  StickyNote,
+} from "lucide-react";
 
 import { appointmentsApi } from "../../../../api/appointments";
 import { reportsApi } from "../../../../api/reports";
+import { FAST_RX_PRESET_BUNDLES } from "../../../../doctor/dashboard/data/fastRxPresets";
 import {
   Alert,
   Badge,
@@ -42,9 +51,11 @@ export function VideoSessionPanel({
   const [loading, setLoading] = useState(!initialSession);
   const [error, setError] = useState<string | null>(null);
 
-  // If initialSession is passed (e.g. In unit tests), bypass lobby so static render matches
+  // If initialSession is passed (e.g. in unit tests), bypass lobby so static render matches
   const [isInLobby, setIsInLobby] = useState(!initialSession && !skipLobby);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const [isSplitView, setIsSplitView] = useState(false);
+  const [clinicalTab, setClinicalTab] = useState<"FILES" | "FASTRX" | "NOTES">("FILES");
 
   const [activeTab, setActiveTab] = useState<"CALL" | "FILES">("CALL");
   const [reports, setReports] = useState<MedicalReportSummary[]>([]);
@@ -52,6 +63,14 @@ export function VideoSessionPanel({
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadBusy, setUploadBusy] = useState(false);
   const [fileNotice, setFileNotice] = useState<string | null>(null);
+
+  // In-call private scratchpad notes
+  const [consultNotes, setConsultNotes] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`consult_notes_${appointmentId}`) || "";
+    }
+    return "";
+  });
 
   useEffect(() => {
     if (initialSession) return;
@@ -90,6 +109,23 @@ export function VideoSessionPanel({
       setError(getErrorMessage(caught, "Could not load shared consultation files."));
     } finally {
       setLoadingReports(false);
+    }
+  }
+
+  // Pre-load reports if split view is toggled
+  function handleToggleSplitView() {
+    const next = !isSplitView;
+    setIsSplitView(next);
+    if (next) {
+      setIsTheaterMode(false);
+      void loadReports();
+    }
+  }
+
+  function handleNotesChange(text: string) {
+    setConsultNotes(text);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`consult_notes_${appointmentId}`, text);
     }
   }
 
@@ -148,7 +184,11 @@ export function VideoSessionPanel({
   }
 
   return (
-    <div className={`${styles.container} ${isTheaterMode ? styles.containerTheater : ""}`}>
+    <div
+      className={`${styles.container} ${isTheaterMode ? styles.containerTheater : ""} ${
+        isSplitView ? styles.containerSplitView : ""
+      }`}
+    >
       {/* 1. Pre-Call Lobby Screen */}
       {session && isInLobby && (
         <VideoPreCallLobby
@@ -225,9 +265,21 @@ export function VideoSessionPanel({
                     <Sliders size={14} style={{ marginRight: "4px" }} />
                     <span>Device Check</span>
                   </Button>
+
+                  <Button
+                    variant={isSplitView ? "primary" : "secondary"}
+                    size="sm"
+                    onClick={handleToggleSplitView}
+                    title="Toggle side-by-side Clinical Assistant Wing"
+                  >
+                    <Columns2 size={14} style={{ marginRight: "4px" }} />
+                    <span>{isSplitView ? "Close Split-View" : "Clinical Split-View"}</span>
+                  </Button>
+
                   <Button
                     variant="secondary"
                     size="sm"
+                    disabled={isSplitView}
                     onClick={() => setIsTheaterMode(!isTheaterMode)}
                     title={isTheaterMode ? "Standard View" : "Theater Mode"}
                   >
@@ -276,30 +328,174 @@ export function VideoSessionPanel({
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <iframe
-                        src={embedUrl}
-                        className={`${styles.videoFrame} ${isTheaterMode ? styles.videoFrameTheater : ""}`}
-                        title="Consultation Video Session"
-                        allow="camera; microphone; fullscreen; display-capture; autoplay"
-                        allowFullScreen
-                      />
-                      <div className={styles.callControls}>
-                        <Text tone="muted" size="sm" className={styles.callNotice}>
-                          In-call text chat, screen sharing, and audio/video controls are active in the call window.
-                        </Text>
-                        <Cluster gap={2} className={styles.callButtons}>
-                          <Button
-                            variant="secondary"
-                            onClick={() => window.open(embedUrl, "_blank", "noopener,noreferrer")}
-                          >
-                            Open in separate window
-                          </Button>
-                          <Button variant="danger" onClick={onClose}>
-                            Leave call
-                          </Button>
-                        </Cluster>
+                    <div className={isSplitView ? styles.splitGrid : undefined}>
+                      {/* Left: Video Iframe & Controls */}
+                      <div className={isSplitView ? styles.videoWing : undefined}>
+                        <iframe
+                          src={embedUrl}
+                          className={`${styles.videoFrame} ${
+                            isTheaterMode ? styles.videoFrameTheater : ""
+                          }`}
+                          title="Consultation Video Session"
+                          allow="camera; microphone; fullscreen; display-capture; autoplay"
+                          allowFullScreen
+                        />
+                        <div className={styles.callControls}>
+                          <Text tone="muted" size="sm" className={styles.callNotice}>
+                            In-call text chat, screen sharing, and audio/video controls are active in the call window.
+                          </Text>
+                          <Cluster gap={2} className={styles.callButtons}>
+                            <Button
+                              variant="secondary"
+                              onClick={() => window.open(embedUrl, "_blank", "noopener,noreferrer")}
+                            >
+                              Open in separate window
+                            </Button>
+                            <Button variant="danger" onClick={onClose}>
+                              Leave call
+                            </Button>
+                          </Cluster>
+                        </div>
                       </div>
+
+                      {/* Right: In-Call Clinical Assistant Wing */}
+                      {isSplitView && (
+                        <div className={styles.clinicalWing}>
+                          <div className={styles.clinicalWingHeader}>
+                            <h4 className={styles.clinicalWingTitle}>
+                              Clinical Telehealth Assistant
+                            </h4>
+                            <Badge tone="info">
+                              {session.participantRole === "DOCTOR" ? "Doctor Mode" : "Patient Records"}
+                            </Badge>
+                          </div>
+
+                          <div className={styles.clinicalTabs}>
+                            <button
+                              type="button"
+                              className={`${styles.clinicalTabBtn} ${
+                                clinicalTab === "FILES" ? styles.clinicalTabBtnActive : ""
+                              }`}
+                              onClick={() => {
+                                setClinicalTab("FILES");
+                                void loadReports();
+                              }}
+                            >
+                              <FileText size={12} style={{ marginRight: "4px" }} />
+                              <span>Records &amp; Labs</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className={`${styles.clinicalTabBtn} ${
+                                clinicalTab === "FASTRX" ? styles.clinicalTabBtnActive : ""
+                              }`}
+                              onClick={() => setClinicalTab("FASTRX")}
+                            >
+                              <Pill size={12} style={{ marginRight: "4px" }} />
+                              <span>Fast-RX Protocols</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className={`${styles.clinicalTabBtn} ${
+                                clinicalTab === "NOTES" ? styles.clinicalTabBtnActive : ""
+                              }`}
+                              onClick={() => setClinicalTab("NOTES")}
+                            >
+                              <StickyNote size={12} style={{ marginRight: "4px" }} />
+                              <span>Clinical Scratchpad</span>
+                            </button>
+                          </div>
+
+                          {/* Tab 1: Records & Shared Labs */}
+                          {clinicalTab === "FILES" && (
+                            <div className={styles.clinicalTabContent}>
+                              {loadingReports && <Spinner label="Loading records…" />}
+                              {!loadingReports && reports.length === 0 && (
+                                <Text size="sm" tone="muted">
+                                  No diagnostic reports uploaded for this patient yet.
+                                </Text>
+                              )}
+                              {!loadingReports && reports.length > 0 && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                  {reports.map((r) => (
+                                    <div
+                                      key={r.id}
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        padding: "8px 12px",
+                                        background: "var(--color-surface)",
+                                        border: "1px solid var(--color-border)",
+                                        borderRadius: "var(--radius-md)",
+                                      }}
+                                    >
+                                      <div>
+                                        <Text size="sm" weight="bold">{r.title}</Text>
+                                        <Text size="sm" tone="muted">{r.fileName}</Text>
+                                      </div>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => void reportsApi.downloadReport(r.id)}
+                                      >
+                                        Download
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Tab 2: Fast-RX Protocol Bundles */}
+                          {clinicalTab === "FASTRX" && (
+                            <div className={styles.fastRxList}>
+                              <Text size="sm" tone="muted">
+                                Standard Bangladesh clinical guidelines for rapid e-prescription during call:
+                              </Text>
+                              {FAST_RX_PRESET_BUNDLES.map((bundle) => (
+                                <div key={bundle.id} className={styles.fastRxCard}>
+                                  <div className={styles.fastRxTitleRow}>
+                                    <Text size="sm" weight="bold">{bundle.title}</Text>
+                                    <Badge tone="neutral">{bundle.category}</Badge>
+                                  </div>
+                                  <Text size="sm" tone="muted">
+                                    Dx: {bundle.diagnosis}
+                                  </Text>
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px" }}>
+                                    {bundle.medicines.map((m, idx) => (
+                                      <span key={idx} className={styles.fastRxMedPill}>
+                                        {m.name} ({m.dosage})
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Tab 3: Consultation Clinical Notes Scratchpad */}
+                          {clinicalTab === "NOTES" && (
+                            <div className={styles.clinicalTabContent}>
+                              <Text size="sm" tone="muted">
+                                Private observations during this video call (persisted in your browser):
+                              </Text>
+                              <textarea
+                                className={styles.notesTextarea}
+                                value={consultNotes}
+                                onChange={(e) => handleNotesChange(e.target.value)}
+                                placeholder="Record patient symptoms, blood pressure, temperature, or diagnostic notes…"
+                              />
+                              <Text size="sm" tone="muted" style={{ fontStyle: "italic" }}>
+                                ✓ Notes auto-saved locally for appointment {appointmentId.slice(0, 8)}…
+                              </Text>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

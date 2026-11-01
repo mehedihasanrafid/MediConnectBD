@@ -13,6 +13,11 @@
   box-shadow: var(--shadow-md);
 }
 
+.containerSplitView {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -69,6 +74,141 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+}
+
+/* Split-View 2-Wing Grid */
+.splitGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.videoWing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.clinicalWing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-height: 560px;
+}
+
+.clinicalWingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.clinicalWingTitle {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.clinicalTabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.clinicalTabBtn {
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-medium);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.clinicalTabBtn:hover {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.clinicalTabBtnActive {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+.clinicalTabContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: fade-in 0.15s ease;
+}
+
+.notesTextarea {
+  width: 100%;
+  height: 280px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.notesTextarea:focus {
+  border-color: var(--color-primary);
+}
+
+.fastRxList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.fastRxCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+}
+
+.fastRxTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fastRxMedPill {
+  display: inline-block;
+  padding: 0.1rem var(--space-2);
+  background-color: var(--color-surface-sunken);
+  border-radius: var(--radius-xs);
+  font-size: 0.6875rem;
+  color: var(--color-text);
 }
 
 .videoFrame {
@@ -191,6 +331,24 @@
 
 .filesTable {
   margin-top: var(--space-2);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .splitGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {

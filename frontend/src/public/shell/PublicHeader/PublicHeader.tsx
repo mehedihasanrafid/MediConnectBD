@@ -67,7 +67,7 @@ export const PublicHeader: React.FC = () => {
   return (
     <header className={styles.header}>
       <div className={styles.content}>
-        <Link to="/doctors" className={styles.logo} onClick={closeMenu}>
+        <Link to="/" className={styles.logo} onClick={closeMenu}>
           <span className={styles.logoIcon} aria-hidden="true">
             <Stethoscope size={18} />
           </span>
@@ -144,7 +144,7 @@ export const PublicHeader: React.FC = () => {
         {/* Top-bar actions (desktop user menu & mobile menu toggle) */}
         <div className={styles.actions}>
           {user && <NotificationBell />}
-          <ThemeToggle />
+          {user && <ThemeToggle />}
 
           {user ? (
             <div className={styles.userMenu}>
@@ -209,12 +209,12 @@ export const PublicHeader: React.FC = () => {
         aria-hidden={!isOpen}
       >
         <div className={styles.drawerHeader}>
-          <div className={styles.drawerLogo}>
+          <Link to="/" className={styles.drawerLogo} onClick={closeMenu}>
             <span className={styles.logoIcon} aria-hidden="true">
               <Stethoscope size={16} />
             </span>
             <span>MediConnect BD</span>
-          </div>
+          </Link>
           <button
             type="button"
             className={styles.drawerCloseButton}

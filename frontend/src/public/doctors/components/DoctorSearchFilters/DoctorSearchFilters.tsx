@@ -88,6 +88,9 @@ export function DoctorSearchFilters({
         <FormField label="Area / Location">
           <Select value={area} onChange={(event) => onAreaChange(event.target.value)}>
             <option value="">All areas</option>
+            {area && !availableAreas.includes(area) && (
+              <option value={area}>{area}</option>
+            )}
             {availableAreas.map((item) => (
               <option key={item} value={item}>
                 {item}

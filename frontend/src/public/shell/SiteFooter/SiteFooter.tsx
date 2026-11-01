@@ -13,14 +13,14 @@ export function SiteFooter() {
       <Container size="lg">
         <div className={styles.grid}>
           <div className={styles.brandCol}>
-            <div className={styles.brand}>
+            <Link to="/" className={styles.brand}>
               <span className={styles.brandIcon} aria-hidden>
                 <Stethoscope size={18} />
               </span>
               <span className={styles.brandName}>
                 MediConnect <strong>BD</strong>
               </span>
-            </div>
+            </Link>
             <p className={styles.tagline}>
               Find trusted doctors across Bangladesh, book appointments, and consult online.
             </p>

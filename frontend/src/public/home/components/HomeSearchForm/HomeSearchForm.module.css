@@ -1,0 +1,103 @@
+.form {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2);
+  gap: var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.form:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  position: relative;
+}
+
+.inputIcon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.divider {
+  width: 1px;
+  height: 2rem;
+  background-color: var(--color-border);
+  flex-shrink: 0;
+}
+
+.label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.submitButton {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .form {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .inputGroup {
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-2) var(--space-1);
+    box-sizing: border-box;
+  }
+
+  .submitButton {
+    width: 100%;
+    margin-top: var(--space-2);
+  }
+
+  .submitButton button {
+    width: 100%;
+    justify-content: center;
+  }
+}

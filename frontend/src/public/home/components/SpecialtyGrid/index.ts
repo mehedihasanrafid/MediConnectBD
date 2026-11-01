@@ -1,0 +1,1 @@
+export { SpecialtyGrid } from "./SpecialtyGrid";

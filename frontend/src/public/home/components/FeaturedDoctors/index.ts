@@ -1,0 +1,1 @@
+export { FeaturedDoctors } from "./FeaturedDoctors";

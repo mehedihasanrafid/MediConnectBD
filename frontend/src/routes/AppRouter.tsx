@@ -21,6 +21,7 @@ import { FamilyMembersPage } from "../patient/family-members";
 import { PatientPrescriptionsPage } from "../patient/prescriptions";
 import { MedicalReportsPage } from "../patient/reports";
 import { DoctorDetailPage, DoctorSearchPage } from "../public/doctors";
+import { HomePage } from "../public/home";
 import { NotFoundPage } from "../public/not-found";
 import { VerifyPrescriptionPage } from "../public/verify-prescription";
 import { CommunicationPage } from "../communication";
@@ -31,7 +32,7 @@ export function AppRouter() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Navigate to="/doctors" replace />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/doctors" element={<DoctorSearchPage />} />

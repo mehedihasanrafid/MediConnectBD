@@ -31,6 +31,7 @@ export function DoctorSearchPage() {
     hasActiveFilters,
     loading,
     error,
+    total,
   } = useDoctorSearch();
 
   return (
@@ -118,9 +119,9 @@ export function DoctorSearchPage() {
       {!loading && !error && (
         <div className={styles.resultsHeader}>
           <p className={styles.resultsCount}>
-            {doctors.length === 1
+            {total === 1
               ? "1 doctor available"
-              : `${doctors.length} doctors available`}
+              : `${total} doctors available`}
           </p>
         </div>
       )}

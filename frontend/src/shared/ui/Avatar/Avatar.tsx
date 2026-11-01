@@ -1,3 +1,4 @@
+import { useState } from "react";
 import clsx from "clsx";
 import styles from "./Avatar.module.css";
 
@@ -19,9 +20,21 @@ export interface AvatarProps {
 }
 
 export function Avatar({ name, src, size = "md", className }: AvatarProps) {
+  const [hasError, setHasError] = useState(false);
+  const showImage = Boolean(src) && !hasError;
+
   return (
-    <span data-size={size} className={clsx(styles.root, className)} aria-hidden={!src}>
-      {src ? <img src={src} alt={name} className={styles.img} /> : initials(name)}
+    <span data-size={size} className={clsx(styles.root, className)} aria-hidden={!showImage}>
+      {showImage ? (
+        <img
+          src={src!}
+          alt={name}
+          className={styles.img}
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        initials(name)
+      )}
     </span>
   );
 }

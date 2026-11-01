@@ -2,7 +2,7 @@
  * Main layout shell for public visitors, patients, and doctors.
  */
 
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { PublicHeader } from "../public/shell/PublicHeader";
 import { SiteFooter } from "../public/shell/SiteFooter";
@@ -11,14 +11,20 @@ import styles from "./MainLayout.module.css";
 
 export function MainLayout() {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   return (
     <div className={styles.root}>
       <PublicHeader />
       <main className={styles.main}>
-        <Container size={user ? "2xl" : "lg"}>
+        {isHome ? (
           <Outlet />
-        </Container>
+        ) : (
+          <Container size={user ? "2xl" : "lg"}>
+            <Outlet />
+          </Container>
+        )}
       </main>
       {!user && !loading && <SiteFooter />}
     </div>

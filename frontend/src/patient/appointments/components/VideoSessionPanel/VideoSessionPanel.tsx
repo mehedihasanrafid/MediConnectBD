@@ -6,7 +6,9 @@
 
 import { useEffect, useState } from "react";
 import {
+  CheckCircle2,
   Columns2,
+  Copy,
   FileText,
   Maximize2,
   Minimize2,
@@ -17,7 +19,10 @@ import {
 
 import { appointmentsApi } from "../../../../api/appointments";
 import { reportsApi } from "../../../../api/reports";
-import { FAST_RX_PRESET_BUNDLES } from "../../../../doctor/dashboard/data/fastRxPresets";
+import {
+  FAST_RX_PRESET_BUNDLES,
+  type FastRxBundle,
+} from "../../../../doctor/dashboard/data/fastRxPresets";
 import {
   Alert,
   Badge,
@@ -34,6 +39,7 @@ import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../../../shared/utils/format";
 import { playChimeSound } from "../../../../shared/utils/sound";
 import { VideoPreCallLobby } from "./components/VideoPreCallLobby";
+import { PostConsultationSummary } from "./components/PostConsultationSummary";
 import styles from "./VideoSessionPanel.module.css";
 
 export function VideoSessionPanel({
@@ -53,6 +59,7 @@ export function VideoSessionPanel({
 
   // If initialSession is passed (e.g. in unit tests), bypass lobby so static render matches
   const [isInLobby, setIsInLobby] = useState(!initialSession && !skipLobby);
+  const [isConcluded, setIsConcluded] = useState<boolean>(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [clinicalTab, setClinicalTab] = useState<"FILES" | "FASTRX" | "NOTES">("FILES");
@@ -129,6 +136,45 @@ export function VideoSessionPanel({
     }
   }
 
+  function handleApplyBundleToNotes(bundle: FastRxBundle) {
+    const formatted = [
+      `\n--- [FAST-RX PROTOCOL: ${bundle.title}] ---`,
+      `Diagnosis: ${bundle.diagnosis}`,
+      `Rx Prescriptions:`,
+      ...bundle.medicines.map(
+        (m, i) => `  ${i + 1}. ${m.name} (${m.dosage}) - ${m.frequency} x ${m.duration} [${m.instruction}]`,
+      ),
+      bundle.advice ? `Clinical Advice: ${bundle.advice}` : "",
+      bundle.tests && bundle.tests.length > 0 ? `Diagnostic Tests: ${bundle.tests.join(", ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const newNotes = consultNotes ? `${consultNotes}\n${formatted}` : formatted;
+    handleNotesChange(newNotes);
+    setClinicalTab("NOTES");
+    playChimeSound("success");
+  }
+
+  function handleCopyBundleText(bundle: FastRxBundle) {
+    const formatted = [
+      `Diagnosis: ${bundle.diagnosis}`,
+      `Prescriptions:`,
+      ...bundle.medicines.map(
+        (m, i) => `  ${i + 1}. ${m.name} (${m.dosage}) - ${m.frequency} x ${m.duration} [${m.instruction}]`,
+      ),
+      bundle.advice ? `Advice: ${bundle.advice}` : "",
+      bundle.tests && bundle.tests.length > 0 ? `Tests: ${bundle.tests.join(", ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(formatted);
+    }
+    playChimeSound("notification");
+  }
+
   async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !session) return;
@@ -189,8 +235,18 @@ export function VideoSessionPanel({
         isSplitView ? styles.containerSplitView : ""
       }`}
     >
+      {/* 0. Post-Consultation Summary Screen */}
+      {session && isConcluded && (
+        <PostConsultationSummary
+          session={session}
+          appointmentId={appointmentId}
+          consultNotes={consultNotes}
+          onClose={onClose}
+        />
+      )}
+
       {/* 1. Pre-Call Lobby Screen */}
-      {session && isInLobby && (
+      {session && isInLobby && !isConcluded && (
         <VideoPreCallLobby
           session={session}
           onJoinRoom={handleJoinFromLobby}
@@ -199,7 +255,7 @@ export function VideoSessionPanel({
       )}
 
       {/* 2. Active Consultation Room & File Drawer */}
-      {(!isInLobby || !session) && (
+      {(!isInLobby || !session) && !isConcluded && (
         <>
           <div className={styles.header}>
             <div>
@@ -210,9 +266,22 @@ export function VideoSessionPanel({
                   : "Connecting to consultation slot…"}
               </Text>
             </div>
-            <Button variant="secondary" onClick={onClose}>
-              Exit room
-            </Button>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  playChimeSound("call");
+                  setIsConcluded(true);
+                }}
+              >
+                <CheckCircle2 size={14} style={{ marginRight: "4px" }} />
+                <span>Conclude Consultation</span>
+              </Button>
+              <Button variant="secondary" size="sm" onClick={onClose}>
+                Exit room
+              </Button>
+            </div>
           </div>
 
           {loading && <Spinner label="Authenticating session and entering video room…" />}
@@ -471,6 +540,27 @@ export function VideoSessionPanel({
                                         {m.name} ({m.dosage})
                                       </span>
                                     ))}
+                                  </div>
+
+                                  <div className={styles.fastRxActions}>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => handleApplyBundleToNotes(bundle)}
+                                      title="Append this protocol to your Clinical Scratchpad"
+                                    >
+                                      <FileText size={12} style={{ marginRight: "4px" }} />
+                                      <span>Apply to Notes</span>
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => handleCopyBundleText(bundle)}
+                                      title="Copy prescription text to clipboard"
+                                    >
+                                      <Copy size={12} style={{ marginRight: "4px" }} />
+                                      <span>Copy Rx Text</span>
+                                    </Button>
                                   </div>
                                 </div>
                               ))}

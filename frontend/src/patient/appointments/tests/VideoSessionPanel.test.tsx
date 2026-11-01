@@ -88,5 +88,7 @@ describe("VideoSessionPanel", () => {
     expect(html).toContain("Device Check");
     expect(html).toContain("Clinical Split-View");
     expect(html).toContain("Theater Mode");
+    expect(html).toContain("Conclude Consultation");
+    expect(html).toContain("Exit room");
   });
 });

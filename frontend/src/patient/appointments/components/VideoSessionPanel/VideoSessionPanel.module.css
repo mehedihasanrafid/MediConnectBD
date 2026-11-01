@@ -3,8 +3,14 @@
   padding: var(--space-4);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.containerTheater {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .header {
@@ -45,20 +51,45 @@
   gap: var(--space-2);
 }
 
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.tabGroup {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.viewModeGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .videoFrame {
   width: 100%;
   height: 560px;
   min-height: 420px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background-color: var(--slate-900);
+  background-color: var(--color-surface-sunken);
   display: block;
+  transition: height 0.25s ease;
+}
+
+.videoFrameTheater {
+  height: 720px;
 }
 
 .mockScreen {
   padding: var(--space-6);
-  background-color: var(--slate-900);
-  color: var(--slate-50);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
   border-radius: var(--radius-lg);
   text-align: center;
 }
@@ -85,6 +116,10 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .callNotice {
@@ -93,19 +128,8 @@
 
 .callButtons {
   display: flex;
-  gap: var(--space-2);
-}
-
-.actions {
-  display: flex;
-  gap: var(--space-2);
   align-items: center;
-}
-
-.tabs {
-  display: flex;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
 }
 
 .filesCard {
@@ -167,4 +191,25 @@
 
 .filesTable {
   margin-top: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .videoFrame {
+    height: 420px;
+    min-height: 360px;
+  }
+
+  .videoFrameTheater {
+    height: 480px;
+  }
+
+  .callControls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .callButtons {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

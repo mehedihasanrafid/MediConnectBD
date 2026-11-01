@@ -5,27 +5,46 @@
  */
 
 import { useEffect, useState } from "react";
+import { Maximize2, Minimize2, Sliders } from "lucide-react";
 
 import { appointmentsApi } from "../../../../api/appointments";
 import { reportsApi } from "../../../../api/reports";
-import { Alert, Badge, Button, Cluster, EmptyState, Field, Spinner, Table, Text } from "../../../../shared/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Cluster,
+  EmptyState,
+  Field,
+  Spinner,
+  Table,
+  Text,
+} from "../../../../shared/ui";
 import type { MedicalReportSummary, VideoSession } from "../../../../shared/types";
 import { getErrorMessage } from "../../../../shared/utils/apiError";
 import { formatDhakaDateTime } from "../../../../shared/utils/format";
+import { playChimeSound } from "../../../../shared/utils/sound";
+import { VideoPreCallLobby } from "./components/VideoPreCallLobby";
 import styles from "./VideoSessionPanel.module.css";
 
 export function VideoSessionPanel({
   appointmentId,
   initialSession,
+  skipLobby = false,
   onClose,
 }: {
   appointmentId: string;
   initialSession?: VideoSession | null;
+  skipLobby?: boolean;
   onClose: () => void;
 }) {
   const [session, setSession] = useState<VideoSession | null>(initialSession ?? null);
   const [loading, setLoading] = useState(!initialSession);
   const [error, setError] = useState<string | null>(null);
+
+  // If initialSession is passed (e.g. In unit tests), bypass lobby so static render matches
+  const [isInLobby, setIsInLobby] = useState(!initialSession && !skipLobby);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"CALL" | "FILES">("CALL");
   const [reports, setReports] = useState<MedicalReportSummary[]>([]);
@@ -123,209 +142,260 @@ export function VideoSessionPanel({
     ? `${session.roomUrl}${session.roomUrl.includes("?") ? "&" : "?"}t=${encodeURIComponent(session.accessToken)}`
     : "";
 
+  function handleJoinFromLobby() {
+    setIsInLobby(false);
+    playChimeSound("call");
+  }
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h4 className={styles.title}>Consultation Video Room</h4>
-          <Text tone="muted" size="sm" className={styles.participantSubtitle}>
-            {session
-              ? `Participant: ${session.participantName} (${session.participantRole === "DOCTOR" ? "Doctor" : "Patient"})`
-              : "Connecting to consultation slot…"}
-          </Text>
-        </div>
-        <Button variant="secondary" onClick={onClose}>
-          Exit room
-        </Button>
-      </div>
+    <div className={`${styles.container} ${isTheaterMode ? styles.containerTheater : ""}`}>
+      {/* 1. Pre-Call Lobby Screen */}
+      {session && isInLobby && (
+        <VideoPreCallLobby
+          session={session}
+          onJoinRoom={handleJoinFromLobby}
+          onCancel={onClose}
+        />
+      )}
 
-      {loading && <Spinner label="Authenticating session and entering video room…" />}
-      {error && <Alert kind="error">{error}</Alert>}
-      {fileNotice && <Alert kind="success">{fileNotice}</Alert>}
-
-      {session && (
-        <div>
-          <div className={styles.metaBar}>
-            <div className={styles.metaStatus}>
-              {isMockProvider ? (
-                <Badge tone="warning">Development Mock Mode</Badge>
-              ) : (
-                <Badge tone="success">Live Video Active</Badge>
-              )}
-              <Text size="sm" as="span">Room: {session.roomName}</Text>
-            </div>
-            <Text tone="muted" size="sm">
-              Session window: {formatDhakaDateTime(session.scheduledStartAt)} –{" "}
-              {formatDhakaDateTime(session.scheduledEndAt)}
-            </Text>
-          </div>
-
-          <div className={styles.tabs}>
-            <Button
-              variant={activeTab === "CALL" ? "primary" : "secondary"}
-              onClick={() => setActiveTab("CALL")}
-            >
-              Video Call & In-call Chat
-            </Button>
-            <Button
-              variant={activeTab === "FILES" ? "primary" : "secondary"}
-              onClick={() => {
-                setActiveTab("FILES");
-                void loadReports();
-              }}
-            >
-              Consultation Files & Reports
-            </Button>
-          </div>
-
-          {activeTab === "CALL" && (
+      {/* 2. Active Consultation Room & File Drawer */}
+      {(!isInLobby || !session) && (
+        <>
+          <div className={styles.header}>
             <div>
-              {isMockProvider ? (
-                <div className={styles.mockScreen}>
-                  <Alert kind="info">
-                    Daily API keys are not configured in backend environment. Operating in development
-                    mock mode for room <code>{session.roomName}</code>.
-                  </Alert>
-                  <div className={styles.mockDetails}>
-                    <p>
-                      <strong>Doctor:</strong> Dr. {session.doctorName}
-                    </p>
-                    <p>
-                      <strong>Patient:</strong> {session.patientName}
-                    </p>
-                    <p>
-                      <strong>Participant:</strong> {session.participantName} ({session.participantRole})
-                    </p>
-                    <p>
-                      <strong>Token Preview:</strong>{" "}
-                      <code>{session.accessToken.slice(0, 36)}…</code>
-                    </p>
-                  </div>
-                  <div className={styles.mockActions}>
-                    <Button variant="secondary" onClick={onClose}>
-                      Leave mock room
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <iframe
-                    src={embedUrl}
-                    className={styles.videoFrame}
-                    title="Consultation Video Session"
-                    allow="camera; microphone; fullscreen; display-capture; autoplay"
-                    allowFullScreen
-                  />
-                  <div className={styles.callControls}>
-                    <Text tone="muted" size="sm" className={styles.callNotice}>
-                      In-call text chat, screen sharing, and audio/video controls are active in the call window.
-                    </Text>
-                    <Cluster gap={2} className={styles.callButtons}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => window.open(embedUrl, "_blank", "noopener,noreferrer")}
-                      >
-                        Open in separate window
-                      </Button>
-                      <Button variant="danger" onClick={onClose}>
-                        Leave call
-                      </Button>
-                    </Cluster>
-                  </div>
-                </div>
-              )}
+              <h4 className={styles.title}>Consultation Video Room</h4>
+              <Text tone="muted" size="sm" className={styles.participantSubtitle}>
+                {session
+                  ? `Participant: ${session.participantName} (${session.participantRole === "DOCTOR" ? "Doctor" : "Patient"})`
+                  : "Connecting to consultation slot…"}
+              </Text>
             </div>
-          )}
+            <Button variant="secondary" onClick={onClose}>
+              Exit room
+            </Button>
+          </div>
 
-          {activeTab === "FILES" && (
-            <div className={styles.filesCard}>
-              <div className={styles.filesHeader}>
-                <h4 className={styles.filesTitle}>In-call Clinical File Sharing</h4>
-                <Text tone="muted" size="sm" className={styles.filesNotice}>
-                  Files shared here are protected by appointment authorization and accessible only by
-                  the treating doctor and patient.
+          {loading && <Spinner label="Authenticating session and entering video room…" />}
+          {error && <Alert kind="error">{error}</Alert>}
+          {fileNotice && <Alert kind="success">{fileNotice}</Alert>}
+
+          {session && (
+            <div>
+              <div className={styles.metaBar}>
+                <div className={styles.metaStatus}>
+                  {isMockProvider ? (
+                    <Badge tone="warning">Development Mock Mode</Badge>
+                  ) : (
+                    <Badge tone="success">Live Video Active</Badge>
+                  )}
+                  <Text size="sm" as="span">Room: {session.roomName}</Text>
+                </div>
+                <Text tone="muted" size="sm">
+                  Session window: {formatDhakaDateTime(session.scheduledStartAt)} –{" "}
+                  {formatDhakaDateTime(session.scheduledEndAt)}
                 </Text>
               </div>
 
-              {session.participantRole === "PATIENT" && (
-                <div className={styles.uploadBox}>
-                  <Text size="sm" weight="bold">Share a document with Dr. {session.doctorName}</Text>
-                  <div className={styles.uploadRow}>
-                    <div className={styles.uploadTitleField}>
-                      <Field
-                        label="Document title"
-                        value={uploadTitle}
-                        onChange={setUploadTitle}
-                        placeholder="e.g. Blood Test Oct 2026"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        className={styles.fileSelectLabel}
-                        data-busy={uploadBusy}
-                      >
-                        <Button variant="secondary" as="span">
-                          {uploadBusy ? "Uploading…" : "Select File (PDF/Image)"}
+              <div className={styles.tabs}>
+                <div className={styles.tabGroup}>
+                  <Button
+                    variant={activeTab === "CALL" ? "primary" : "secondary"}
+                    onClick={() => setActiveTab("CALL")}
+                  >
+                    Video Call &amp; In-call Chat
+                  </Button>
+                  <Button
+                    variant={activeTab === "FILES" ? "primary" : "secondary"}
+                    onClick={() => {
+                      setActiveTab("FILES");
+                      void loadReports();
+                    }}
+                  >
+                    Consultation Files &amp; Reports
+                  </Button>
+                </div>
+
+                <div className={styles.viewModeGroup}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsInLobby(true)}
+                    title="Re-open pre-call device diagnostics"
+                  >
+                    <Sliders size={14} style={{ marginRight: "4px" }} />
+                    <span>Device Check</span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsTheaterMode(!isTheaterMode)}
+                    title={isTheaterMode ? "Standard View" : "Theater Mode"}
+                  >
+                    {isTheaterMode ? (
+                      <>
+                        <Minimize2 size={14} style={{ marginRight: "4px" }} />
+                        <span>Standard View</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 size={14} style={{ marginRight: "4px" }} />
+                        <span>Theater Mode</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {activeTab === "CALL" && (
+                <div>
+                  {isMockProvider ? (
+                    <div className={styles.mockScreen}>
+                      <Alert kind="info">
+                        Daily API keys are not configured in backend environment. Operating in development
+                        mock mode for room <code>{session.roomName}</code>.
+                      </Alert>
+                      <div className={styles.mockDetails}>
+                        <p>
+                          <strong>Doctor:</strong> Dr. {session.doctorName}
+                        </p>
+                        <p>
+                          <strong>Patient:</strong> {session.patientName}
+                        </p>
+                        <p>
+                          <strong>Participant:</strong> {session.participantName} ({session.participantRole})
+                        </p>
+                        <p>
+                          <strong>Token Preview:</strong>{" "}
+                          <code>{session.accessToken.slice(0, 36)}…</code>
+                        </p>
+                      </div>
+                      <div className={styles.mockActions}>
+                        <Button variant="secondary" onClick={onClose}>
+                          Leave mock room
                         </Button>
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          className={styles.fileInputHidden}
-                          disabled={uploadBusy}
-                          onChange={(e) => void handleFileUpload(e)}
-                        />
-                      </label>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div>
+                      <iframe
+                        src={embedUrl}
+                        className={`${styles.videoFrame} ${isTheaterMode ? styles.videoFrameTheater : ""}`}
+                        title="Consultation Video Session"
+                        allow="camera; microphone; fullscreen; display-capture; autoplay"
+                        allowFullScreen
+                      />
+                      <div className={styles.callControls}>
+                        <Text tone="muted" size="sm" className={styles.callNotice}>
+                          In-call text chat, screen sharing, and audio/video controls are active in the call window.
+                        </Text>
+                        <Cluster gap={2} className={styles.callButtons}>
+                          <Button
+                            variant="secondary"
+                            onClick={() => window.open(embedUrl, "_blank", "noopener,noreferrer")}
+                          >
+                            Open in separate window
+                          </Button>
+                          <Button variant="danger" onClick={onClose}>
+                            Leave call
+                          </Button>
+                        </Cluster>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {loadingReports && <Spinner label="Loading consultation files…" />}
+              {activeTab === "FILES" && (
+                <div className={styles.filesCard}>
+                  <div className={styles.filesHeader}>
+                    <h4 className={styles.filesTitle}>In-call Clinical File Sharing</h4>
+                    <Text tone="muted" size="sm" className={styles.filesNotice}>
+                      Files shared here are protected by appointment authorization and accessible only by
+                      the treating doctor and patient.
+                    </Text>
+                  </div>
 
-              {!loadingReports && reports.length === 0 && (
-                <EmptyState>No files shared for this consultation yet.</EmptyState>
-              )}
-
-              {!loadingReports && reports.length > 0 && (
-                <div className={styles.filesTable}>
-                  <Table>
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>File name</th>
-                        <th>Uploaded</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reports.map((r) => (
-                        <tr key={r.id}>
-                          <td>{r.title}</td>
-                          <td>{r.fileName}</td>
-                          <td>{formatDhakaDateTime(r.createdAt)}</td>
-                          <td>
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                void reportsApi
-                                  .downloadReport(r.id)
-                                  .catch((caught) =>
-                                    setError(getErrorMessage(caught, "Could not download file.")),
-                                  );
-                              }}
-                            >
-                              Download
+                  {session.participantRole === "PATIENT" && (
+                    <div className={styles.uploadBox}>
+                      <Text size="sm" weight="bold">Share a document with Dr. {session.doctorName}</Text>
+                      <div className={styles.uploadRow}>
+                        <div className={styles.uploadTitleField}>
+                          <Field
+                            label="Document title"
+                            value={uploadTitle}
+                            onChange={setUploadTitle}
+                            placeholder="e.g. Blood Test Oct 2026"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            className={styles.fileSelectLabel}
+                            data-busy={uploadBusy}
+                          >
+                            <Button variant="secondary" as="span">
+                              {uploadBusy ? "Uploading…" : "Select File (PDF/Image)"}
                             </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              className={styles.fileInputHidden}
+                              disabled={uploadBusy}
+                              onChange={(e) => void handleFileUpload(e)}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingReports && <Spinner label="Loading consultation files…" />}
+
+                  {!loadingReports && reports.length === 0 && (
+                    <EmptyState>No files shared for this consultation yet.</EmptyState>
+                  )}
+
+                  {!loadingReports && reports.length > 0 && (
+                    <div className={styles.filesTable}>
+                      <Table>
+                        <thead>
+                          <tr>
+                            <th>Title</th>
+                            <th>File name</th>
+                            <th>Uploaded</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reports.map((r) => (
+                            <tr key={r.id}>
+                              <td>{r.title}</td>
+                              <td>{r.fileName}</td>
+                              <td>{formatDhakaDateTime(r.createdAt)}</td>
+                              <td>
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    void reportsApi
+                                      .downloadReport(r.id)
+                                      .catch((caught) =>
+                                        setError(getErrorMessage(caught, "Could not download file.")),
+                                      );
+                                  }}
+                                >
+                                  Download
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { DoctorAppointment, DoctorEarningsSummary, Prescription } from "../../../shared/types";
 import { ClinicalStatusBar } from "../components/ClinicalStatusBar";
+import { DoctorApprovalBanner } from "../components/DoctorApprovalBanner";
 import { DoctorBreadcrumbs } from "../components/DoctorBreadcrumbs";
 import { DoctorDashboardHeader } from "../components/DoctorDashboardHeader";
 import { DoctorKpiCards } from "../components/DoctorKpiCards";
@@ -271,17 +272,23 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
   });
 
   it("renders DoctorBreadcrumbs with trail and Dhaka timezone indicators", () => {
-    const html = renderToString(
+    const htmlApproved = renderToString(
       <MemoryRouter>
-        <DoctorBreadcrumbs activeTabLabel="Today's Patient Queue" />
+        <DoctorBreadcrumbs activeTabLabel="Today's Patient Queue" isApproved={true} />
       </MemoryRouter>,
     );
+    expect(htmlApproved).toContain("Doctor Workspace");
+    expect(htmlApproved).toContain("Clinical Command Center");
+    expect(htmlApproved).toContain("Today&#x27;s Patient Queue");
+    expect(htmlApproved).toContain("Realtime Synced");
+    expect(htmlApproved).toContain("BMDC Verified");
 
-    expect(html).toContain("Doctor Workspace");
-    expect(html).toContain("Clinical Command Center");
-    expect(html).toContain("Today&#x27;s Patient Queue");
-    expect(html).toContain("Realtime Synced");
-    expect(html).toContain("BMDC Encrypted");
+    const htmlPending = renderToString(
+      <MemoryRouter>
+        <DoctorBreadcrumbs activeTabLabel="Today's Patient Queue" isApproved={false} />
+      </MemoryRouter>,
+    );
+    expect(htmlPending).toContain("Verification Pending");
   });
 
   it("renders DoctorViewSwitcher with all 3 workspace tabs and active count", () => {
@@ -299,16 +306,129 @@ describe("DoctorDashboard Clinical Command Center Components", () => {
     expect(html).toContain("3");
   });
 
-  it("renders ClinicalStatusBar with WebRTC status and BMDC badge", () => {
-    const html = renderToString(
-      <ClinicalStatusBar bmdcNumber="A-54321" />,
+  it("renders ClinicalStatusBar with operational status and BMDC badge", () => {
+    const htmlApproved = renderToString(
+      <ClinicalStatusBar bmdcNumber="A-54321" isApproved={true} />,
     );
 
-    expect(html).toContain("Daily.co WebRTC HD: Connected");
-    expect(html).toContain("Sync Gateway: Active");
-    expect(html).toContain("BMDC #");
-    expect(html).toContain("A-54321");
-    expect(html).toContain("v1.4.0 (.deb)");
+    expect(htmlApproved).toContain("Telehealth Network: Operational");
+    expect(htmlApproved).toContain("Clinical EHR: Synced");
+    expect(htmlApproved).toContain("BMDC #");
+    expect(htmlApproved).toContain("A-54321");
+    expect(htmlApproved).toContain("(Verified)");
+    expect(htmlApproved).toContain("v1.4.0");
+
+    const htmlPending = renderToString(
+      <ClinicalStatusBar bmdcNumber="A-54321" isApproved={false} />,
+    );
+    expect(htmlPending).toContain("(Pending Review)");
+  });
+
+  it("renders DoctorApprovalBanner for DRAFT with missing requirement checklist", () => {
+    const draftProfile = {
+      id: "doc-1",
+      userId: "u-1",
+      bmdcNumber: "A-54321",
+      experienceYears: 5,
+      applicationStatus: "DRAFT",
+      degrees: "",
+      specialties: [],
+      videoConsultationFee: null,
+      chambers: [],
+    } as any;
+
+    const html = renderToString(
+      <DoctorApprovalBanner
+        profile={draftProfile}
+        onProfileUpdated={vi.fn()}
+        onOpenEditProfile={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Complete Your Practitioner Application");
+    expect(html).toContain("Application Draft");
+    expect(html).toContain("/3 Complete)");
+    expect(html).toContain("Degrees &amp; Credentials");
+    expect(html).toContain("Clinical Specialties");
+    expect(html).toContain("Consultation Fee");
+    expect(html).toContain("Submit Application for Review");
+  });
+
+  it("renders DoctorApprovalBanner for PENDING_REVIEW with under review banner", () => {
+    const pendingProfile = {
+      id: "doc-1",
+      userId: "u-1",
+      bmdcNumber: "A-54321",
+      experienceYears: 5,
+      applicationStatus: "PENDING_REVIEW",
+      degrees: "MBBS",
+      specialties: [{ id: "s1", name: "Cardiology" }],
+      videoConsultationFee: 500,
+      chambers: [],
+    } as any;
+
+    const html = renderToString(
+      <DoctorApprovalBanner
+        profile={pendingProfile}
+        onProfileUpdated={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Application Under Administrator Review");
+    expect(html).toContain("Your application has been received");
+    expect(html).toContain("Pending Review");
+    expect(html).toContain("BMDC Registration");
+  });
+
+  it("renders DoctorApprovalBanner for REJECTED with rejection reason", () => {
+    const rejectedProfile = {
+      id: "doc-1",
+      userId: "u-1",
+      bmdcNumber: "A-54321",
+      experienceYears: 5,
+      applicationStatus: "REJECTED",
+      rejectionReason: "BMDC certificate copy is blurry and illegible.",
+      degrees: "MBBS",
+      specialties: [{ id: "s1", name: "Cardiology" }],
+      videoConsultationFee: 500,
+      chambers: [],
+    } as any;
+
+    const html = renderToString(
+      <DoctorApprovalBanner
+        profile={rejectedProfile}
+        onProfileUpdated={vi.fn()}
+        onOpenEditProfile={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Application Returned — Revisions Required");
+    expect(html).toContain("BMDC certificate copy is blurry and illegible.");
+    expect(html).toContain("Update Profile Details");
+    expect(html).toContain("Resubmit Application");
+  });
+
+  it("renders null in DoctorApprovalBanner when profile is APPROVED", () => {
+    const approvedProfile = {
+      id: "doc-1",
+      userId: "u-1",
+      bmdcNumber: "A-54321",
+      experienceYears: 5,
+      applicationStatus: "APPROVED",
+      degrees: "MBBS",
+      specialties: [{ id: "s1", name: "Cardiology" }],
+      videoConsultationFee: 500,
+      chambers: [],
+    } as any;
+
+    const html = renderToString(
+      <DoctorApprovalBanner
+        profile={approvedProfile}
+        onProfileUpdated={vi.fn()}
+      />,
+    );
+
+    expect(html).toBe("");
   });
 
   it("renders IssuePrescriptionModal with Fast-RX presets ribbon and medicine input rows", () => {

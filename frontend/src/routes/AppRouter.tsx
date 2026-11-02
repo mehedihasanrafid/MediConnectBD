@@ -10,11 +10,17 @@ import { AdminOverviewPage } from "../admin/dashboard";
 import { AdminOperationsPage } from "../admin/operations";
 import { AdminUsersPage } from "../admin/users";
 import { DoctorAppointmentsPage } from "../doctor/appointments";
+import { DoctorConsultationPage } from "../doctor/consultations";
 import { DoctorDashboardPage } from "../doctor/dashboard";
+import { DoctorEarningsPage } from "../doctor/earnings";
 import { DoctorPrescriptionsPage } from "../doctor/prescriptions";
+import { DoctorProfilePage } from "../doctor/profile";
+import { DoctorSchedulePage } from "../doctor/schedule";
+import { DoctorSettingsPage } from "../doctor/settings";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RegisterPage } from "../features/auth/RegisterPage";
 import { AdminLayout } from "../layouts/AdminLayout";
+import { DoctorLayout } from "../layouts/DoctorLayout";
 import { MainLayout } from "../layouts/MainLayout";
 import { AppointmentsPage } from "../patient/appointments";
 import { FamilyMembersPage } from "../patient/family-members";
@@ -55,13 +61,20 @@ export function AppRouter() {
           <Route path="/family-members" element={<FamilyMembersPage />} />
         </Route>
 
-        <Route element={<RoleRoute roles={["DOCTOR"]} />}>
-          <Route path="/doctor" element={<DoctorDashboardPage />} />
-          <Route path="/doctor/appointments" element={<DoctorAppointmentsPage />} />
-          <Route path="/doctor/prescriptions" element={<DoctorPrescriptionsPage />} />
-        </Route>
-
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+
+      <Route path="/doctor" element={<RoleRoute roles={["DOCTOR"]} />}>
+        <Route element={<DoctorLayout />}>
+          <Route index element={<DoctorDashboardPage />} />
+          <Route path="appointments" element={<DoctorAppointmentsPage />} />
+          <Route path="consultations/:appointmentId" element={<DoctorConsultationPage />} />
+          <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
+          <Route path="profile" element={<DoctorProfilePage />} />
+          <Route path="schedule" element={<DoctorSchedulePage />} />
+          <Route path="earnings" element={<DoctorEarningsPage />} />
+          <Route path="settings" element={<DoctorSettingsPage />} />
+        </Route>
       </Route>
 
       <Route path="/admin" element={<RoleRoute roles={["ADMIN"]} />}>

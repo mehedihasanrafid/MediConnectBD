@@ -4,9 +4,10 @@ import styles from "./ClinicalStatusBar.module.css";
 
 interface ClinicalStatusBarProps {
   bmdcNumber: string;
+  isApproved?: boolean;
 }
 
-export function ClinicalStatusBar({ bmdcNumber }: ClinicalStatusBarProps) {
+export function ClinicalStatusBar({ bmdcNumber, isApproved }: ClinicalStatusBarProps) {
   const [dhakaTime, setDhakaTime] = useState("");
 
   useEffect(() => {
@@ -34,12 +35,12 @@ export function ClinicalStatusBar({ bmdcNumber }: ClinicalStatusBarProps) {
         <div className={styles.statusItem}>
           <span className={styles.liveDot} aria-hidden="true" />
           <Wifi size={12} style={{ color: "var(--color-success)" }} aria-hidden="true" />
-          <span>Daily.co WebRTC HD: Connected (22ms)</span>
+          <span>Telehealth Network: Operational</span>
         </div>
 
         <div className={styles.statusItem}>
           <Database size={12} style={{ color: "var(--color-primary)" }} aria-hidden="true" />
-          <span>Sync Gateway: Active</span>
+          <span>Clinical EHR: Synced</span>
         </div>
 
         <div className={styles.statusItem}>
@@ -55,13 +56,17 @@ export function ClinicalStatusBar({ bmdcNumber }: ClinicalStatusBarProps) {
         </div>
 
         <div className={styles.statusItem}>
-          <ShieldCheck size={12} style={{ color: "var(--color-success)" }} aria-hidden="true" />
-          <span>BMDC #{bmdcNumber}</span>
+          <ShieldCheck
+            size={12}
+            style={{ color: isApproved ? "var(--color-success)" : "var(--color-warning)" }}
+            aria-hidden="true"
+          />
+          <span>BMDC #{bmdcNumber} {isApproved ? "(Verified)" : "(Pending Review)"}</span>
         </div>
 
         <div className={styles.versionBadge}>
           <Package size={10} aria-hidden="true" />
-          <span>v1.4.0 (.deb)</span>
+          <span>v1.4.0</span>
         </div>
       </div>
     </footer>

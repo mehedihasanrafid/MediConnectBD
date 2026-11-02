@@ -38,9 +38,11 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 export function DoctorScheduleSection({
   schedule,
   onScheduleChanged,
+  isApproved = true,
 }: {
   schedule: ScheduleOverview | null;
   onScheduleChanged: () => Promise<void>;
+  isApproved?: boolean;
 }) {
   const [dayOfWeek, setDayOfWeek] = useState("1");
   const [startTime, setStartTime] = useState("18:00");
@@ -126,20 +128,29 @@ export function DoctorScheduleSection({
       {error && <Alert kind="error">{error}</Alert>}
       {notice && <Alert kind="success">{notice}</Alert>}
 
+      {!isApproved && (
+        <Alert kind="info">
+          Weekly schedule management and 7-day slot generation become available once your doctor
+          application is approved by administrators.
+        </Alert>
+      )}
+
       <Card>
         <div className={styles.sectionHeader}>
           <div>
             <h2>Weekly schedule</h2>
             <Text tone="muted" size="sm">Timezone: {schedule?.timezone ?? "Asia/Dhaka"}</Text>
           </div>
-          <div className={styles.ruleActions}>
-            <Button variant="secondary" disabled={busy} onClick={() => setAddingRule(!addingRule)}>
-              {addingRule ? "Close form" : "+ Add rule"}
-            </Button>
-            <Button disabled={busy} onClick={() => void handleGenerateSlots()}>
-              Regenerate 7-day slots
-            </Button>
-          </div>
+          {isApproved && (
+            <div className={styles.ruleActions}>
+              <Button variant="secondary" disabled={busy} onClick={() => setAddingRule(!addingRule)}>
+                {addingRule ? "Close form" : "+ Add rule"}
+              </Button>
+              <Button disabled={busy} onClick={() => void handleGenerateSlots()}>
+                Regenerate 7-day slots
+              </Button>
+            </div>
+          )}
         </div>
 
         {addingRule && (
@@ -210,14 +221,16 @@ export function DoctorScheduleSection({
         )}
       </Card>
 
-      <DoctorTimeOffSection
-        schedule={schedule}
-        busy={busy}
-        setBusy={setBusy}
-        setError={setError}
-        setNotice={setNotice}
-        onScheduleChanged={onScheduleChanged}
-      />
+      {isApproved && (
+        <DoctorTimeOffSection
+          schedule={schedule}
+          busy={busy}
+          setBusy={setBusy}
+          setError={setError}
+          setNotice={setNotice}
+          onScheduleChanged={onScheduleChanged}
+        />
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export interface FieldProps {
   type?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   name?: string;
   autoComplete?: string;
   hint?: string;

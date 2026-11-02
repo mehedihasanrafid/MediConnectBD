@@ -85,6 +85,11 @@
   white-space: nowrap;
 }
 
+.bmdcBadgePending {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
 .metaRow {
   display: flex;
   flex-wrap: wrap;

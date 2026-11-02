@@ -3,7 +3,7 @@
  * and allows editing or deleting within the 24-hour edit window (`isEditable === true`).
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Trash2 } from "lucide-react";
 
@@ -30,26 +30,7 @@ export function DoctorPrescriptionsPage() {
 
   const [activeDraft, setActiveDraft] = useState<FastRxBundle | null>(null);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("mediconnect_rx_draft");
-      if (stored) {
-        const parsed = JSON.parse(stored) as FastRxBundle;
-        if (parsed.title && parsed.diagnosis) {
-          setActiveDraft(parsed);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
   const handleClearDraft = () => {
-    try {
-      localStorage.removeItem("mediconnect_rx_draft");
-    } catch {
-      // ignore
-    }
     setActiveDraft(null);
     showToast("Prescription protocol draft discarded.", { kind: "info" });
   };

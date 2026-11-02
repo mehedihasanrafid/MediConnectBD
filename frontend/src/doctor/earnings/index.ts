@@ -1,0 +1,1 @@
+export { DoctorEarningsPage } from "./DoctorEarningsPage";

@@ -5,9 +5,10 @@ import styles from "./DoctorBreadcrumbs.module.css";
 
 interface DoctorBreadcrumbsProps {
   activeTabLabel: string;
+  isApproved?: boolean;
 }
 
-export function DoctorBreadcrumbs({ activeTabLabel }: DoctorBreadcrumbsProps) {
+export function DoctorBreadcrumbs({ activeTabLabel, isApproved }: DoctorBreadcrumbsProps) {
   const [dhakaTime, setDhakaTime] = useState<string>("");
 
   useEffect(() => {
@@ -62,8 +63,12 @@ export function DoctorBreadcrumbs({ activeTabLabel }: DoctorBreadcrumbsProps) {
         )}
 
         <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <ShieldCheck size={12} style={{ color: "var(--color-success)" }} aria-hidden="true" />
-          <span>BMDC Encrypted</span>
+          <ShieldCheck
+            size={12}
+            style={{ color: isApproved ? "var(--color-success)" : "var(--color-warning)" }}
+            aria-hidden="true"
+          />
+          <span>{isApproved ? "BMDC Verified" : "Verification Pending"}</span>
         </span>
       </div>
     </nav>

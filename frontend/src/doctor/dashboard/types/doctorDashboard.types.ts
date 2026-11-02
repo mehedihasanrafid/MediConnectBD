@@ -1,3 +1,10 @@
+export type DoctorApplicationStatus =
+  | "DRAFT"
+  | "PENDING_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | (string & {});
+
 export interface DoctorProfileDetails {
   id: string;
   bmdcNumber: string;
@@ -5,7 +12,7 @@ export interface DoctorProfileDetails {
   experienceYears: number;
   bio: string | null;
   languages: string[];
-  applicationStatus: string;
+  applicationStatus: DoctorApplicationStatus;
   rejectionReason: string | null;
   videoConsultationFee: number | null;
   specialties: Array<{ id: string; name: string }>;

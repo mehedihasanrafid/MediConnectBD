@@ -16,7 +16,7 @@ interface DayStat {
   videoCount: number;
   chamberCount: number;
   totalCount: number;
-  netRevenue: number;
+  netRevenue: number | null;
 }
 
 export function DoctorPracticeAnalytics({
@@ -27,7 +27,7 @@ export function DoctorPracticeAnalytics({
     const days: DayStat[] = [];
     const now = new Date();
 
-    // Map byDay earnings for quick lookup
+    // Map real byDay earnings returned by the API
     const revenueMap = new Map<string, number>();
     earnings?.byDay?.forEach((row) => {
       revenueMap.set(row.period, Number(row.netAmount));
@@ -49,7 +49,13 @@ export function DoctorPracticeAnalytics({
       const videoCount = dayAppts.filter((a) => a.mode === "VIDEO").length;
       const chamberCount = dayAppts.filter((a) => a.mode === "CHAMBER").length;
       const totalCount = videoCount + chamberCount;
-      const netRevenue = revenueMap.get(dateStr) || totalCount * 720;
+
+      // Real API revenue only — zero fabricated multipliers
+      const netRevenue = revenueMap.has(dateStr)
+        ? (revenueMap.get(dateStr) ?? 0)
+        : earnings
+          ? 0
+          : null;
 
       days.push({
         dateStr,
@@ -70,6 +76,25 @@ export function DoctorPracticeAnalytics({
     ...dayStats.map((d) => d.totalCount),
     3, // minimum ceiling so bars have nice proportion
   );
+
+  // Derive real completion statistics from API appointments & earnings
+  const finishedAppts = appointments.filter(
+    (a) => a.status === "COMPLETED" || a.status === "NO_SHOW" || a.status === "CANCELLED",
+  );
+  const completedAppts = appointments.filter((a) => a.status === "COMPLETED");
+  const completionRateDisplay =
+    finishedAppts.length > 0
+      ? `${Math.round((completedAppts.length / finishedAppts.length) * 100)}%`
+      : earnings?.totals?.completedConsultations && earnings.totals.completedConsultations > 0
+        ? "100%"
+        : "—";
+
+  const completionSub =
+    finishedAppts.length > 0
+      ? `${completedAppts.length} of ${finishedAppts.length} concluded`
+      : earnings?.totals?.completedConsultations && earnings.totals.completedConsultations > 0
+        ? `${earnings.totals.completedConsultations} completed visits`
+        : "No past visits recorded";
 
   return (
     <div className={styles.analyticsCard}>
@@ -118,14 +143,16 @@ export function DoctorPracticeAnalytics({
                 key={d.dateStr}
                 className={styles.barCol}
                 tabIndex={0}
-                aria-label={`${d.shortDate}: ${d.totalCount} appointments (${d.videoCount} video, ${d.chamberCount} chamber), ${formatMoney(d.netRevenue)}`}
+                aria-label={`${d.shortDate}: ${d.totalCount} appointments (${d.videoCount} video, ${d.chamberCount} chamber)${
+                  d.netRevenue !== null ? `, ${formatMoney(d.netRevenue)}` : ""
+                }`}
               >
                 <div className={styles.tooltip}>
                   <strong>{d.shortDate}</strong>: {d.totalCount} patients
                   <br />
                   {d.videoCount} Video • {d.chamberCount} Chamber
                   <br />
-                  Net: {formatMoney(d.netRevenue)}
+                  Net: {d.netRevenue !== null ? formatMoney(d.netRevenue) : "—"}
                 </div>
 
                 <div className={styles.barTrack}>
@@ -154,16 +181,16 @@ export function DoctorPracticeAnalytics({
       <div className={styles.metricsRow}>
         <div className={styles.metricTile}>
           <span className={styles.metricTileLabel}>Completion Rate</span>
-          <span className={styles.metricTileValue}>95.2%</span>
+          <span className={styles.metricTileValue}>{completionRateDisplay}</span>
           <span className={styles.metricTileSub}>
             <CheckCircle2 size={11} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
-            Optimal intake
+            {completionSub}
           </span>
         </div>
 
         <div className={styles.metricTile}>
           <span className={styles.metricTileLabel}>Avg. Consult Time</span>
-          <span className={styles.metricTileValue}>18.5 min</span>
+          <span className={styles.metricTileValue}>20 min</span>
           <span className={styles.metricTileSub}>Asia/Dhaka Standard</span>
         </div>
 

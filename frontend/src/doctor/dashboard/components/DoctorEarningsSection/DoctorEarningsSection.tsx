@@ -14,7 +14,25 @@ interface DoctorEarningsSectionProps {
 }
 
 export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) {
-  if (!earnings) return null;
+  if (!earnings) {
+    return (
+      <div className={styles.section}>
+        <div className={styles.headerRow}>
+          <div className={styles.titleGroup}>
+            <div className={styles.iconWrap}>
+              <Wallet size={16} aria-hidden="true" />
+            </div>
+            <h3 className={styles.cardTitle}>Earnings & Payout Summary</h3>
+          </div>
+          <span className={styles.payoutBadge}>Weekly Direct Settlement</span>
+        </div>
+        <EmptyState>
+          No settled earnings data available yet. Completed consultations and verified payments
+          will appear here.
+        </EmptyState>
+      </div>
+    );
+  }
 
   const netAmount = Number(earnings.totals.netAmount);
   const grossAmount = Number(earnings.totals.grossAmount);

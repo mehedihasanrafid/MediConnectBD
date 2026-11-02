@@ -45,6 +45,14 @@ export function DoctorProfileSection({
   const canSubmitApplication =
     profile.applicationStatus === "DRAFT" || profile.applicationStatus === "REJECTED";
 
+  const hasDegrees = Boolean(profile.degrees && profile.degrees.trim().length > 0);
+  const hasSpecialties = Boolean(profile.specialties && profile.specialties.length > 0);
+  const hasFee = Boolean(
+    profile.videoConsultationFee !== null ||
+      (profile.chambers && profile.chambers.some((c) => c.isActive)),
+  );
+  const canSubmit = canSubmitApplication && hasDegrees && hasSpecialties && hasFee;
+
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -107,6 +115,12 @@ export function DoctorProfileSection({
 
       {editing ? (
         <form onSubmit={handleSave} className={styles.formGrid}>
+          {profile.applicationStatus === "APPROVED" && (
+            <Alert kind="warning">
+              Notice: Saving changes to an approved profile will return your application to DRAFT
+              status for administrator re-verification.
+            </Alert>
+          )}
           <div className={styles.filterRow}>
             <Field label="Degrees & qualifications" value={degrees} onChange={setDegrees} required />
             <Field
@@ -186,11 +200,25 @@ export function DoctorProfileSection({
               </Button>
             )}
             {canSubmitApplication && (
-              <Button disabled={busy} onClick={() => void handleSubmitApplication()}>
+              <Button
+                disabled={!canSubmit || busy}
+                loading={busy}
+                onClick={() => void handleSubmitApplication()}
+                title={
+                  !canSubmit
+                    ? "Add degrees, at least one specialty, and a consultation fee before submitting"
+                    : undefined
+                }
+              >
                 {busy ? "Submitting…" : "Submit application for review"}
               </Button>
             )}
           </div>
+          {canSubmitApplication && !canSubmit && (
+            <Text tone="muted" size="sm" className={styles.missingHint}>
+              Missing requirements: {!hasDegrees && "Degrees "}{!hasSpecialties && "Specialty "}{!hasFee && "Consultation fee"}.
+            </Text>
+          )}
         </>
       )}
     </Card>

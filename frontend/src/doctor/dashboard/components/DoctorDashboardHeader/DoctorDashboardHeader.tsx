@@ -17,6 +17,7 @@ interface DoctorDashboardHeaderProps {
   experienceYears?: number;
   specialties?: Array<{ id: string; name: string }>;
   todayAppointmentsCount?: number;
+  isApproved?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export function DoctorDashboardHeader({
   experienceYears,
   specialties = [],
   todayAppointmentsCount = 0,
+  isApproved = true,
 }: DoctorDashboardHeaderProps) {
   const { user } = useAuth();
   const [isTelehealthOnline, setIsTelehealthOnline] = useState<boolean>(() => {
@@ -69,9 +71,9 @@ export function DoctorDashboardHeader({
           <div className={styles.doctorInfo}>
             <div className={styles.doctorNameRow}>
               <h1 className={styles.doctorName}>{doctorName}</h1>
-              <span className={styles.bmdcBadge}>
+              <span className={clsx(styles.bmdcBadge, !isApproved && styles.bmdcBadgePending)}>
                 <ShieldCheck size={14} aria-hidden="true" />
-                <span>BMDC #{bmdcNumber}</span>
+                <span>BMDC #{bmdcNumber}{isApproved ? " (Verified)" : " (Pending Verification)"}</span>
               </span>
             </div>
 

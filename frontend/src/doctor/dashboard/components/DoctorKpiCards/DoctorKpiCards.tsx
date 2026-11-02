@@ -13,15 +13,17 @@ interface DoctorKpiCardsProps {
   earnings: DoctorEarningsSummary | null;
   prescriptions: Prescription[];
   averageRating?: number | null;
-  reviewCount?: number;
+  reviewCount?: number | null;
+  isApproved?: boolean;
 }
 
 export function DoctorKpiCards({
   appointments,
   earnings,
   prescriptions,
-  averageRating = 4.9,
-  reviewCount = 28,
+  averageRating,
+  reviewCount,
+  isApproved = true,
 }: DoctorKpiCardsProps) {
   // Count active / upcoming appointments
   const activeAppointments = appointments.filter(
@@ -30,12 +32,12 @@ export function DoctorKpiCards({
   const videoCount = activeAppointments.filter((a) => a.mode === "VIDEO").length;
   const chamberCount = activeAppointments.filter((a) => a.mode === "CHAMBER").length;
 
-  const netEarnings = earnings?.totals?.netAmount
-    ? Number(earnings.totals.netAmount)
-    : 2040;
-  const grossEarnings = earnings?.totals?.grossAmount
-    ? Number(earnings.totals.grossAmount)
-    : 2400;
+  // Real API earnings only — zero invented fallbacks
+  const hasEarnings = Boolean(earnings && earnings.totals && earnings.totals.netAmount !== undefined);
+  const netEarnings = hasEarnings ? Number(earnings!.totals.netAmount) : null;
+  const grossEarnings = hasEarnings ? Number(earnings!.totals.grossAmount) : null;
+
+  const hasRating = averageRating !== undefined && averageRating !== null;
 
   return (
     <div className={styles.kpiGrid}>
@@ -74,11 +76,19 @@ export function DoctorKpiCards({
         </div>
         <div className={styles.cardBody}>
           <span className={styles.metricLabel}>Net Doctor Payout</span>
-          <span className={styles.metricValue}>{formatMoney(netEarnings)}</span>
+          <span className={styles.metricValue}>
+            {netEarnings !== null ? formatMoney(netEarnings) : "—"}
+          </span>
         </div>
         <div className={styles.cardFooter}>
-          <span>Gross {formatMoney(grossEarnings)}</span> •{" "}
-          <span className={styles.footerHighlight}>bKash Disbursal</span>
+          {hasEarnings ? (
+            <>
+              <span>Gross {formatMoney(grossEarnings!)}</span> •{" "}
+              <span className={styles.footerHighlight}>bKash Disbursal</span>
+            </>
+          ) : (
+            <span>Awaiting settled consultations</span>
+          )}
         </div>
       </div>
 
@@ -88,16 +98,22 @@ export function DoctorKpiCards({
           <div className={`${styles.iconWrap} ${styles.iconWarning}`}>
             <Star size={18} aria-hidden="true" />
           </div>
-          <span className={styles.badgePill}>BMDC Verified</span>
+          <span className={styles.badgePill}>
+            {isApproved ? "BMDC Verified" : "Verification Pending"}
+          </span>
         </div>
         <div className={styles.cardBody}>
           <span className={styles.metricLabel}>Patient Satisfaction</span>
           <span className={styles.metricValue}>
-            {(averageRating ?? 4.9).toFixed(1)} ★
+            {hasRating ? `${averageRating.toFixed(1)} ★` : "—"}
           </span>
         </div>
         <div className={styles.cardFooter}>
-          <span className={styles.footerHighlight}>{reviewCount || 28} Verified Reviews</span>
+          <span className={styles.footerHighlight}>
+            {hasRating && (reviewCount ?? 0) > 0
+              ? `${reviewCount} Verified Reviews`
+              : "No reviews recorded yet"}
+          </span>
         </div>
       </div>
 

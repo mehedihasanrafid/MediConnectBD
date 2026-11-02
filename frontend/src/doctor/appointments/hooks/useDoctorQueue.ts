@@ -63,7 +63,11 @@ export function useDoctorQueue() {
   }, []);
 
   const handleTransition = useCallback(
-    async (appointmentId: string, action: "complete" | "no-show" | "cancel") => {
+    async (
+      appointmentId: string,
+      action: "complete" | "no-show" | "cancel",
+      reason?: string,
+    ) => {
       setBusyId(appointmentId);
       setError(null);
       setNotice(null);
@@ -75,7 +79,7 @@ export function useDoctorQueue() {
           await appointmentsApi.markNoShow(appointmentId);
           setNotice("Appointment marked as no-show.");
         } else {
-          await appointmentsApi.cancelAppointment(appointmentId, "Cancelled by doctor");
+          await appointmentsApi.cancelAppointment(appointmentId, reason || "Cancelled by doctor");
           setNotice("Appointment cancelled (100% patient refund policy applied if paid).");
         }
         await loadQueue();
@@ -105,5 +109,6 @@ export function useDoctorQueue() {
     busyId,
     handleTransition,
     registerCreatedPrescription,
+    reload: loadQueue,
   };
 }

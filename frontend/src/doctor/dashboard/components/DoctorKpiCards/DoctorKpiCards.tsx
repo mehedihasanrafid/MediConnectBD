@@ -84,10 +84,10 @@ export function DoctorKpiCards({
           {hasEarnings ? (
             <>
               <span>Gross {formatMoney(grossEarnings!)}</span> •{" "}
-              <span className={styles.footerHighlight}>bKash Disbursal</span>
+              <span className={styles.footerHighlight}>10% Platform Fee</span>
             </>
           ) : (
-            <span>Awaiting settled consultations</span>
+            <span>Awaiting consultation earnings</span>
           )}
         </div>
       </div>

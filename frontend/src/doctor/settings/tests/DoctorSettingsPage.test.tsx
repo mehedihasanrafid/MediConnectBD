@@ -54,7 +54,7 @@ vi.mock("../../../api/doctors", () => ({
   },
 }));
 
-describe("DoctorSettingsPage (Phase 6)", () => {
+describe("DoctorSettingsPage (Phase 6.1 Validation)", () => {
   const dummyProfile: DoctorProfileDetails = {
     id: "doc-1",
     bmdcNumber: "A-54321",
@@ -107,27 +107,33 @@ describe("DoctorSettingsPage (Phase 6)", () => {
 
     expect(html).toContain("Dr. Mahmudur Rahman");
     expect(html).toContain("A-54321");
+    expect(html).toContain("BMDC Registration Identifier");
     expect(html).toContain("mahmudur@mediconnect.bd");
+    expect(html).toContain("Application Review Status");
     expect(html).toContain("approved");
 
     // Deep link to clinical profile
     expect(html).toContain('href="/doctor/profile"');
     expect(html).toContain("Manage Clinical Profile");
+    // Ensure no false claim of live BMDC external verification
+    expect(html).not.toContain("Core credentials verified against Bangladesh Medical");
   });
 
-  it("renders sound chime preview controls and Dhaka timezone badge", () => {
+  it("renders sound chime preview controls accurately without claiming automatic alerts", () => {
     const html = renderToString(
       <MemoryRouter>
         <DoctorSettingsPage initialProfile={dummyProfile} />
       </MemoryRouter>
     );
 
-    expect(html).toContain("Clinical Auditory Alerts &amp; Time Synchronization");
-    expect(html).toContain("Test Video Call Ring");
-    expect(html).toContain("Test Patient Arrival");
-    expect(html).toContain("Test Session Complete");
-    expect(html).toContain("Test Rx Issuance");
+    expect(html).toContain("Auditory Chime Preview &amp; Time Synchronization");
+    expect(html).toContain("Preview Video Call Chime");
+    expect(html).toContain("Preview Arrival Chime");
+    expect(html).toContain("Preview Session Complete");
+    expect(html).toContain("Preview Rx Issuance Chime");
     expect(html).toContain("Dhaka Time Zone Lock (Asia/Dhaka GMT+6)");
+    // Ensure no fake preference save notifications
+    expect(html).not.toContain("Preferences Saved");
   });
 
   it("renders security overview and session sign-out button", () => {
@@ -138,10 +144,11 @@ describe("DoctorSettingsPage (Phase 6)", () => {
     );
 
     expect(html).toContain("Session &amp; Account Security");
-    expect(html).toContain("Credential &amp; Single-Sign-On Policy");
+    expect(html).toContain("Credential &amp; Session Policy");
     expect(html).toContain("Sign Out of Doctor Session");
-    // Ensure no fake change password forms
+    // Ensure no fake change password forms or fake 2FA switches
     expect(html).not.toContain("Enter old password");
     expect(html).not.toContain("Enter new password");
+    expect(html).not.toContain("Two-Factor Authentication");
   });
 });

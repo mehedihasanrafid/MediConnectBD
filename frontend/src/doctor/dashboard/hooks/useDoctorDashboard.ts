@@ -144,9 +144,10 @@ export function useDoctorDashboard() {
 
   useEffect(() => {
     void loadDashboard();
+    const cycleRef = activeCycleRef;
     return () => {
       // Invalidate pending cycle on unmount
-      activeCycleRef.current++;
+      cycleRef.current++;
     };
   }, [loadDashboard]);
 

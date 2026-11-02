@@ -54,7 +54,7 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
     playChimeSound(kind);
     setTestedSound(kind);
     setTimeout(() => {
-      setTestedSound((curr) => (curr === kind ? null : curr));
+      setTestedSound((curr: SoundKind | null) => (curr === kind ? null : curr));
     }, 1500);
   };
 
@@ -85,7 +85,7 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
           <span className={styles.eyebrow}>Practice Configuration & Identity</span>
           <h1 className={styles.title}>Doctor Account Settings</h1>
           <p className={styles.description}>
-            Manage interface appearance, auditory alerts, clinical identity, and authenticated session preferences.
+            Manage interface appearance, auditory alerts preview, provider credentials, and authenticated session preferences.
           </p>
         </div>
       </div>
@@ -169,16 +169,16 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
         </div>
       </section>
 
-      {/* Section 2: Account & Verification Overview */}
+      {/* Section 2: Account & Verification Overview (Truthful labels) */}
       <section className={styles.settingsCard} aria-labelledby="identity-settings-heading">
         <div className={styles.cardHeader}>
           <div>
             <h2 id="identity-settings-heading" className={styles.cardTitle}>
               <User size={18} />
-              Provider Identity & Verification
+              Provider Identity & Recorded Credentials
             </h2>
             <p className={styles.cardSubtitle}>
-              Core credentials verified against Bangladesh Medical & Dental Council (BMDC) records.
+              Recorded professional identifier and platform application status.
             </p>
           </div>
         </div>
@@ -190,7 +190,7 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
           </div>
 
           <div className={styles.identityItem}>
-            <span className={styles.identityLabel}>BMDC Registration No.</span>
+            <span className={styles.identityLabel}>BMDC Registration Identifier</span>
             <span className={styles.identityValue}>{bmdcNumber}</span>
           </div>
 
@@ -200,7 +200,7 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
           </div>
 
           <div className={styles.identityItem}>
-            <span className={styles.identityLabel}>Verification Status</span>
+            <span className={styles.identityLabel}>Application Review Status</span>
             <span className={styles.identityValue} style={{ textTransform: "capitalize" }}>
               {status.toLowerCase().replace("_", " ")}
             </span>
@@ -223,63 +223,63 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
         </div>
       </section>
 
-      {/* Section 3: Clinical Notifications & Auditory Chimes */}
+      {/* Section 3: Auditory Chimes Preview & Time Synchronization */}
       <section className={styles.settingsCard} aria-labelledby="alerts-settings-heading">
         <div className={styles.cardHeader}>
           <div>
             <h2 id="alerts-settings-heading" className={styles.cardTitle}>
               <Volume2 size={18} />
-              Clinical Auditory Alerts & Time Synchronization
+              Auditory Chime Preview & Time Synchronization
             </h2>
             <p className={styles.cardSubtitle}>
-              Preview synthesized Web Audio tones used for patient call invites and completion notifications.
+              Preview synthesized Web Audio chime tones used during active clinic hours. Volume and output depend on local device sound settings.
             </p>
           </div>
         </div>
 
         <div>
           <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 700, marginBottom: "8px" }}>
-            Test Audio Chimes
+            Preview Audio Chimes
           </label>
           <div className={styles.chimeGrid}>
             <button
               type="button"
               className={styles.chimeButton}
               onClick={() => handleTestSound("call")}
-              aria-label="Test incoming call sound chime"
+              aria-label="Preview incoming video call sound chime"
             >
               <Volume2 size={14} />
-              <span>{testedSound === "call" ? "Playing Call Tone..." : "Test Video Call Ring"}</span>
+              <span>{testedSound === "call" ? "Playing Call Chime..." : "Preview Video Call Chime"}</span>
             </button>
 
             <button
               type="button"
               className={styles.chimeButton}
               onClick={() => handleTestSound("notification")}
-              aria-label="Test patient alert sound chime"
+              aria-label="Preview patient queue arrival sound chime"
             >
               <Volume2 size={14} />
-              <span>{testedSound === "notification" ? "Playing Alert..." : "Test Patient Arrival"}</span>
+              <span>{testedSound === "notification" ? "Playing Arrival Chime..." : "Preview Arrival Chime"}</span>
             </button>
 
             <button
               type="button"
               className={styles.chimeButton}
               onClick={() => handleTestSound("complete")}
-              aria-label="Test consultation completion sound chime"
+              aria-label="Preview consultation completion sound chime"
             >
               <Volume2 size={14} />
-              <span>{testedSound === "complete" ? "Playing Chime..." : "Test Session Complete"}</span>
+              <span>{testedSound === "complete" ? "Playing Complete Chime..." : "Preview Session Complete"}</span>
             </button>
 
             <button
               type="button"
               className={styles.chimeButton}
               onClick={() => handleTestSound("success")}
-              aria-label="Test prescription issued sound chime"
+              aria-label="Preview prescription issuance sound chime"
             >
               <Volume2 size={14} />
-              <span>{testedSound === "success" ? "Playing Chime..." : "Test Rx Issuance"}</span>
+              <span>{testedSound === "success" ? "Playing Rx Chime..." : "Preview Rx Issuance Chime"}</span>
             </button>
           </div>
         </div>
@@ -314,11 +314,10 @@ export function DoctorSettingsPage({ initialProfile }: DoctorSettingsPageProps =
           <Lock size={18} style={{ flexShrink: 0, marginTop: "2px", color: "var(--color-primary)" }} />
           <div>
             <strong style={{ display: "block", marginBottom: "2px", color: "var(--color-text)" }}>
-              Credential & Single-Sign-On Policy
+              Credential & Session Policy
             </strong>
-            Doctor account credentials and BMDC verification tokens are managed centrally. To update your login email,
-            reset credentials, or configure multi-factor institutional hardware keys, please submit a verified ticket to
-            support@mediconnectbd.com.
+            Doctor account credentials and profile records are managed by system administrators. To update your login email
+            or reset credentials, please contact support@mediconnectbd.com.
           </div>
         </div>
 

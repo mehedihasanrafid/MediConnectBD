@@ -22,12 +22,12 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
             <div className={styles.iconWrap}>
               <Wallet size={16} aria-hidden="true" />
             </div>
-            <h3 className={styles.cardTitle}>Earnings & Payout Summary</h3>
+            <h3 className={styles.cardTitle}>Earnings &amp; Revenue Summary</h3>
           </div>
-          <span className={styles.payoutBadge}>Weekly Direct Settlement</span>
+          <span className={styles.payoutBadge}>Eligible Consultations</span>
         </div>
         <EmptyState>
-          No settled earnings data available yet. Completed consultations and verified payments
+          No eligible earnings data recorded yet. Completed consultations and verified payments
           will appear here.
         </EmptyState>
       </div>
@@ -45,15 +45,14 @@ export function DoctorEarningsSection({ earnings }: DoctorEarningsSectionProps) 
           <div className={styles.iconWrap}>
             <Wallet size={16} aria-hidden="true" />
           </div>
-          <h3 className={styles.cardTitle}>Earnings & Payout Summary</h3>
+          <h3 className={styles.cardTitle}>Earnings &amp; Revenue Summary</h3>
         </div>
-        <span className={styles.payoutBadge}>Weekly Direct Settlement</span>
+        <span className={styles.payoutBadge}>Eligible Consultations</span>
       </div>
 
       <div className={styles.heroPayoutBox}>
         <div className={styles.heroPayoutTop}>
-          <span className={styles.heroLabel}>Net Doctor Payout (90%)</span>
-          <span className={styles.payoutBadge}>bKash / Bank</span>
+          <span className={styles.heroLabel}>Net Doctor Earnings (90%)</span>
         </div>
         <div className={styles.heroAmount}>{formatMoney(netAmount)}</div>
         <div className={styles.ratioBar} aria-hidden="true">

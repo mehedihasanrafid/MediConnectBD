@@ -4,7 +4,7 @@
  * completions, and successful prescription signings without external media file dependencies.
  */
 
-type SoundKind = "notification" | "success" | "call" | "complete";
+export type SoundKind = "notification" | "success" | "call" | "complete";
 
 let audioCtx: AudioContext | null = null;
 

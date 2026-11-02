@@ -61,7 +61,7 @@ export function ChamberDialog({
         setConsultationFee("1000");
       }
     }
-  }, [open, editingChamber]);
+  }, [open, editingChamber, availableHospitals]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

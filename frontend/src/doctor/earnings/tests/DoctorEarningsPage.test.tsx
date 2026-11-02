@@ -48,7 +48,7 @@ vi.mock("../../../api/doctors", () => ({
   },
 }));
 
-describe("DoctorEarningsPage (Phase 6)", () => {
+describe("DoctorEarningsPage (Phase 6.1 Financial Accuracy)", () => {
   const dummyEarnings: DoctorEarningsSummary = {
     totals: {
       succeededPayments: 8,
@@ -151,7 +151,31 @@ describe("DoctorEarningsPage (Phase 6)", () => {
         dateOfBirth: "1990-08-15",
       },
     },
-  ];
+    {
+      id: "appt-cancelled",
+      patientProfileId: "patient-3",
+      doctorId: "doc-1",
+      holdId: "hold-3",
+      scheduledStartAt: "2026-11-01T12:00:00Z",
+      scheduledEndAt: "2026-11-01T12:20:00Z",
+      mode: "VIDEO",
+      status: "CANCELLED",
+      feeAmount: 1200,
+      paymentRequired: false,
+      paymentReference: null,
+      cancellationReason: "Doctor unavailable",
+      createdAt: "2026-10-30T12:00:00Z",
+      updatedAt: "2026-10-31T12:00:00Z",
+      slot: {
+        id: "slot-3",
+        doctorId: "doc-1",
+        startAt: "2026-11-01T12:00:00Z",
+        endAt: "2026-11-01T12:20:00Z",
+        mode: "VIDEO",
+      },
+      patient: null,
+    },
+  ] as unknown as DoctorAppointment[];
 
   it("renders loading state when initial data is not provided", () => {
     const html = renderToString(
@@ -164,7 +188,7 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     expect(html).toContain("Loading real-time financial ledger...");
   });
 
-  it("renders 5 KPI cards with real formatted amounts", () => {
+  it("renders 5 KPI cards with truthful financial labels and 90/10 split", () => {
     const html = renderToString(
       <MemoryRouter>
         <DoctorEarningsPage initialEarnings={dummyEarnings} initialAppointments={dummyAppointments} />
@@ -174,10 +198,12 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     // Net earnings (90%)
     expect(html).toContain("Net Doctor Earnings (90%)");
     expect(html).toContain("৳9000.00");
+    expect(html).toContain("Calculated doctor share after 10% platform fee");
 
-    // Gross revenue
+    // Gross billing
     expect(html).toContain("Gross Patient Billing");
     expect(html).toContain("৳10000.00");
+    expect(html).toContain("Total paid by patients through gateway");
 
     // Platform Fee (10%)
     expect(html).toContain("Platform Service Fee (10%)");
@@ -186,10 +212,13 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     // Counters
     expect(html).toContain("Completed Consultations");
     expect(html).toContain("8");
-    expect(html).toContain("Settled Transactions");
+
+    // Successful Patient Payments (Strictly verified label)
+    expect(html).toContain("Successful Patient Payments");
+    expect(html).not.toContain("Settled Transactions");
   });
 
-  it("renders the revenue over time period tabs and data table", () => {
+  it("renders the revenue over time period tabs and data table without false payout claims", () => {
     const rawHtml = renderToString(
       <MemoryRouter>
         <DoctorEarningsPage initialEarnings={dummyEarnings} initialAppointments={dummyAppointments} />
@@ -206,7 +235,8 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     expect(html).toContain("Visits");
     expect(html).toContain("Gross Billing");
     expect(html).toContain("Platform (10%)");
-    expect(html).toContain("Net Payout");
+    expect(html).toContain("Net Earnings");
+    expect(html).not.toContain("Net Payout"); // No payout ledger exists
 
     // Table rows for daily
     expect(html).toContain("2026-11-01");
@@ -215,7 +245,7 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     expect(html).toContain("৳3600.00");
   });
 
-  it("renders consultation mode mix derived from real appointments", () => {
+  it("renders completed consultations by mode using verified visit counts only", () => {
     const rawHtml = renderToString(
       <MemoryRouter>
         <DoctorEarningsPage initialEarnings={dummyEarnings} initialAppointments={dummyAppointments} />
@@ -223,25 +253,32 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     );
     const html = rawHtml.replace(/<!-- -->/g, "");
 
-    expect(html).toContain("Consultation Mix");
-    expect(html).toContain("Completed: 2");
+    expect(html).toContain("Completed Consultations by Mode");
+    expect(html).toContain("Total: 2 visits"); // Only the 2 COMPLETED appointments, not CANCELLED
     expect(html).toContain("Video Sessions");
     expect(html).toContain("1 visits");
-    expect(html).toContain("৳1200.00");
+    expect(html).toContain("50% of total");
     expect(html).toContain("Physical Chamber");
-    expect(html).toContain("৳1500.00");
+    // Verify NO fabricated chamber collected revenue is displayed
+    expect(html).not.toContain("Revenue by Mode");
   });
 
-  it("renders institutional settlement notice explaining out-of-band disbursement", () => {
+  it("renders neutral settlement policy statement and removes unsupported monthly disbursement claims", () => {
     const html = renderToString(
       <MemoryRouter>
         <DoctorEarningsPage initialEarnings={dummyEarnings} initialAppointments={dummyAppointments} />
       </MemoryRouter>
     );
 
-    expect(html).toContain("Institutional Settlement Policy");
-    expect(html).toContain("MediConnectBD disburses verified doctor balances monthly");
-    expect(html).not.toContain("Request Payout"); // Zero fake buttons
+    expect(html).toContain("Settlement &amp; Payout Policy");
+    expect(html).toContain(
+      "Your earnings are calculated from eligible consultations. Payout scheduling and settlement information are not available in this dashboard."
+    );
+    // Verify unsupported claims are completely absent
+    expect(html).not.toContain("disburses verified doctor balances monthly");
+    expect(html).not.toContain("bKash");
+    expect(html).not.toContain("Weekly Direct Settlement");
+    expect(html).not.toContain("Request Payout");
   });
 
   it("renders clean zero-state when periods list is empty", () => {
@@ -264,6 +301,6 @@ describe("DoctorEarningsPage (Phase 6)", () => {
     );
 
     expect(html).toContain("৳0.00");
-    expect(html).toContain("No settled revenue records found for this period filter.");
+    expect(html).toContain("No eligible revenue records found for this period filter.");
   });
 });

@@ -33,7 +33,6 @@ export function DoctorEarningsPage({
   const [activePeriodTab, setActivePeriodTab] = useState<"day" | "month">("day");
 
   const loadData = useCallback(async () => {
-    setIsLoading(true);
     setError(null);
     try {
       const [earningsRes, appointmentsRes] = await Promise.all([
@@ -50,20 +49,23 @@ export function DoctorEarningsPage({
     }
   }, []);
 
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void loadData();
+  };
+
   useEffect(() => {
     if (initialEarnings === undefined) {
       void loadData();
     }
   }, [loadData, initialEarnings]);
 
-  // Derive mode mix from real completed appointments
+  // Derive mode visit distribution strictly from verified completed appointments
   const mixStats = useMemo(() => {
     const completed = appointments.filter((a) => a.status === "COMPLETED");
     const videoList = completed.filter((a) => a.mode === "VIDEO");
     const chamberList = completed.filter((a) => a.mode === "CHAMBER");
 
-    const videoGross = videoList.reduce((sum, a) => sum + (Number(a.feeAmount) || 0), 0);
-    const chamberGross = chamberList.reduce((sum, a) => sum + (Number(a.feeAmount) || 0), 0);
     const totalCount = completed.length;
     const videoPct = totalCount > 0 ? Math.round((videoList.length / totalCount) * 100) : 50;
     const chamberPct = totalCount > 0 ? 100 - videoPct : 50;
@@ -71,10 +73,8 @@ export function DoctorEarningsPage({
     return {
       totalCount,
       videoCount: videoList.length,
-      videoGross,
       videoPct,
       chamberCount: chamberList.length,
-      chamberGross,
       chamberPct,
     };
   }, [appointments]);
@@ -99,16 +99,16 @@ export function DoctorEarningsPage({
       {/* Header */}
       <div className={styles.headerRow}>
         <div className={styles.headerTextGroup}>
-          <span className={styles.eyebrow}>Practice Revenue & Settlements</span>
+          <span className={styles.eyebrow}>Practice Revenue & Earnings</span>
           <h1 className={styles.title}>Doctor Earnings & Financial Performance</h1>
           <p className={styles.description}>
-            Real-time summary of settled patient consultation fees, platform commissions, and completed encounters.
+            Real-time summary of eligible patient consultation payments, platform commission, and completed encounters.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => void loadData()}
+          onClick={handleRefresh}
           disabled={isLoading}
           className={styles.refreshBtn}
           aria-label="Refresh earnings data"
@@ -138,7 +138,7 @@ export function DoctorEarningsPage({
           </div>
           <button
             type="button"
-            onClick={() => void loadData()}
+            onClick={handleRefresh}
             className={styles.refreshBtn}
             style={{ borderColor: "currentColor" }}
           >
@@ -171,7 +171,7 @@ export function DoctorEarningsPage({
               <div className={styles.kpiValue} data-testid="kpi-net-amount">
                 {formatMoney(earnings.totals.netAmount)}
               </div>
-              <div className={styles.kpiSub}>Disbursed or payable to doctor</div>
+              <div className={styles.kpiSub}>Calculated doctor share after 10% platform fee</div>
             </div>
 
             {/* Gross Revenue */}
@@ -185,7 +185,7 @@ export function DoctorEarningsPage({
               <div className={styles.kpiValue} data-testid="kpi-gross-amount">
                 {formatMoney(earnings.totals.grossAmount)}
               </div>
-              <div className={styles.kpiSub}>Total consultation fees paid</div>
+              <div className={styles.kpiSub}>Total paid by patients through gateway</div>
             </div>
 
             {/* Platform Service Fee */}
@@ -199,7 +199,7 @@ export function DoctorEarningsPage({
               <div className={styles.kpiValue} data-testid="kpi-commission-amount">
                 {formatMoney(earnings.totals.commissionAmount)}
               </div>
-              <div className={styles.kpiSub}>Infrastructure & payment gateway</div>
+              <div className={styles.kpiSub}>Fixed platform commission deducted</div>
             </div>
 
             {/* Completed Consultations */}
@@ -213,13 +213,13 @@ export function DoctorEarningsPage({
               <div className={styles.kpiValue} data-testid="kpi-completed-consultations">
                 {earnings.totals.completedConsultations}
               </div>
-              <div className={styles.kpiSub}>Verified patient encounters</div>
+              <div className={styles.kpiSub}>Total verified completed consultations</div>
             </div>
 
-            {/* Succeeded Payments */}
+            {/* Successful Patient Payments (Renamed from Settled Transactions) */}
             <div className={styles.kpiCard}>
               <div className={styles.kpiTop}>
-                <span className={styles.kpiLabel}>Settled Transactions</span>
+                <span className={styles.kpiLabel}>Successful Patient Payments</span>
                 <span className={styles.kpiIconWrap}>
                   <Calendar size={16} />
                 </span>
@@ -227,7 +227,7 @@ export function DoctorEarningsPage({
               <div className={styles.kpiValue} data-testid="kpi-succeeded-payments">
                 {earnings.totals.succeededPayments}
               </div>
-              <div className={styles.kpiSub}>Digital gateway clearances</div>
+              <div className={styles.kpiSub}>Cleared gateway payment transactions</div>
             </div>
           </div>
 
@@ -265,7 +265,7 @@ export function DoctorEarningsPage({
               {periodRows.length === 0 ? (
                 <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--color-text-muted)" }}>
                   <Calendar size={28} style={{ margin: "0 auto 0.5rem", opacity: 0.5 }} />
-                  <p>No settled revenue records found for this period filter.</p>
+                  <p>No eligible revenue records found for this period filter.</p>
                 </div>
               ) : (
                 <>
@@ -299,7 +299,7 @@ export function DoctorEarningsPage({
                           <th>Visits</th>
                           <th>Gross Billing</th>
                           <th>Platform (10%)</th>
-                          <th>Net Payout</th>
+                          <th>Net Earnings</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -321,17 +321,17 @@ export function DoctorEarningsPage({
               )}
             </div>
 
-            {/* Right: Consultation Mix & Settlement Notice */}
+            {/* Right: Completed Consultations by Mode & Neutral Settlement Statement */}
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
-              {/* Consultation Mode Mix */}
+              {/* Completed Consultations by Mode (Strictly Visit Counts Only) */}
               <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>
                     <Video size={18} />
-                    Consultation Mix
+                    Completed Consultations by Mode
                   </h2>
                   <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-                    Completed: {mixStats.totalCount}
+                    Total: {mixStats.totalCount} visits
                   </span>
                 </div>
 
@@ -358,7 +358,7 @@ export function DoctorEarningsPage({
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 700 }}>{mixStats.videoCount} visits</div>
                       <div style={{ color: "var(--color-text-secondary)" }}>
-                        {formatMoney(mixStats.videoGross)}
+                        {mixStats.videoPct}% of total
                       </div>
                     </div>
                   </div>
@@ -372,23 +372,22 @@ export function DoctorEarningsPage({
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 700 }}>{mixStats.chamberCount} visits</div>
                       <div style={{ color: "var(--color-text-secondary)" }}>
-                        {formatMoney(mixStats.chamberGross)}
+                        {mixStats.chamberPct}% of total
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Settlement Notice */}
+              {/* Settlement & Payout Policy (Accurate & Neutral) */}
               <div className={styles.noticeCard}>
                 <Info size={20} style={{ flexShrink: 0, marginTop: "2px", color: "var(--color-primary)" }} />
                 <div>
                   <strong style={{ display: "block", marginBottom: "4px", color: "var(--color-text)" }}>
-                    Institutional Settlement Policy
+                    Settlement &amp; Payout Policy
                   </strong>
-                  MediConnectBD disburses verified doctor balances monthly to the institution or personal account
-                  registered during doctor verification. The platform service fee is 10% on completed appointments.
-                  Failed or refunded sessions are excluded from net earnings.
+                  Your earnings are calculated from eligible consultations. Payout scheduling and settlement information
+                  are not available in this dashboard.
                 </div>
               </div>
             </div>

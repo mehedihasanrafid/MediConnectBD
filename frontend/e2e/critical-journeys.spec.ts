@@ -217,7 +217,7 @@ test.describe("MediConnect BD Critical Journeys (Step 16)", () => {
     await page.goto("/doctor/appointments");
     await expect(page.locator("body")).toContainText("Rahim Uddin");
     await expect(page.locator("body")).toContainText("Confirmed");
-    await expect(page.locator("body")).toContainText("Patient history & reports");
+    await expect(page.locator("body")).toContainText("Clinical History & Reports");
   });
 
   test("Journey 3: Patient views digital prescription and pharmacy verifies authenticity", async ({
@@ -361,7 +361,7 @@ test.describe("MediConnect BD Critical Journeys (Step 16)", () => {
     });
 
     await page.goto("/reports");
-    await expect(page.locator("body")).toContainText("My medical reports");
+    await expect(page.locator("body")).toContainText("Diagnostic & medical reports");
     await expect(page.locator("body")).toContainText(
       "You are not authorized to view this patient's medical reports.",
     );

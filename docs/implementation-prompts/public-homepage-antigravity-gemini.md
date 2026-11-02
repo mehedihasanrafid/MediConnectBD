@@ -16,6 +16,10 @@ Use this image as the design reference:
 
 `/home/mehedi/Desktop/MediConnectBD/docs/ui-mockups/public-homepage-v1.png`
 
+![MediConnectBD public homepage design](../ui-mockups/public-homepage-v1.png)
+
+When using this prompt in Antigravity/Gemini, attach the PNG to the task as an image as well as pasting this document. If Antigravity cannot read the local path, the attached image is the authoritative visual reference.
+
 Match its information hierarchy and overall feeling, but implement a responsive, accessible web page rather than copying pixels. The page must work in every existing theme preset and in light, dark, and system mode.
 
 ## Product goal

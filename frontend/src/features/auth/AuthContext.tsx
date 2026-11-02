@@ -20,7 +20,7 @@ import {
 import { setAccessToken } from "../../api/client";
 import type { PublicUser } from "../../shared/types";
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<PublicUser>;
@@ -29,7 +29,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -96,4 +96,8 @@ export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
+}
+
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
 }

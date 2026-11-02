@@ -5,7 +5,7 @@ import styles from "./CareBenefits.module.css";
 const BENEFITS = [
   {
     title: "Clear availability",
-    description: "View verified chamber schedules and teleconsultation slots with transparent visiting hours.",
+    description: "View chamber schedules and teleconsultation slots with transparent visiting hours.",
     icon: CalendarCheck,
   },
   {

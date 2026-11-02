@@ -92,12 +92,16 @@ export function HomeHero() {
             <span className={styles.trustLabel}>Verified doctor profiles</span>
           </div>
 
+          <div className={styles.trustDivider} aria-hidden="true" />
+
           <div className={styles.trustItem}>
             <div className={styles.trustIconCircle} aria-hidden="true">
               <CalendarCheck size={18} />
             </div>
             <span className={styles.trustLabel}>Chamber &amp; video appointments</span>
           </div>
+
+          <div className={styles.trustDivider} aria-hidden="true" />
 
           <div className={styles.trustItem}>
             <div className={styles.trustIconCircle} aria-hidden="true">

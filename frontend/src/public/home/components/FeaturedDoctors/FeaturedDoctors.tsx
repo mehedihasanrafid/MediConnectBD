@@ -18,7 +18,7 @@ export function FeaturedDoctors({ doctors, loading, error }: FeaturedDoctorsProp
       <Container size="lg">
         <div className={styles.header}>
           <h2 id="home-featured-doctors-heading" className={styles.title}>
-            Doctors available near you
+            Featured doctors
           </h2>
           <Link to="/doctors" className={styles.viewAllLink}>
             <span>View all doctors</span>

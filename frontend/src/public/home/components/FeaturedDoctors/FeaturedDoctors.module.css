@@ -1,5 +1,6 @@
 .section {
-  padding: var(--space-8) 0;
+  padding: var(--space-10) 0;
+  background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -17,7 +18,7 @@
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   color: var(--color-text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .viewAllLink {
@@ -28,12 +29,20 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   text-decoration: none;
-  transition: gap var(--duration-fast) var(--ease-out);
+  transition: gap var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .viewAllLink:hover {
   gap: var(--space-2);
+  color: var(--color-primary-hover);
   text-decoration: underline;
+}
+
+.viewAllLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .grid {
@@ -50,15 +59,15 @@
   padding: var(--space-5);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
   transition: transform var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
@@ -91,7 +100,7 @@
 .specialties {
   font-size: var(--text-xs);
   color: var(--color-primary);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -108,6 +117,7 @@
 
 .locationIcon {
   flex-shrink: 0;
+  color: var(--color-text-muted);
 }
 
 .pillsRow {
@@ -127,6 +137,7 @@
   border: 1px solid var(--color-border);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
 }
 
 .feeSection {
@@ -160,17 +171,32 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   text-decoration: none;
+  border: 1px solid transparent;
   transition: background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .profileButton:hover {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
+  box-shadow: var(--shadow-xs);
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
-/* Skeleton State */
+.profileButton:active {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+}
+
+.profileButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skeletons */
 .skeletonCard {
   display: flex;
   flex-direction: column;
@@ -178,20 +204,22 @@
   padding: var(--space-5);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  min-height: 200px;
 }
 
 .skeletonHeader {
   display: flex;
   gap: var(--space-4);
+  align-items: center;
 }
 
 .skeletonAvatar {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: var(--radius-full);
-  background-color: var(--color-surface-raised);
-  animation: pulse 1.5s infinite;
+  background-color: var(--color-skeleton-base);
 }
 
 .skeletonMeta {
@@ -202,47 +230,59 @@
 }
 
 .skeletonLine {
-  height: 1rem;
+  height: 0.875rem;
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface-raised);
-  animation: pulse 1.5s infinite;
+  background: linear-gradient(
+    90deg,
+    var(--color-skeleton-base) 0%,
+    var(--color-skeleton-shine) 50%,
+    var(--color-skeleton-base) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
   }
 
-  50% {
-    opacity: 0.5;
+  100% {
+    background-position: -200% 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card {
+  .card,
+  .profileButton {
     transition: none;
     transform: none;
   }
 
-  .card:hover {
+  .card:hover,
+  .profileButton:hover {
     transform: none;
   }
 
-  .skeletonAvatar,
   .skeletonLine {
     animation: none;
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
   }
 }
 
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .card {
+    padding: var(--space-4);
   }
 }

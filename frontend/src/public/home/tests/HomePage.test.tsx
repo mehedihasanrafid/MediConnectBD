@@ -4,12 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AdminHeader } from "../../../admin/layout/AdminHeader/AdminHeader";
 import type { PublicDoctor } from "../../../shared/types";
+import { CareBenefits } from "../components/CareBenefits";
 import { FeaturedDoctors } from "../components/FeaturedDoctors";
 import { HomeSearchForm } from "../components/HomeSearchForm";
 import { SpecialtyGrid } from "../components/SpecialtyGrid";
 import { HomePage } from "../HomePage";
 import { PublicHeader } from "../../shell/PublicHeader";
 import { useDoctorSearch } from "../../doctors/hooks/useDoctorSearch";
+import { orderFeaturedDoctors } from "../hooks/useHomeData";
 
 // Mock user for AuthContext
 let mockUser: unknown = null;
@@ -22,6 +24,7 @@ vi.mock("../../../features/auth/AuthContext", () => ({
     registerPatient: vi.fn(),
     registerDoctor: vi.fn(),
   }),
+  useOptionalAuth: () => (mockUser ? { user: mockUser } : null),
 }));
 
 // Mock valid PublicDoctor data matching backend schema
@@ -86,27 +89,61 @@ const mockHomeDoctors: PublicDoctor[] = [
       },
     ],
   },
+  {
+    id: "doc-3",
+    firstName: "Nusrat",
+    lastName: "Jahan",
+    degrees: "MBBS, DDV",
+    experienceYears: 7,
+    bio: "Dermatology specialist",
+    photoUrl: null,
+    languages: ["Bangla", "English"],
+    videoConsultationFee: 800,
+    minimumFee: 1000,
+    averageRating: 4.7,
+    reviewCount: 15,
+    specialties: [{ id: "s-3", name: "Dermatology", slug: "dermatology" }],
+    chambers: [
+      {
+        id: "ch-3",
+        roomOrUnit: "Suite 12",
+        consultationFee: 1000,
+        isActive: true,
+        hospital: {
+          id: "hosp-3",
+          name: "Skin Health Center",
+          slug: "skin-health",
+          area: "Uttara",
+          address: "Sector 3",
+        },
+      },
+    ],
+  },
 ];
 
 let mockLoading = false;
 let mockError: string | null = null;
 let currentMockDoctors = mockHomeDoctors;
 
-vi.mock("../hooks/useHomeData", () => ({
-  useHomeData: () => ({
-    doctors: currentMockDoctors,
-    specialties: [
-      { id: "s-1", name: "Cardiology", slug: "cardiology" },
-      { id: "s-2", name: "Neurology", slug: "neurology" },
-    ],
-    loading: mockLoading,
-    error: mockError,
-  }),
-  getDoctorPhotoUrl: () => null,
-}));
+vi.mock("../hooks/useHomeData", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../hooks/useHomeData")>();
+  return {
+    ...actual,
+    useHomeData: () => ({
+      doctors: currentMockDoctors,
+      specialties: [
+        { id: "s-1", name: "Cardiology", slug: "cardiology" },
+        { id: "s-2", name: "Neurology", slug: "neurology" },
+      ],
+      loading: mockLoading,
+      error: mockError,
+    }),
+    getDoctorPhotoUrl: () => null,
+  };
+});
 
 describe("MediConnectBD Public Homepage (HomePage)", () => {
-  it("renders the H1 and all major section headings", () => {
+  it("renders the H1 and all major section headings including Featured doctors", () => {
     mockLoading = false;
     mockError = null;
     currentMockDoctors = mockHomeDoctors;
@@ -126,7 +163,7 @@ describe("MediConnectBD Public Homepage (HomePage)", () => {
 
     // Major Section Headings
     expect(html).toContain("Find care by specialty");
-    expect(html).toContain("Doctors available near you");
+    expect(html).toContain("Featured doctors");
     expect(html).toContain("Book in three easy steps");
     expect(html).toContain("Designed around your care");
     expect(html).toContain("Ready to find the right doctor?");
@@ -177,16 +214,20 @@ describe("MediConnectBD Public Homepage (HomePage)", () => {
     // Doctor names
     expect(html).toContain("Dr. Farhana Rahman");
     expect(html).toContain("Dr. Tanvir Ahmed");
+    expect(html).toContain("Dr. Nusrat Jahan");
 
     // Profile links
     expect(html).toContain("/doctors/doc-1");
     expect(html).toContain("/doctors/doc-2");
+    expect(html).toContain("/doctors/doc-3");
 
     // Specialties and locations
     expect(html).toContain("Cardiology");
     expect(html).toContain("Dhanmondi");
     expect(html).toContain("Neurology");
     expect(html).toContain("Gulshan");
+    expect(html).toContain("Dermatology");
+    expect(html).toContain("Uttara");
 
     // Mode badges
     expect(html).toContain("Chamber");
@@ -199,6 +240,42 @@ describe("MediConnectBD Public Homepage (HomePage)", () => {
     // Availability honesty: must NOT claim "Next available today"
     expect(html).not.toContain("Next available today");
     expect(html).not.toContain("available now");
+  });
+
+  it("correctly orders featured doctors in development mode vs production", () => {
+    // Array with scrambled order
+    const scrambled = [
+      mockHomeDoctors[1], // Tanvir Ahmed
+      mockHomeDoctors[2], // Nusrat Jahan
+      mockHomeDoctors[0], // Farhana Rahman
+    ];
+
+    // Dev mode: must order 1. Farhana Rahman, 2. Tanvir Ahmed, 3. Nusrat Jahan
+    const devOrdered = orderFeaturedDoctors(scrambled, true);
+    expect(devOrdered[0].firstName).toBe("Farhana");
+    expect(devOrdered[1].firstName).toBe("Tanvir");
+    expect(devOrdered[2].firstName).toBe("Nusrat");
+
+    // Prod mode: must preserve API order
+    const prodOrdered = orderFeaturedDoctors(scrambled, false);
+    expect(prodOrdered[0].firstName).toBe("Tanvir");
+    expect(prodOrdered[1].firstName).toBe("Nusrat");
+    expect(prodOrdered[2].firstName).toBe("Farhana");
+  });
+
+  it("renders honest CareBenefits copy without claiming verified schedules", () => {
+    const html = renderToString(
+      <MemoryRouter>
+        <CareBenefits />
+      </MemoryRouter>,
+    );
+
+    expect(html).toContain("Clear availability");
+    expect(html).toContain("Simple booking");
+    expect(html).toContain("Family profiles");
+    // Honest: does not claim schedules are BMDC verified
+    expect(html).not.toContain("verified chamber schedules");
+    expect(html).toContain("View chamber schedules");
   });
 
   it("renders loading skeletons and honest empty / error states without inventing doctors", () => {
@@ -244,7 +321,6 @@ describe("MediConnectBD Public Homepage (HomePage)", () => {
         <PublicHeader />
       </MemoryRouter>,
     );
-    // Theme toggle button has aria-label starting with "Toggle theme"
     expect(visitorHeader).not.toContain("Toggle theme");
 
     // Authenticated Patient

@@ -21,17 +21,19 @@ export function HomePage() {
 
       <section className={styles.ctaSection} aria-labelledby="home-cta-heading">
         <Container size="lg">
-          <div className={styles.ctaContent}>
-            <h2 id="home-cta-heading" className={styles.ctaTitle}>
-              Ready to find the right doctor?
-            </h2>
-            <p className={styles.ctaText}>
-              Search, compare and book chamber or video appointments in minutes.
-            </p>
+          <div className={styles.ctaCard}>
+            <div className={styles.ctaContent}>
+              <h2 id="home-cta-heading" className={styles.ctaTitle}>
+                Ready to find the right doctor?
+              </h2>
+              <p className={styles.ctaText}>
+                Search, compare and book chamber or video appointments in minutes.
+              </p>
+            </div>
             <div className={styles.ctaActions}>
               <ButtonLink
                 to="/doctors"
-                variant="primary"
+                variant="secondary"
                 size="lg"
                 className={styles.ctaButton}
                 rightIcon={<ArrowRight size={18} aria-hidden="true" />}

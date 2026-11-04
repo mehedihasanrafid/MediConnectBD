@@ -1,5 +1,6 @@
 .header {
   height: 60px;
+  width: 100%;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 0 var(--space-6);
@@ -9,7 +10,7 @@
   gap: var(--space-4);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 30;
   color: var(--color-text);
 }
 
@@ -18,6 +19,60 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+}
+
+.brandLogo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.brandLogo:hover {
+  opacity: 0.85;
+}
+
+.brandIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.portalBadge {
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 var(--space-1);
+  flex-shrink: 0;
 }
 
 .mobileToggle {
@@ -84,16 +139,32 @@
 }
 
 .dhakaClock {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0.25rem var(--space-3);
-  border-radius: var(--radius-full);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.2rem var(--space-3);
+  border-radius: var(--radius-md);
   background: var(--color-bg-subtle);
   border: 1px solid var(--color-border);
+  line-height: 1.25;
+}
+
+.dhakaTimeRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dhakaDateRow {
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
+  font-weight: var(--weight-normal);
+  line-height: 1.15;
 }
 
 .clockDot {
@@ -112,7 +183,8 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out),
+  transition:
+    background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
 }
 
@@ -150,7 +222,7 @@
 }
 
 .menuHeader {
-  padding: var(--space-3) var(--space-3);
+  padding: var(--space-3);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -177,7 +249,18 @@
     display: inline-flex;
   }
 
+  .headerDivider,
+  .breadcrumbTrail {
+    display: none;
+  }
+
   .dhakaClock {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .brandName {
     display: none;
   }
 }

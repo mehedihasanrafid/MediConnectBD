@@ -21,7 +21,7 @@ export function VideoModal({ appointmentId, onClose }: VideoModalProps) {
           </button>
         </div>
         <div className={styles.modalBody}>
-          <VideoSessionPanel appointmentId={appointmentId} onClose={onClose} />
+          <VideoSessionPanel clinicalToolsEnabled={false} appointmentId={appointmentId} onClose={onClose} />
         </div>
       </div>
     </div>

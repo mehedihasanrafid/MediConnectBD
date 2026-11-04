@@ -1,107 +1,73 @@
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
-import type { PublicUser } from "../../shared/types";
 import { CommunicationPage } from "../CommunicationPage";
+import { ChatWindow } from "../components/ChatWindow/ChatWindow";
+import { ConversationList } from "../components/ConversationList/ConversationList";
+import { canCompose, type Conversation } from "../types";
 
-let mockUser: PublicUser | null = {
-  id: "patient-1",
-  email: "patient.demo@mediconnect.example",
-  roles: ["PATIENT"],
-  firstName: "Demo",
-  lastName: "Patient",
-  status: "ACTIVE",
-  patientProfileId: "patient-profile-1",
-  doctorProfile: null,
+let user: { id: string; roles: string[] } | null = { id: "p1", roles: ["PATIENT"] };
+vi.mock("../../features/auth/AuthContext", () => ({ useAuth: () => ({ user }) }));
+const conversation: Conversation = {
+  id: "c1", participantId: "d1", participantName: "Doctor One", participantRole: "DOCTOR",
+  participantSubtitle: "Consultation", lastMessage: "", lastMessageAt: "",
+  canSend: true, communicationState: "AVAILABLE",
 };
+const view = (changes: Partial<React.ComponentProps<typeof ChatWindow>> = {}) => renderToString(
+  <ChatWindow conversation={conversation} messages={[]} currentUserId="p1"
+    loading={false} sending={false} error="" sendError="" onSendMessage={vi.fn()}
+    onOpenVideoCall={vi.fn()} onBackToList={vi.fn()} onReload={vi.fn()} {...changes} />);
 
-vi.mock("../../features/auth/AuthContext", () => ({
-  useAuth: () => ({
-    user: mockUser,
-    logout: vi.fn(),
-    loading: false,
-    login: vi.fn(),
-    registerPatient: vi.fn(),
-    registerDoctor: vi.fn(),
-  }),
-}));
-
-describe("CommunicationPage Component", () => {
-  it("renders consultation communication hub with patient conversation list and clinical chat", () => {
-    mockUser = {
-      id: "patient-1",
-      email: "patient.demo@mediconnect.example",
-      roles: ["PATIENT"],
-      firstName: "Demo",
-      lastName: "Patient",
-      status: "ACTIVE",
-      patientProfileId: "patient-profile-1",
-      doctorProfile: null,
-    };
-
-    const html = renderToString(
-      <MemoryRouter initialEntries={["/communication"]}>
-        <CommunicationPage initialDrawerOpen={true} />
-      </MemoryRouter>,
-    );
-
-    // Page header
-    expect(html).toContain("Consultation Communication Hub");
-    expect(html).toContain("Connected Care &amp; Telemedicine");
-
-    // Quick Call Banner for active video consultation
-    expect(html).toContain("Live Video Call Ready with Dr. Demo Doctor");
-    expect(html).toContain("Join Video Room");
-
-    // Conversation list
-    expect(html).toContain("Dr. Demo Doctor");
-    expect(html).toContain("Dr. Nusrat Jahan");
-    expect(html).toContain("MediConnect Help Desk");
-    expect(html).toContain("LIVE CALL");
-
-    // Chat timeline & active messages
-    expect(html).toContain("Hello Demo Patient, welcome to the consultation session.");
-    expect(html).toContain("Digital Prescription #MCBD2026DEMO0001 has been issued");
-
-    // Clinical Context Drawer
-    expect(html).toContain("Clinical Context");
-    expect(html).toContain("Linked Appointment");
-    expect(html).toContain("MCBD2026DEMO0001");
-
-    // Desktop Breadcrumbs & Docked Status Bar
-    expect(html).toContain("Patient Portal");
-    expect(html).toContain("Telehealth Gateway: Connected (18ms)");
-    expect(html).toContain("AES-256 Encrypted Clinical Messaging");
-    expect(html).toContain("Daily.co WebRTC Ready");
+describe("HTTP-backed communication interface", () => {
+  it("starts with loading and no fabricated participants or gateway claims", () => {
+    const html = renderToString(<MemoryRouter><CommunicationPage /></MemoryRouter>);
+    expect(html).toContain("Loading conversations");
+    for (const text of ["Demo Patient", "18ms", "AES-256", "Realtime Synced", "Encrypted Records", "LIVE CALL", "Daily.co WebRTC Ready"]) {
+      expect(html).not.toContain(text);
+    }
   });
-
-  it("renders doctor perspective with booked patients and clinical queue", () => {
-    mockUser = {
-      id: "doctor-1",
-      email: "doctor.demo@mediconnect.example",
-      roles: ["DOCTOR"],
-      firstName: "Demo",
-      lastName: "Doctor",
-      status: "ACTIVE",
-      patientProfileId: null,
-      doctorProfile: {
-        id: "doc-profile-1",
-        applicationStatus: "APPROVED",
-      },
-    };
-
-    const html = renderToString(
-      <MemoryRouter initialEntries={["/communication"]}>
-        <CommunicationPage initialDrawerOpen={true} />
-      </MemoryRouter>,
-    );
-
-    // Doctor sees patient name in list, breadcrumb, and call banner
-    expect(html).toContain("Doctor Workspace");
-    expect(html).toContain("Demo Patient");
-    expect(html).toContain("Tanvir Hasan");
-    expect(html).toContain("Consultation Slot Active for Demo Patient");
-    expect(html).toContain("Clinical Context");
-    expect(html).toContain("Telehealth Gateway: Connected (18ms)");
+  it("denies unsupported roles before fetching communication", () => {
+    user = { id: "a1", roles: ["UNSUPPORTED"] };
+    const html = renderToString(<MemoryRouter><CommunicationPage /></MemoryRouter>);
+    expect(html).toContain("Sign in to access communication");
+    user = { id: "p1", roles: ["PATIENT"] };
+  });
+  it("shows a real empty list without demo fallback", () => {
+    expect(renderToString(<ConversationList conversations={[]} activeConversationId={null}
+      onSelectConversation={vi.fn()} />)).toContain("No conversations yet");
+  });
+  it("shows expired history read-only and blocks composing", () => {
+    const expired = { ...conversation, communicationState: "EXPIRED" as const };
+    const html = view({ conversation: expired });
+    expect(html).toContain("Messaging window expired");
+    expect(html).toMatch(/textarea[^>]*disabled/);
+    expect(canCompose(expired)).toBe(false);
+    expect(canCompose({ ...conversation, canSend: false })).toBe(false);
+  });
+  it("does not expose unsupported attachments, prescriptions, presence or receipts", () => {
+    const html = view();
+    for (const text of ["Attach", "Prescription", "Delivered", "Online", "Verified"]) {
+      expect(html).not.toContain(text);
+    }
+    expect(html).toContain("No messages yet");
+  });
+  it("disables call entry unless the server explicitly permits it", () => {
+    const linked = { ...conversation, linkedConsultation: { appointmentId: "a1" } };
+    expect(view({ conversation: linked })).toMatch(/button[^>]*aria-label="Open video consultation"[^>]*disabled/);
+    expect(view({ conversation: { ...linked, videoAvailable: true } }))
+      .toContain("Open video consultation");
+  });
+  it("renders server errors instead of a composer or stale history", () => {
+    const html = view({ conversation: null, error: "You are not authorized to access this conversation." });
+    expect(html).toContain('role="alert"');
+    expect(html).not.toContain("textarea");
+  });
+  it("compares sender IDs rather than inferring ownership from role", () => {
+    const html = view({ messages: [{ id: "m1", conversationId: "c1", senderId: "other",
+      senderName: "Other patient", senderRole: "PATIENT", text: "Server message",
+      timestamp: "2026-11-03T10:00:00Z" }] });
+    expect(html).toContain("Other patient");
+    expect(html).toContain("Server message");
+    expect(html).not.toContain(">You<");
   });
 });

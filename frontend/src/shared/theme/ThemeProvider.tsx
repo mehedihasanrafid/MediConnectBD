@@ -56,7 +56,7 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === "undefined" || !window.localStorage) return "system";
+  if (typeof window === "undefined" || !window.localStorage) return "light";
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system") {
@@ -65,7 +65,7 @@ function getStoredTheme(): Theme {
   } catch {
     // fallback if localStorage is blocked
   }
-  return "system";
+  return "light";
 }
 
 function getStoredPreset(): ThemePreset {
@@ -81,9 +81,10 @@ function getStoredPreset(): ThemePreset {
   return "aqua";
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children, publicPage = false }: { children: ReactNode; publicPage?: boolean }) {
   const auth = useOptionalAuth();
   const isAuthenticated = Boolean(auth?.user);
+  const useSavedAppearance = isAuthenticated && !publicPage;
 
   const [savedTheme, setSavedTheme] = useState<Theme>(getStoredTheme);
   const [savedPreset, setSavedPreset] = useState<ThemePreset>(getStoredPreset);
@@ -133,11 +134,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   // Determine effective presentation:
-  // Unauthenticated: fixed light mode & aqua preset
-  // Authenticated: saved user mode & saved user preset
-  const effectiveTheme: Theme = isAuthenticated ? savedTheme : "light";
-  const effectivePreset: ThemePreset = isAuthenticated ? savedPreset : "aqua";
-  const effectiveResolvedTheme: ResolvedTheme = isAuthenticated
+  // Public pages and guests use light aqua; portal routes restore saved preferences.
+  const effectiveTheme: Theme = useSavedAppearance ? savedTheme : "light";
+  const effectivePreset: ThemePreset = useSavedAppearance ? savedPreset : "aqua";
+  const effectiveResolvedTheme: ResolvedTheme = useSavedAppearance
     ? savedTheme === "system"
       ? systemResolved
       : savedTheme

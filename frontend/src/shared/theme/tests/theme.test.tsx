@@ -145,4 +145,18 @@ describe("Theme System (Phase 5 & Dynamic Presets)", () => {
     expect(html).toContain('<span data-testid="resolved">dark</span>');
     expect(html).toContain('<span data-testid="preset">coral</span>');
   });
+
+  it("keeps public pages light aqua for signed-in users without overwriting portal preferences", () => {
+    storageMap.set(THEME_STORAGE_KEY, "dark");
+    storageMap.set(PRESET_STORAGE_KEY, "coral");
+    const html = renderToString(
+      <AuthContext.Provider value={createMockAuth(mockPatient)}>
+        <ThemeProvider publicPage><TestConsumer /></ThemeProvider>
+      </AuthContext.Provider>,
+    );
+    expect(html).toContain('<span data-testid="resolved">light</span>');
+    expect(html).toContain('<span data-testid="preset">aqua</span>');
+    expect(storageMap.get(THEME_STORAGE_KEY)).toBe("dark");
+    expect(storageMap.get(PRESET_STORAGE_KEY)).toBe("coral");
+  });
 });

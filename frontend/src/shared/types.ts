@@ -13,6 +13,7 @@ export interface PublicUser {
   patientProfileId: string | null;
   doctorProfile: {
     id: string;
+    photoUrl?: string | null;
     applicationStatus: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
   } | null;
 }

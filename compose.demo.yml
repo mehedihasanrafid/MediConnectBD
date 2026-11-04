@@ -1,0 +1,99 @@
+name: mediconnect-public-demo
+x-api-environment: &api-environment
+  NODE_ENV: production
+  PUBLIC_DEMO: 'true'
+  PORT: 4000
+  APP_URL: https://${DEMO_DOMAIN:?Set DEMO_DOMAIN}
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_NAME: mediconnect_demo
+  DB_USER: mediconnect_demo
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET}
+  REDIS_URL: redis://redis:6379
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: mediconnect_demo
+      MYSQL_USER: mediconnect_demo
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - demo_mysql:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_PASSWORD" mysqladmin ping -h 127.0.0.1 -u "$$MYSQL_USER" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: [redis-server, --appendonly, 'yes', --maxmemory-policy, noeviction]
+    volumes:
+      - demo_redis:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+  migrate:
+    build:
+      context: ./MediConnectBDbackend
+      dockerfile: Dockerfile.demo
+    env_file: .env.demo
+    environment: *api-environment
+    command: [npm, run, migration:run]
+    depends_on:
+      mysql:
+        condition: service_healthy
+  backend:
+    build:
+      context: ./MediConnectBDbackend
+      dockerfile: Dockerfile.demo
+    restart: unless-stopped
+    env_file: .env.demo
+    environment: *api-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:4000/health/ready").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 20s
+      timeout: 5s
+      retries: 10
+  worker:
+    build:
+      context: ./MediConnectBDbackend
+      dockerfile: Dockerfile.demo
+    restart: unless-stopped
+    env_file: .env.demo
+    environment: *api-environment
+    command: [node, dist/workers/worker.js]
+    depends_on:
+      backend:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.demo
+    restart: unless-stopped
+    environment:
+      DEMO_DOMAIN: ${DEMO_DOMAIN:?Set DEMO_DOMAIN}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - demo_caddy_data:/data
+      - demo_caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  demo_mysql:
+  demo_redis:
+  demo_caddy_data:
+  demo_caddy_config:

@@ -5,6 +5,7 @@
  */
 import type { OpenAPIV3 } from "openapi-types";
 import { applicationStatuses, openApiSchemas, requestExamples, schemaRef } from "./openapi.schemas";
+import { communicationExtensionPaths, communicationExtensionSchemas } from "./communication-extensions.openapi";
 
 type Method = "get" | "post" | "put" | "patch" | "delete";
 type Access = "public" | "bearer" | "refresh";
@@ -81,6 +82,13 @@ add("get", doctors, "listDoctors", "Doctors", "Search approved, active doctors",
 add("get", `${doctors}/{doctorId}`, "getDoctor", "Doctors", "Read an approved doctor's public profile", "PublicDoctor", 200, { parameters: [id("doctorId")], errors: [404] });
 const doctorAccess = { access: "bearer" as const, roles: ["DOCTOR"], errors: [404, 409] };
 add("get", `${doctors}/me`, "getMyDoctorProfile", "Doctor profile", "Read your private doctor profile", "DoctorDetails", 200, doctorAccess);
+add("post", `${doctors}/me/photo`, "uploadDoctorPhoto", "Doctor profile", "Upload a public profile photo", "DoctorPhotoResult", 201,
+  { ...doctorAccess, body: "DoctorPhotoUpload", errors: [413, 429], description: "DOCTOR only; pending applications are frozen. Decode and resize JPG/PNG/WebP to a metadata-free 512px WebP. Returns an asset path; PATCH /doctors/me attaches it using the existing approval rules." });
+add("get", `${doctors}/photos/{photoId}`, "readDoctorPhoto", "Doctor profile", "Read a public doctor photo", null, 200,
+  { parameters: [id("photoId")], errors: [404] });
+(paths[`${doctors}/photos/{photoId}`]!.get!.responses["200"] as OpenAPIV3.ResponseObject).content = {
+  "image/webp": { schema: { type: "string", format: "binary" } },
+};
 add("get", `${doctors}/me/earnings`, "getMyDoctorEarnings", "Doctor profile", "Read your earnings summary by day and month", "DoctorEarnings", 200, doctorAccess);
 add("get", `${doctors}/me/patients/{patientProfileId}/history`, "getDoctorPatientHistory", "Doctor profile", "Read clinical history, prescriptions, and reports for a patient you treat", "DoctorPatientHistory", 200, {
   ...doctorAccess, parameters: [id("patientProfileId")],
@@ -253,11 +261,36 @@ add("get", notifications, "listInAppNotifications", "Notifications", "List in-ap
 add("post", `${notifications}/mark-read`, "markAllNotificationsRead", "Notifications", "Mark all notifications as read", "MarkNotificationsReadResult", 200, { access: "bearer" });
 add("patch", `${notifications}/{id}/read`, "markNotificationRead", "Notifications", "Mark specific notification as read", "MarkSingleNotificationReadResult", 200, { access: "bearer", parameters: [id("id")] });
 
+const communication = "/api/v1/communication";
+const communicationAccess = { access: "bearer" as const, roles: ["PATIENT", "DOCTOR"] };
+add("get", `${communication}/conversations`, "listConversations", "Communication", "List consultation conversations for authenticated user", "ConversationsList", 200, communicationAccess);
+add("get", `${communication}/conversations/{id}`, "getConversation", "Communication", "Get consultation conversation details and entitlement status", "ConversationDetail", 200, {
+  ...communicationAccess,
+  parameters: [id("id")],
+  errors: [404],
+});
+add("get", `${communication}/conversations/{id}/messages`, "listMessages", "Communication", "List cursor-paginated messages in a conversation", "PaginatedMessages", 200, {
+  ...communicationAccess,
+  parameters: [
+    id("id"),
+    query("limit", { type: "integer", minimum: 1, maximum: 100, default: 30 }),
+    query("before", { type: "string", format: "uuid" }),
+  ],
+  errors: [404],
+});
+add("post", `${communication}/conversations/{id}/messages`, "sendMessage", "Communication", "Post a message to a consultation conversation", "Message", 201, {
+  ...communicationAccess,
+  parameters: [id("id")],
+  body: "CreateMessage",
+  errors: [404],
+});
+
 const errorDescriptions: Record<number, string> = {
   400: "Malformed request payload or empty content.",
   401: "Missing, invalid, expired, or reused authentication/session token.", 403: "Wrong role, inactive account, unapproved doctor, or forbidden ownership.",
   404: "Resource not found or not visible to the current user.", 409: "Business-state, availability, idempotency, or payment-verification conflict.",
   413: "Uploaded payload exceeds the maximum allowed size.",
+  429: "Too many requests. Retry after the indicated interval.",
   422: "Validation failed; fieldErrors identifies invalid inputs.", 500: "Unexpected server error; internal details are not exposed.",
   502: "Provider unavailable, ambiguous, or invalid response. An uncertain initiation may include details.paymentId.",
   503: "Sandbox payment credentials/public callback URL are not configured.",
@@ -270,14 +303,14 @@ export const openApiDocument: OpenAPIV3.Document = {
     description: "Interactive documentation for implemented backend endpoints. Start with patient registration/login, copy accessToken into Authorize, then test the protected routes. Examples are synthetic; replace example IDs with actual API results. All server timestamps are UTC; scheduling input uses Asia/Dhaka. Swagger does not bypass database readiness, authorization, or sandbox provider verification.",
   },
   servers: [{ url: "/", description: "This API server (same origin as Swagger UI)" }],
-  tags: ["Platform", "Health", "Authentication", "Account", "Catalog", "Doctors", "Doctor profile", "Scheduling", "Admin", "Appointments", "Payments", "Provider callbacks", "Notifications"].map(name => ({ name })),
-  paths,
+  tags: ["Platform", "Health", "Authentication", "Account", "Catalog", "Doctors", "Doctor profile", "Scheduling", "Admin", "Appointments", "Payments", "Provider callbacks", "Notifications", "Communication"].map(name => ({ name })),
+  paths: { ...paths, ...communicationExtensionPaths },
   components: {
     securitySchemes: {
       bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "Paste accessToken from login/registration without the Bearer prefix. Use an account with the endpoint's required role." },
       refreshCookie: { type: "apiKey", in: "cookie", name: "mediconnect_refresh", description: "HTTP-only cookie set by login. The browser sends it automatically on this origin; do not try to paste it into Swagger's Authorize form." },
     },
-    schemas: openApiSchemas,
+    schemas: { ...openApiSchemas, ...communicationExtensionSchemas },
     responses: Object.fromEntries(Object.entries(errorDescriptions).map(([code, description]) => [`Error${code}`,
       code === "422" ? { description, content: { "application/json": { schema: { anyOf: [schemaRef("ValidationError"), schemaRef("Error")] } } } }
         : jsonResponse("Error", description),

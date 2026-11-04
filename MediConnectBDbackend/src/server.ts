@@ -42,6 +42,12 @@ import { AdminService } from "./modules/admin/admin.service";
 import { TypeOrmAdminRepository } from "./modules/admin/typeorm-admin.repository";
 import { InAppNotificationService } from "./modules/notifications/in-app-notification.service";
 import { TypeOrmInAppNotificationRepository } from "./modules/notifications/typeorm-in-app-notification.repository";
+import { CommunicationService } from "./modules/communication/communication.service";
+import { TypeOrmCommunicationRepository } from "./modules/communication/typeorm-communication.repository";
+import { DirectStore } from "./modules/communication/direct/direct.store";
+import { CallStore } from "./modules/communication/calls/call.store";
+import { CallAccess } from "./modules/communication/calls/call.access";
+import { CallService } from "./modules/communication/calls/call.service";
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
@@ -109,6 +115,12 @@ async function main(): Promise<void> {
   const inAppNotificationService = new InAppNotificationService(
     new TypeOrmInAppNotificationRepository(AppDataSource),
   );
+  const communicationService = new CommunicationService(
+    new TypeOrmCommunicationRepository(AppDataSource),
+  );
+  const directStore = new DirectStore(AppDataSource);
+  const callService = new CallService(new CallStore(AppDataSource), new CallAccess(communicationService, directStore),
+    env.DAILY_API_KEY ? videoProvider : undefined);
 
   const apiRouter = createApiRouter({
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource, notificationService),
@@ -121,6 +133,9 @@ async function main(): Promise<void> {
     prescriptionService,
     adminService,
     inAppNotificationService,
+    communicationService,
+    directStore,
+    callService,
     authService,
     authRepository,
     accessTokens,

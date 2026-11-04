@@ -1,3 +1,7 @@
+import { HardenCommunication1761800000000 } from "./migrations/1761800000000-harden-communication";
+import { AddDirectCommunication1761900000000 } from "./migrations/1761900000000-add-direct-communication";
+import { DirectConversation, DirectMessage } from "../modules/communication/direct/direct.entities";
+import { CommunicationCall } from "../modules/communication/calls/call.entity";
 /**
  * Registers module-owned TypeORM entities and the explicit migration sequence. synchronize stays
  * disabled: moving an entity file must not rename or recreate tables. MySQL connections use UTC
@@ -29,6 +33,12 @@ import { User } from "../modules/users/user.entity";
 import { Review } from "../modules/reviews/review.entity";
 import { Prescription, PrescriptionVersion } from "../modules/prescriptions/prescription.entity";
 import { InAppNotification } from "../modules/notifications/in-app-notification.entity";
+import {
+  Conversation,
+  ConversationParticipant,
+  CommunicationEntitlement,
+} from "../modules/communication/conversation.entity";
+import { Message } from "../modules/communication/message.entity";
 import { InitialFoundation1760788800000 } from "./migrations/1760788800000-initial-foundation";
 import { AddAuthSessions1760875200000 } from "./migrations/1760875200000-add-auth-sessions";
 import { AddDoctorDirectory1760961600000 } from "./migrations/1760961600000-add-doctor-directory";
@@ -43,6 +53,7 @@ import { AddPrescriptions1761540000000 } from "./migrations/1761540000000-add-pr
 import { AddAppointmentFamilyMember1761560000000 } from "./migrations/1761560000000-add-appointment-family-member";
 import { AddMedicalReports1761580000000 } from "./migrations/1761580000000-add-medical-reports";
 import { AddInAppNotifications1761600000000 } from "./migrations/1761600000000-add-in-app-notifications";
+import { AddCommunicationMessaging1761700000000 } from "./migrations/1761700000000-add-communication-messaging";
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -78,6 +89,11 @@ const AppDataSource = new DataSource({
     Prescription,
     PrescriptionVersion,
     InAppNotification,
+    Conversation,
+    ConversationParticipant,
+    CommunicationEntitlement,
+    Message,
+    DirectConversation, DirectMessage, CommunicationCall,
   ],
   migrations: [
     InitialFoundation1760788800000,
@@ -95,6 +111,9 @@ const AppDataSource = new DataSource({
     AddAppointmentFamilyMember1761560000000,
     AddMedicalReports1761580000000,
     AddInAppNotifications1761600000000,
+    AddCommunicationMessaging1761700000000,
+    HardenCommunication1761800000000,
+    AddDirectCommunication1761900000000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

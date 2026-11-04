@@ -203,9 +203,9 @@ export function IssuePrescriptionModal({
     setActiveSuggestionIndex(null);
   }
 
-  const patientName = appointment.patient
+  const patientName = appointment.familyMember?.name || (appointment.patient
     ? `${appointment.patient.firstName} ${appointment.patient.lastName}`.trim()
-    : "Patient Visit";
+    : "Patient Visit");
 
   const scheduledTimeStr = formatDhakaTime(appointment.scheduledStartAt);
 

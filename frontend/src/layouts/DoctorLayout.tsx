@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import clsx from "clsx";
 
 import { DoctorHeader } from "../doctor/navigation/DoctorHeader";
-import { DoctorSidebar } from "../doctor/navigation/DoctorSidebar";
+import {
+  DoctorSidebar,
+  useDoctorSidebarState,
+} from "../doctor/navigation/DoctorSidebar";
 import styles from "./DoctorLayout.module.css";
 
 /**
  * Dedicated Layout Shell for MediConnect BD Doctor Portal.
- * Provides persistent left navigation on desktop, an accessible slide-over drawer on mobile,
- * a compact clinical utility header, and an unhindered routed content area.
+ * Provides sticky left navigation on desktop with on/off collapse & hover-peek capabilities,
+ * an accessible slide-over drawer on mobile, a sticky full-width clinical utility header,
+ * and an independently scrolling routed workspace.
  */
 export function DoctorLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { collapsed, isHovered, toggle, onMouseEnter, onMouseLeave } = useDoctorSidebarState();
 
   // Close mobile drawer on route navigation
   useEffect(() => {
@@ -41,36 +47,50 @@ export function DoctorLayout() {
 
   return (
     <div className={styles.root}>
-      {/* 1. Desktop Persistent Sidebar */}
-      <div className={styles.desktopSidebarWrap}>
-        <DoctorSidebar />
-      </div>
+      {/* 1. Full-Width Sticky Top Clinical Utility Header */}
+      <DoctorHeader
+        onToggleMobile={() => setMobileOpen((prev) => !prev)}
+        isMobileOpen={mobileOpen}
+      />
 
-      {/* 2. Accessible Mobile Navigation Drawer */}
-      {mobileOpen && (
+      {/* 2. Body Shell: Pinned Sidebar & Routed Content Below Header */}
+      <div className={styles.shell}>
+        {/* Desktop Persistent Sidebar with On/Off collapse & hover expansion */}
         <div
-          className={styles.drawerBackdrop}
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
+          className={clsx(
+            styles.desktopSidebarWrap,
+            collapsed && styles.desktopSidebarWrapCollapsed,
+          )}
         >
-          <div
-            className={styles.drawerPanel}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Doctor navigation drawer"
-          >
-            <DoctorSidebar isMobile onClose={() => setMobileOpen(false)} />
-          </div>
+          <DoctorSidebar
+            isCollapsed={collapsed}
+            onToggleCollapse={toggle}
+            isHoverExpanded={isHovered}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+          />
         </div>
-      )}
 
-      {/* 3. Main Workspace Area */}
-      <div className={styles.mainColumn}>
-        <DoctorHeader
-          onToggleMobile={() => setMobileOpen((prev) => !prev)}
-          isMobileOpen={mobileOpen}
-        />
+        {/* Accessible Mobile Navigation Drawer */}
+        {mobileOpen && (
+          <div
+            className={styles.drawerBackdrop}
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          >
+            <div
+              className={styles.drawerPanel}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Doctor navigation drawer"
+            >
+              <DoctorSidebar isMobile onClose={() => setMobileOpen(false)} />
+            </div>
+          </div>
+        )}
+
+        {/* Main Workspace Area (Independently scrolling) */}
         <main id="doctor-workspace" className={styles.workspace}>
           <Outlet />
         </main>

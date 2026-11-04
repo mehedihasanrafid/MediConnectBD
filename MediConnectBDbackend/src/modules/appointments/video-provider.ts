@@ -9,11 +9,12 @@ import { AppError } from "../../utils/app-error";
 export interface VideoSessionParticipant {
   identity: string;
   name: string;
-  role: "DOCTOR" | "PATIENT";
+  role: "DOCTOR" | "PATIENT" | "ADMIN";
   isOwner: boolean;
 }
 
 export interface CreateVideoSessionInput {
+  audioOnly?: boolean;
   appointmentId: string;
   roomName: string;
   opensAt: Date;
@@ -148,6 +149,7 @@ export class DailyVideoProvider implements VideoProvider {
           is_owner: input.participant.isOwner,
           enable_screenshare: true,
           exp: expSeconds,
+          ...(input.audioOnly ? { start_video_off: true, enable_screenshare: false, permissions: { canSend: ["audio"] } } : {}),
         },
       }),
     });

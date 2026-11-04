@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import {
+  Bell,
   Building2,
   CalendarCheck,
   CalendarDays,
@@ -8,6 +9,8 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Stethoscope,
   Wallet,
@@ -15,15 +18,29 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../../features/auth/AuthContext";
-import { Badge } from "../../../shared/ui";
+import { Avatar, Badge } from "../../../shared/ui";
 import styles from "./DoctorSidebar.module.css";
+import { CommunicationNavItem } from "../../../communication/components/CommunicationNavItem";
 
 interface DoctorSidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  isHoverExpanded?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
+export function DoctorSidebar({
+  isMobile,
+  onClose,
+  isCollapsed = false,
+  onToggleCollapse,
+  isHoverExpanded = false,
+  onMouseEnter,
+  onMouseLeave,
+}: DoctorSidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,6 +80,9 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
       (location.search.includes("tab=earnings") || location.search.includes("tab=analytics")));
 
   const isSettingsActive = location.pathname === "/doctor/settings";
+  const isNotificationsActive =
+    location.pathname.startsWith("/doctor/notifications") ||
+    location.pathname === "/notifications";
 
   // Application status
   const appStatus = user?.doctorProfile?.applicationStatus ?? "DRAFT";
@@ -74,10 +94,18 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
   };
   const currentStatusInfo = statusLabels[appStatus] ?? { label: appStatus, tone: "neutral" };
 
-  const initials = `${user?.firstName?.[0] ?? "D"}${user?.lastName?.[0] ?? "R"}`.toUpperCase();
 
   return (
-    <aside className={styles.sidebar} aria-label="Doctor navigation">
+    <aside
+      className={clsx(
+        styles.sidebar,
+        isCollapsed && !isHoverExpanded && styles.sidebarCollapsed,
+        isCollapsed && isHoverExpanded && styles.sidebarHoverExpanded,
+      )}
+      aria-label="Doctor navigation"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       {/* Brand Header */}
       <div className={styles.brand}>
         <button
@@ -107,21 +135,45 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
 
       {/* Nav Content */}
       <div className={styles.navContainer}>
+        {/* On/Off Collapse Button inside Sidebar */}
+        {!isMobile && onToggleCollapse && (
+          <div className={styles.collapseRow}>
+            <button
+              type="button"
+              className={styles.collapseToggle}
+              onClick={onToggleCollapse}
+              aria-label={isCollapsed ? "Expand sidebar (On)" : "Collapse sidebar (Off)"}
+              title={isCollapsed ? "Expand sidebar (On)" : "Collapse sidebar (Off)"}
+            >
+              <span className={styles.itemIcon} aria-hidden="true">
+                {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+              </span>
+              <span className={styles.itemLabel}>
+                {isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Workspace */}
         <div className={styles.sectionGroup}>
           <span className={styles.sectionLabel}>Workspace</span>
+          <CommunicationNavItem onNavigate={() => handleNavClick("/doctor/communication")}
+            itemClassName={styles.navItem} activeClassName={styles.navItemActive}
+            iconClassName={styles.itemIcon} labelClassName={styles.itemLabel} />
+
 
           <button
             type="button"
             className={clsx(styles.navItem, isTodayActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor")}
             aria-current={isTodayActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Today's Overview"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <LayoutDashboard size={18} />
             </span>
-            <span>Today&#39;s Overview</span>
+            <span className={styles.itemLabel}>Today&#39;s Overview</span>
           </button>
 
           <button
@@ -129,12 +181,12 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
             className={clsx(styles.navItem, isAppointmentsActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/appointments")}
             aria-current={isAppointmentsActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Appointments"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <CalendarCheck size={18} />
             </span>
-            <span>Appointments</span>
+            <span className={styles.itemLabel}>Appointments</span>
           </button>
 
           <button
@@ -142,12 +194,12 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
             className={clsx(styles.navItem, isPrescriptionsActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/prescriptions")}
             aria-current={isPrescriptionsActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Prescriptions"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <FileText size={18} />
             </span>
-            <span>Prescriptions</span>
+            <span className={styles.itemLabel}>Prescriptions</span>
           </button>
         </div>
 
@@ -160,12 +212,12 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
             className={clsx(styles.navItem, isScheduleActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/schedule")}
             aria-current={isScheduleActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Schedule & Leave"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <CalendarDays size={18} />
             </span>
-            <span>Schedule &amp; Leave</span>
+            <span className={styles.itemLabel}>Schedule &amp; Leave</span>
           </button>
 
           <button
@@ -173,12 +225,12 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
             className={clsx(styles.navItem, isProfileActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/profile")}
             aria-current={isProfileActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Profile & Chambers"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <Building2 size={18} />
             </span>
-            <span>Profile &amp; Chambers</span>
+            <span className={styles.itemLabel}>Profile &amp; Chambers</span>
           </button>
 
           <button
@@ -186,12 +238,12 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
             className={clsx(styles.navItem, isEarningsActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/earnings")}
             aria-current={isEarningsActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Earnings"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <Wallet size={18} />
             </span>
-            <span>Earnings</span>
+            <span className={styles.itemLabel}>Earnings</span>
           </button>
         </div>
 
@@ -201,37 +253,49 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
 
           <button
             type="button"
+            className={clsx(styles.navItem, isNotificationsActive && styles.navItemActive)}
+            onClick={() => handleNavClick("/doctor/notifications")}
+            aria-current={isNotificationsActive ? "page" : undefined}
+            title="Notification Center"
+          >
+            <span className={styles.itemIcon} aria-hidden="true">
+              <Bell size={18} />
+            </span>
+            <span className={styles.itemLabel}>Notification Center</span>
+          </button>
+
+          <button
+            type="button"
             className={clsx(styles.navItem, isSettingsActive && styles.navItemActive)}
             onClick={() => handleNavClick("/doctor/settings")}
             aria-current={isSettingsActive ? "page" : undefined}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Settings"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <Settings size={18} />
             </span>
-            <span>Settings</span>
+            <span className={styles.itemLabel}>Settings</span>
           </button>
 
           <button
             type="button"
             className={clsx(styles.navItem)}
             onClick={() => handleNavClick("/doctor#support")}
-            style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+            title="Help & Support"
           >
             <span className={styles.itemIcon} aria-hidden="true">
               <CircleHelp size={18} />
             </span>
-            <span>Help &amp; Support</span>
+            <span className={styles.itemLabel}>Help &amp; Support</span>
           </button>
         </div>
       </div>
 
       {/* Profile & Logout Footer */}
       <div className={styles.profileFooter}>
-        <div className={styles.doctorCard}>
-          <div className={styles.avatarInitials} aria-hidden="true">
-            {initials}
-          </div>
+        <div className={styles.doctorCard} title={`Dr. ${user?.firstName} ${user?.lastName}`}>
+          <Avatar name={`Dr. ${user?.firstName ?? ""} ${user?.lastName ?? ""}`}
+            src={user?.doctorProfile?.photoUrl} size="md" className={styles.avatarInitials} />
           <div className={styles.doctorMeta}>
             <span className={styles.doctorName}>
               Dr. {user?.firstName} {user?.lastName}
@@ -249,9 +313,10 @@ export function DoctorSidebar({ isMobile, onClose }: DoctorSidebarProps) {
           className={styles.logoutButton}
           onClick={() => void handleLogout()}
           aria-label="Sign out of Doctor Portal"
+          title="Sign Out"
         >
           <LogOut size={16} aria-hidden="true" />
-          <span>Sign Out</span>
+          <span className={styles.itemLabel}>Sign Out</span>
         </button>
       </div>
     </aside>

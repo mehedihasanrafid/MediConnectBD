@@ -8,7 +8,7 @@ import path from "node:path";
 import { config } from "dotenv";
 import { z } from "zod";
 
-config({ path: path.resolve(__dirname, "../../.env"), quiet: true });
+if (process.env.NODE_ENV !== "test") config({ path: path.resolve(__dirname, "../../.env"), quiet: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

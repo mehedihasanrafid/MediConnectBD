@@ -37,6 +37,10 @@ import type { AdminService } from "../modules/admin/admin.service";
 import { createAdminRouter } from "../modules/admin/admin.routes";
 import type { InAppNotificationService } from "../modules/notifications/in-app-notification.service";
 import { createInAppNotificationRouter } from "../modules/notifications/in-app-notification.routes";
+import type { CommunicationService } from "../modules/communication/communication.service";
+import type { DirectStore } from "../modules/communication/direct/direct.store";
+import type { CallService } from "../modules/communication/calls/call.service";
+import { createCommunicationRouter } from "../modules/communication/communication.routes";
 
 export interface ApiRouterOptions {
   authService: AuthService;
@@ -52,6 +56,9 @@ export interface ApiRouterOptions {
   prescriptionService?: PrescriptionService;
   adminService?: AdminService;
   inAppNotificationService?: InAppNotificationService;
+  communicationService?: CommunicationService;
+  directStore?: DirectStore;
+  callService?: CallService;
   secureCookies: boolean;
 }
 
@@ -135,6 +142,13 @@ export function createApiRouter(options: ApiRouterOptions): Router {
     router.use(
       "/notifications",
       createInAppNotificationRouter(options.inAppNotificationService, authenticate),
+    );
+  }
+
+  if (options.communicationService) {
+    router.use(
+      "/communication",
+      createCommunicationRouter(options.communicationService, authenticate, { direct: options.directStore, calls: options.callService }),
     );
   }
 

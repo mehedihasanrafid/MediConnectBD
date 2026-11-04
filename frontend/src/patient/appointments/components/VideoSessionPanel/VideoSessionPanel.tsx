@@ -46,11 +46,13 @@ export function VideoSessionPanel({
   appointmentId,
   initialSession,
   skipLobby = false,
+  clinicalToolsEnabled = true,
   onClose,
 }: {
   appointmentId: string;
   initialSession?: VideoSession | null;
   skipLobby?: boolean;
+  clinicalToolsEnabled?: boolean;
   onClose: () => void;
 }) {
   const [session, setSession] = useState<VideoSession | null>(initialSession ?? null);
@@ -267,6 +269,7 @@ export function VideoSessionPanel({
               </Text>
             </div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              {clinicalToolsEnabled && <>
               <Button
                 variant="primary"
                 size="sm"
@@ -278,6 +281,7 @@ export function VideoSessionPanel({
                 <CheckCircle2 size={14} style={{ marginRight: "4px" }} />
                 <span>Conclude Consultation</span>
               </Button>
+              </>}
               <Button variant="secondary" size="sm" onClick={onClose}>
                 Exit room
               </Button>
@@ -335,6 +339,7 @@ export function VideoSessionPanel({
                     <span>Device Check</span>
                   </Button>
 
+                  {clinicalToolsEnabled && <>
                   <Button
                     variant={isSplitView ? "primary" : "secondary"}
                     size="sm"
@@ -344,6 +349,8 @@ export function VideoSessionPanel({
                     <Columns2 size={14} style={{ marginRight: "4px" }} />
                     <span>{isSplitView ? "Close Split-View" : "Clinical Split-View"}</span>
                   </Button>
+
+                  </>}
 
                   <Button
                     variant="secondary"

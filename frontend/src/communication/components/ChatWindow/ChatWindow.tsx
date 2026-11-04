@@ -1,233 +1,62 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  CheckCheck,
-  FileText,
-  Info,
-  Paperclip,
-  Send,
-  ShieldCheck,
-  Video,
-} from "lucide-react";
-import { Avatar } from "../../../shared/ui";
-import type { ChatMessage, Conversation } from "../../types";
+import { ArrowLeft, Info, Phone, RotateCw, Video } from "lucide-react";
+import { Avatar, Button } from "../../../shared/ui";
+import { canCompose, type ChatMessage, type Conversation } from "../../types";
+import { useCalls } from "../../calls/CallContext";
+import { MessageComposer } from "../MessageComposer/MessageComposer";
+import { MessageHistory } from "../MessageHistory/MessageHistory";
 import styles from "./ChatWindow.module.css";
 
 interface ChatWindowProps {
-  conversation: Conversation | null;
-  messages: ChatMessage[];
-  currentUserId: string;
-  currentUserRole: "DOCTOR" | "PATIENT";
-  onSendMessage: (text: string, attachments?: ChatMessage["attachments"]) => void;
-  onOpenVideoCall: (appointmentId: string) => void;
-  onToggleDrawer: () => void;
-  isDrawerOpen: boolean;
-  onBackToList?: () => void;
+  conversation: Conversation | null; messages: ChatMessage[]; currentUserId: string;
+  loading: boolean; error: string; sendError: string; sending: boolean;
+  onSendMessage: (text: string) => Promise<boolean>; onOpenVideoCall: (appointmentId: string) => void;
+  onBackToList: () => void; onReload: () => void; onOpenDetails?: () => void;
+  onLoadOlder?: () => void; hasOlder?: boolean; olderError?: string; olderBusy?: boolean;
 }
-
-export function ChatWindow({
-  conversation,
-  messages,
-  currentUserId,
-  currentUserRole,
-  onSendMessage,
-  onOpenVideoCall,
-  onToggleDrawer,
-  isDrawerOpen,
-  onBackToList,
-}: ChatWindowProps) {
-  const [inputText, setInputText] = useState("");
-  const messageAreaRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (messageAreaRef.current) {
-      messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  if (!conversation) {
-    return (
-      <div className={styles.emptySelection}>
-        <p>Select a consultation from the left to start messaging.</p>
-      </div>
-    );
-  }
-
-  const isLive = conversation.status === "LIVE_CONSULTATION";
-  const appointmentId = conversation.linkedConsultation?.appointmentId;
-
-  function handleSend() {
-    if (!inputText.trim()) return;
-    onSendMessage(inputText.trim());
-    setInputText("");
-  }
-
-  function handleAttachSimulatedReport() {
-    onSendMessage("Attached consultation document for review:", [
-      {
-        id: `att-sim-${Date.now()}`,
-        name: currentUserRole === "DOCTOR" ? "Clinical_Summary_Note.pdf" : "Blood_Test_Report_Oct2026.pdf",
-        type: "PDF",
-        size: "340 KB",
-      },
-    ]);
-  }
-
-  return (
-    <div className={styles.container}>
-      {/* Sleek Chat Header */}
-      <div className={styles.chatHeader}>
-        <div className={styles.headerInfo}>
-          {onBackToList && (
-            <button
-              type="button"
-              className={styles.mobileBackBtn}
-              onClick={onBackToList}
-              aria-label="Back to conversations list"
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-            </button>
-          )}
-          <Avatar name={conversation.participantName} size="md" />
-          <div className={styles.participantDetails}>
-            <h3 className={styles.participantName}>
-              <span>{conversation.participantName}</span>
-              {conversation.participantRole === "DOCTOR" && (
-                <span title="BMDC Verified Specialist" aria-label="BMDC Verified Specialist">
-                  <ShieldCheck size={14} color="var(--color-primary)" />
-                </span>
-              )}
-            </h3>
-            <p className={styles.participantSubtitle}>{conversation.participantSubtitle}</p>
-          </div>
+export function ChatWindow(props: ChatWindowProps) {
+  const { conversation, messages, currentUserId, loading, error, sendError, sending } = props;
+  const calls = useCalls();
+  const canSend = canCompose(conversation), appointmentId = conversation?.linkedConsultation?.appointmentId;
+  const direct = Boolean(conversation?.id.startsWith("direct:"));
+  const eligible = direct ? canSend : conversation?.videoAvailable === true;
+  const canCall = eligible && calls?.available === true && !calls.busy;
+  const subtitle = conversation?.beneficiary ? `Patient: ${conversation.beneficiary.name} · ${conversation.beneficiary.relationship}` : conversation?.participantSubtitle;
+  return <section className={styles.container} aria-label="Conversation">
+    <header className={styles.chatHeader}>
+      <div className={styles.headerInfo}>
+        <button type="button" className={styles.mobileBackBtn} onClick={props.onBackToList} aria-label="Back to conversations list"><ArrowLeft size={18} /></button>
+        {conversation && <Avatar name={conversation.participantName} src={conversation.participantAvatarUrl} size="md" />}
+        <div className={styles.participantDetails}><h2 className={styles.participantName}>{conversation?.participantName ?? "Messages"}</h2>
+          {conversation && <p className={styles.participantSubtitle} title={subtitle}>{subtitle}</p>}
         </div>
-
-        <div className={styles.headerActions}>
-          {appointmentId && (
-            <button
-              type="button"
-              className={styles.videoBtn}
-              onClick={() => onOpenVideoCall(appointmentId)}
-            >
-              <Video size={14} aria-hidden="true" />
-              <span>{isLive ? "Join Video Call" : "Video Room"}</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className={styles.detailsBtn}
-            onClick={onToggleDrawer}
-            title={isDrawerOpen ? "Hide clinical details" : "Show clinical details"}
-          >
-            <Info size={14} aria-hidden="true" />
-            <span>{isDrawerOpen ? "Close Details" : "Clinical Context"}</span>
+      </div>
+      <div className={styles.headerActions}>
+        {conversation && <>
+          <button type="button" className={styles.detailsBtn} aria-label="Voice call" disabled={!canCall}
+            title={canCall ? "Start a voice call" : "Calling is unavailable or outside the appointment window"}
+            onClick={() => void calls?.start(conversation.id, "AUDIO")}><Phone size={16} /></button>
+          <button type="button" className={styles.videoBtn} aria-label={direct ? "Video call" : "Open video consultation"}
+            disabled={direct ? !canCall : !eligible || !appointmentId}
+            title={direct ? "Start a video call" : "Open authorized appointment video room"}
+            onClick={() => { if (direct) void calls?.start(conversation.id, "VIDEO"); else if (appointmentId) props.onOpenVideoCall(appointmentId); }}>
+            <Video size={16} /><span>Video</span>
           </button>
-        </div>
+          <button type="button" className={styles.detailsBtn} aria-label="Conversation details" onClick={props.onOpenDetails}><Info size={16} /></button>
+        </>}
+        <button type="button" className={styles.detailsBtn} aria-label="Refresh" onClick={props.onReload} disabled={loading || sending}><RotateCw size={15} /></button>
       </div>
-
-      {/* Message Timeline */}
-      <div ref={messageAreaRef} className={styles.messageArea}>
-        <div className={styles.dateDivider}>
-          <span className={styles.datePill}>Consultation Session · Today</span>
-        </div>
-
-        {messages.map((msg) => {
-          if (msg.systemNotice) {
-            return (
-              <div key={msg.id} className={styles.systemNoticeCard}>
-                <div className={styles.systemHeader}>
-                  <ShieldCheck size={14} aria-hidden="true" />
-                  <span>{msg.senderName}</span>
-                </div>
-                <div className={styles.systemBody}>{msg.text}</div>
-                {msg.attachments && msg.attachments.length > 0 && (
-                  <div className={styles.attachmentList}>
-                    {msg.attachments.map((att) => (
-                      <div key={att.id} className={styles.attachmentCard}>
-                        <FileText size={14} color="var(--color-primary)" aria-hidden="true" />
-                        <span className={styles.attachmentName}>{att.name}</span>
-                        {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          const isSent = msg.senderId === currentUserId || msg.senderRole === currentUserRole;
-
-          return (
-            <div
-              key={msg.id}
-              className={`${styles.bubbleRow} ${isSent ? styles.bubbleRowSent : styles.bubbleRowReceived}`}
-            >
-              {!isSent && <span className={styles.senderLabel}>{msg.senderName}</span>}
-              <div className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}>
-                <div>{msg.text}</div>
-
-                {msg.attachments && msg.attachments.length > 0 && (
-                  <div className={styles.attachmentList}>
-                    {msg.attachments.map((att) => (
-                      <div key={att.id} className={styles.attachmentCard}>
-                        <FileText size={14} aria-hidden="true" />
-                        <span className={styles.attachmentName}>{att.name}</span>
-                        {att.size && <span className={styles.attachmentSize}>({att.size})</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.bubbleFooter}>
-                <span>{msg.timestamp}</span>
-                {isSent && (
-                  <span title="Delivered">
-                    <CheckCheck size={13} color="var(--color-primary)" aria-hidden="true" />
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Sleek Composer Bar */}
-      <form
-        className={styles.composer}
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-      >
-        <button
-          type="button"
-          className={styles.attachBtn}
-          onClick={handleAttachSimulatedReport}
-          title="Attach medical document"
-        >
-          <Paperclip size={18} aria-hidden="true" />
-        </button>
-
-        <input
-          type="text"
-          className={styles.inputField}
-          placeholder="Type a clinical message or follow-up query…"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-        />
-
-        <button
-          type="submit"
-          className={styles.sendBtn}
-          disabled={!inputText.trim()}
-          title="Send message"
-        >
-          <Send size={14} aria-hidden="true" />
-          <span>Send</span>
-        </button>
-      </form>
-    </div>
-  );
+    </header>
+    {error && <p role="alert">{error}</p>}
+    {loading && !conversation ? <p role="status">Loading message history…</p> : conversation ? <>
+      {props.olderError && <p role="alert">Could not load earlier history. {props.olderError}</p>}
+      {props.hasOlder && <Button size="sm" variant="ghost" disabled={props.olderBusy} onClick={props.onLoadOlder}>
+        {props.olderBusy ? "Loading earlier messages…" : "Load earlier messages"}
+      </Button>}
+      <MessageHistory messages={messages} currentUserId={currentUserId} />
+      {!canSend && <p role="status" className={styles.participantSubtitle}>{conversation.communicationState === "EXPIRED"
+        ? "Messaging window expired · history is read-only" : conversation.unavailableReason || "Messaging is unavailable."}</p>}
+      {sendError && <p role="alert">{sendError} Your message was not confirmed; your draft is kept.</p>}
+      <MessageComposer key={conversation.id} disabled={!canSend} sending={sending} onSend={props.onSendMessage} />
+    </> : !error && <div className={styles.emptySelection}>Select a conversation to view messages.</div>}
+  </section>;
 }

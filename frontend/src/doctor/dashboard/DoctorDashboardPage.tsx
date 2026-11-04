@@ -1,298 +1,74 @@
-/**
- * Doctor workspace overview: operational clinical command center, active consultation queue,
- * upcoming next appointment, practice status, schedule summary, and secondary deep-dive tooling.
- */
-
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-
-import { useAuth } from "../../features/auth/AuthContext";
+import { useEffect, useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
+import { Alert, Button, ButtonLink, Spinner } from "../../shared/ui";
 import type { DoctorAppointment } from "../../shared/types";
-import { Alert, Button, EmptyState, Spinner } from "../../shared/ui";
-
-import { ClinicalStatusBar } from "./components/ClinicalStatusBar";
-import { ContextualPatientDrawer } from "./components/ContextualPatientDrawer";
-import { DoctorEarningsSection } from "./components/DoctorEarningsSection";
-import { DoctorPracticeAnalytics } from "./components/DoctorPracticeAnalytics";
-import { DoctorProfileSection } from "./components/DoctorProfileSection";
-import { DoctorScheduleSection } from "./components/DoctorScheduleSection";
-import { DoctorViewSwitcher, type DoctorDashboardTab } from "./components/DoctorViewSwitcher";
-import { DoctorWelcomeHeader } from "./components/DoctorWelcomeHeader";
-import { EmergencyLeaveModal } from "./components/EmergencyLeaveModal";
-import { FastRxModal, type FastRxBundle } from "./components/FastRxModal";
-import { IssuePrescriptionModal } from "./components/IssuePrescriptionModal";
-import { NextAppointmentCard } from "./components/NextAppointmentCard";
-import { OperationalKpiCards } from "./components/OperationalKpiCards";
-import { PracticeStatusWidget } from "./components/PracticeStatusWidget";
-import { QuickPracticeTools } from "./components/QuickPracticeTools";
-import { ScheduleSummaryWidget } from "./components/ScheduleSummaryWidget";
-import { TodayPatientRadar } from "./components/TodayPatientRadar";
-import { TodayQueuePreview } from "./components/TodayQueuePreview";
-import { useDoctorDashboard } from "./hooks/useDoctorDashboard";
-import styles from "./DoctorDashboardPage.module.css";
+import { FocusedPatientCard } from "./patient-focus/FocusedPatientCard";
+import { PatientQueue } from "./patient-focus/PatientQueue";
+import { DashboardPanels } from "./patient-focus/DashboardPanels";
+import { usePatientDashboard } from "./patient-focus/usePatientDashboard";
+import { legacyDashboardPath, todaysPatients } from "./patient-focus/patientFocus.model";
+import type { PatientPanelKind, PatientPanelSelection } from "./patient-focus/patientFocus.types";
+import styles from "./patient-focus/PatientFocus.module.css";
 
 export function DoctorDashboardPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [query] = useSearchParams();
+  const redirect = legacyDashboardPath(query.get("tab"));
+  return redirect ? <Navigate to={redirect} replace /> : <TodaysPatientDashboard />;
+}
 
-  const {
-    profile,
-    setProfile,
-    schedule,
-    earnings,
-    specialties,
-    appointments,
-    prescriptions,
-    loading,
-    error,
-    isApproved,
-    loadDashboard,
-  } = useDoctorDashboard();
-
-  // Determine initial tab from query string if provided
-  const queryTab = searchParams.get("tab");
-  const resolveTab = (): DoctorDashboardTab => {
-    if (queryTab === "schedule" || queryTab === "profile") return "schedule";
-    if (queryTab === "analytics" || queryTab === "earnings") return "analytics";
-    return "queue";
-  };
-
-  const [activeTab, setActiveTab] = useState<DoctorDashboardTab>(resolveTab);
-
-  // Sync state if query param changes externally
+function TodaysPatientDashboard() {
+  const data = usePatientDashboard();
+  const [now, setNow] = useState(() => new Date());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<PatientPanelSelection | null>(null);
   useEffect(() => {
-    if (queryTab === "schedule" || queryTab === "profile") {
-      setActiveTab("schedule");
-    } else if (queryTab === "analytics" || queryTab === "earnings") {
-      setActiveTab("analytics");
-    }
-  }, [queryTab]);
-
-  const handleTabChange = (tab: DoctorDashboardTab) => {
-    setActiveTab(tab);
-    setSearchParams({ tab });
+    const timer = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (data.loading) return <Spinner label="Loading today's patients…" />;
+  if (data.profileError || !data.profile) return <Alert kind="error">
+    {data.profileError || "No doctor profile found."}
+    <Button size="sm" variant="secondary" onClick={() => void data.reload()}>Retry loading dashboard</Button>
+  </Alert>;
+  if (data.profile.applicationStatus !== "APPROVED") return <div className={styles.stack}>
+    <h1>Doctor dashboard</h1>
+    <Alert kind="info">Your application is {data.profile.applicationStatus.toLowerCase().replaceAll("_", " ")}.
+      Patient appointments become available after approval.</Alert>
+    <ButtonLink to="/doctor/profile">Review your profile</ButtonLink>
+  </div>;
+  const day = todaysPatients(data.appointments, now);
+  const focused = day.remaining.find((item) => item.id === selectedId) ?? day.next;
+  const panelAppointment = panel ? data.appointments.find((item) => item.id === panel.appointmentId) : null;
+  const openPanel = (appointment: DoctorAppointment, kind: PatientPanelKind) => {
+    setSelectedId(appointment.id);
+    setPanel({ appointmentId: appointment.id, kind });
   };
-
-  const [inspectingPatientId, setInspectingPatientId] = useState<string | null>(null);
-  const [selectedFastRxBundle, setSelectedFastRxBundle] = useState<FastRxBundle | null>(null);
-  const [prescribingAppointment, setPrescribingAppointment] = useState<DoctorAppointment | null>(null);
-  const [isEmergencyLeaveOpen, setIsEmergencyLeaveOpen] = useState(false);
-
-  // Auto-switch to schedule & profile tab for unapproved doctors if today's queue is empty
-  const hasAutoSwitchedRef = useRef(false);
-  useEffect(() => {
-    if (
-      !hasAutoSwitchedRef.current &&
-      profile &&
-      profile.applicationStatus !== "APPROVED" &&
-      appointments.length === 0
-    ) {
-      hasAutoSwitchedRef.current = true;
-      setActiveTab("schedule");
-    }
-  }, [profile, appointments.length]);
-
-  if (loading) return <Spinner label="Loading doctor clinical command center…" />;
-  if (error) {
-    return (
-      <div style={{ maxWidth: "600px", margin: "2rem auto", padding: "1rem" }}>
-        <Alert kind="error">
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <span>{error}</span>
-            <div>
-              <Button size="sm" onClick={loadDashboard}>
-                Retry loading dashboard
-              </Button>
-            </div>
-          </div>
-        </Alert>
+  return <div className={styles.page}>
+    <div className={styles.top}>
+      <h1 id="todays-patients-heading" tabIndex={-1}>Today’s patients</h1>
+      <div className={styles.topRight}>
+        {data.hasAppointments && <dl className={styles.counts} aria-label="Today's appointment counts">
+          <div><dt>booked</dt><dd>{day.today.length}</dd></div>
+          <div><dt>left</dt><dd>{day.remaining.length}</dd></div>
+          <div><dt>done</dt><dd>{day.completed}</dd></div>
+        </dl>}
+        <Button variant="ghost" size="sm" disabled={data.refreshing} aria-label="Refresh today's patients"
+          onClick={() => void data.reload()}><RefreshCw size={14} aria-hidden="true" /></Button>
       </div>
-    );
-  }
-  if (!profile) return <EmptyState>No doctor profile found.</EmptyState>;
-
-  // Filter today's appointments in Asia/Dhaka
-  const todayDhaka = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
-
-  const todayAppointments = appointments.filter((a) => {
-    try {
-      const itemDhaka = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(
-        new Date(a.scheduledStartAt),
-      );
-      return itemDhaka === todayDhaka;
-    } catch {
-      return false;
-    }
-  });
-
-  // Calculate next eligible appointment
-  const nowMs = Date.now();
-  const upcomingAppointments = todayAppointments
-    .filter((a) => {
-      const isEligible = a.status === "CONFIRMED" || a.status === "PENDING_PAYMENT";
-      return isEligible && new Date(a.scheduledEndAt).getTime() > nowMs;
-    })
-    .sort((a, b) => new Date(a.scheduledStartAt).getTime() - new Date(b.scheduledStartAt).getTime());
-
-  const nextAppointment = upcomingAppointments[0] ?? null;
-
-  // Active queue count for tabs
-  const activeQueueCount = appointments.filter(
-    (a) => a.status === "CONFIRMED" || a.status === "PENDING_PAYMENT",
-  ).length;
-
-  return (
-    <div className={styles.dashboardContainer}>
-      {/* 1. SECTION A: Executive Doctor Welcome Header */}
-      <DoctorWelcomeHeader
-        user={user}
-        profile={profile}
-        isApproved={isApproved}
-        onViewSchedule={() => navigate("/doctor/schedule")}
-      />
-
-      {/* 2. SECTION B: Operational KPI Cards (Today in Asia/Dhaka) */}
-      <OperationalKpiCards
-        appointments={appointments}
-        loading={loading}
-      />
-
-      {/* 3. SECTION C & E: Operational Grid Row 1 (Next Appointment + Practice Status) */}
-      <div className={styles.operationalGrid}>
-        <NextAppointmentCard
-          appointment={nextAppointment}
-          loading={loading}
-          onInspectPatientHistory={setInspectingPatientId}
-          onOpenIssuePrescription={(appt) => setPrescribingAppointment(appt)}
-        />
-
-        <PracticeStatusWidget
-          profile={profile}
-          schedule={schedule}
-          onOpenEditProfile={() => navigate("/doctor/profile")}
-          onProfileUpdated={setProfile}
-        />
-      </div>
-
-      {/* 4. SECTION D & F: Operational Grid Row 2 (Today's Queue Preview + Schedule Summary) */}
-      <div className={styles.operationalGrid}>
-        <TodayQueuePreview
-          appointments={todayAppointments}
-          onInspectPatientHistory={setInspectingPatientId}
-          onOpenIssuePrescription={(appt) => setPrescribingAppointment(appt)}
-        />
-
-        <ScheduleSummaryWidget
-          schedule={schedule}
-          isApproved={isApproved}
-          onOpenManageSchedule={() => navigate("/doctor/schedule")}
-        />
-      </div>
-
-      {/* 5. SECTION G: Secondary Practice Tools & Tab Workspace */}
-      <section className={styles.secondarySection} aria-label="Detailed Clinical Workspaces and Practice Tools">
-        <div className={styles.secondaryHeader}>
-          <h2 className={styles.secondaryTitle}>Clinical Workspaces &amp; Tools</h2>
-        </div>
-
-        {/* Workspace Tab Switcher */}
-        <DoctorViewSwitcher
-          activeTab={activeTab}
-          onChangeTab={handleTabChange}
-          activeQueueCount={activeQueueCount}
-        />
-
-        {/* Tab Content */}
-        <div className={styles.tabContentWrapper}>
-          {/* TAB 1: Today's Full Queue & Radar */}
-          {activeTab === "queue" && (
-            <div className={styles.twoWingGrid}>
-              <div className={styles.leftWing}>
-                <TodayPatientRadar
-                  appointments={appointments}
-                  prescriptions={prescriptions}
-                  onInspectPatientHistory={setInspectingPatientId}
-                  onOpenIssuePrescription={(appt) => setPrescribingAppointment(appt)}
-                  onAppointmentUpdated={loadDashboard}
-                />
-              </div>
-
-              <div className={styles.rightWing}>
-                <QuickPracticeTools
-                  onSelectFastRxBundle={setSelectedFastRxBundle}
-                  onOpenEmergencyLeave={() => setIsEmergencyLeaveOpen(true)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: Practice Analytics & Financials */}
-          {activeTab === "analytics" && (
-            <div className={styles.twoWingGrid}>
-              <div className={styles.leftWing}>
-                <DoctorPracticeAnalytics
-                  appointments={appointments}
-                  earnings={earnings}
-                />
-              </div>
-
-              <div className={styles.rightWing}>
-                <DoctorEarningsSection earnings={earnings} />
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: Weekly Schedule & Profile Setup */}
-          {activeTab === "schedule" && (
-            <div className={styles.twoWingGrid}>
-              <div className={styles.leftWing}>
-                <DoctorScheduleSection
-                  schedule={schedule}
-                  onScheduleChanged={loadDashboard}
-                  isApproved={isApproved}
-                />
-              </div>
-
-              <div className={styles.rightWing}>
-                <DoctorProfileSection
-                  profile={profile}
-                  allSpecialties={specialties}
-                  onProfileUpdated={setProfile}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 6. Contextual Slide-out Drawer */}
-      <ContextualPatientDrawer
-        patientProfileId={inspectingPatientId}
-        onClose={() => setInspectingPatientId(null)}
-      />
-
-      {/* 7. Dialog Modals */}
-      <FastRxModal
-        bundle={selectedFastRxBundle}
-        onClose={() => setSelectedFastRxBundle(null)}
-      />
-
-      <IssuePrescriptionModal
-        appointment={prescribingAppointment}
-        isOpen={!!prescribingAppointment}
-        onClose={() => setPrescribingAppointment(null)}
-        onPrescriptionIssued={loadDashboard}
-      />
-
-      <EmergencyLeaveModal
-        isOpen={isEmergencyLeaveOpen}
-        onClose={() => setIsEmergencyLeaveOpen(false)}
-        onScheduleChanged={loadDashboard}
-      />
-
-      {/* 8. Docked Clinical Status Bar */}
-      <ClinicalStatusBar bmdcNumber={profile.bmdcNumber} isApproved={isApproved} />
     </div>
-  );
+    {data.appointmentsError && <Alert kind="error">
+      {data.appointmentsError}{data.hasAppointments && " Showing the last loaded appointments."}
+      <Button size="sm" variant="secondary" disabled={data.refreshing} onClick={() => void data.reload()}>Retry appointments</Button>
+    </Alert>}
+    {data.hasAppointments && <>
+      <FocusedPatientCard appointment={focused} now={now} selected={Boolean(focused && focused.id !== day.next?.id)}
+        onOpen={openPanel} onReset={() => setSelectedId(null)} />
+      <PatientQueue appointments={day.remaining.filter((item) => item.id !== focused?.id)}
+        onSelect={(appointment) => openPanel(appointment, "details")}
+        onReadiness={(appointment) => openPanel(appointment, "readiness")} />
+    </>}
+    {panel && panelAppointment && <DashboardPanels key={panelAppointment.id} appointment={panelAppointment}
+      kind={panel.kind} now={now} onOpen={openPanel} onClose={() => setPanel(null)} reload={data.reload} />}
+  </div>;
 }

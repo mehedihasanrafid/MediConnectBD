@@ -16,7 +16,7 @@ export function DoctorCard({ doctor }: DoctorCardProps) {
     <Card className={styles.card}>
       <div>
         <div className={styles.head}>
-          <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} size="lg" />
+          <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} src={doctor.photoUrl} size="lg" />
           <div>
             <h2 className={styles.title}>
               Dr. {doctor.firstName} {doctor.lastName}

@@ -22,6 +22,7 @@ import { RegisterPage } from "../features/auth/RegisterPage";
 import { AdminLayout } from "../layouts/AdminLayout";
 import { DoctorLayout } from "../layouts/DoctorLayout";
 import { MainLayout } from "../layouts/MainLayout";
+import { PatientLayout } from "../layouts/PatientLayout";
 import { AppointmentsPage } from "../patient/appointments";
 import { FamilyMembersPage } from "../patient/family-members";
 import { PatientPrescriptionsPage } from "../patient/prescriptions";
@@ -31,42 +32,47 @@ import { HomePage } from "../public/home";
 import { NotFoundPage } from "../public/not-found";
 import { VerifyPrescriptionPage } from "../public/verify-prescription";
 import { CommunicationPage } from "../communication";
+import { CommunicationLayout, CommunicationRedirect } from "../communication/CommunicationLayout";
+import { useAuth } from "../features/auth/AuthContext";
 import { NotificationsPage } from "../notifications";
 import { RoleRoute } from "./guards";
+
+function SmartNotificationsRoute() {
+  const { user } = useAuth();
+  if (user?.roles?.includes("DOCTOR")) {
+    return <Navigate to="/doctor/notifications" replace />;
+  }
+  if (user?.roles?.includes("ADMIN")) {
+    return <Navigate to="/admin/notifications" replace />;
+  }
+  return <Navigate to="/patient/notifications" replace />;
+}
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/doctors" element={<DoctorSearchPage />} />
-        <Route path="/doctors/:doctorId" element={<DoctorDetailPage />} />
-        <Route path="/verify-prescription" element={<VerifyPrescriptionPage />} />
-
-        <Route element={<RoleRoute roles={["PATIENT", "DOCTOR"]} />}>
-          <Route path="/communication" element={<CommunicationPage />} />
-          <Route path="/messages" element={<Navigate to="/communication" replace />} />
-        </Route>
-
-        <Route element={<RoleRoute roles={["PATIENT", "DOCTOR", "ADMIN"]} />}>
-          <Route path="/notifications" element={<NotificationsPage />} />
-        </Route>
-
-        <Route element={<RoleRoute roles={["PATIENT"]} />}>
+      {/* Patient Portal */}
+      <Route element={<RoleRoute roles={["PATIENT"]} />}>
+        <Route element={<PatientLayout />}>
           <Route path="/appointments" element={<AppointmentsPage />} />
+          <Route path="/patient/communication" element={<CommunicationPage />} />
           <Route path="/prescriptions" element={<PatientPrescriptionsPage />} />
           <Route path="/reports" element={<MedicalReportsPage />} />
           <Route path="/family-members" element={<FamilyMembersPage />} />
+          <Route path="/patient" element={<Navigate to="/appointments" replace />} />
+          <Route path="/patient/appointments" element={<Navigate to="/appointments" replace />} />
+          <Route path="/patient/prescriptions" element={<Navigate to="/prescriptions" replace />} />
+          <Route path="/patient/reports" element={<Navigate to="/reports" replace />} />
+          <Route path="/patient/family-members" element={<Navigate to="/family-members" replace />} />
+          <Route path="/patient/notifications" element={<NotificationsPage />} />
         </Route>
-
-        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
+      {/* Doctor Portal */}
       <Route path="/doctor" element={<RoleRoute roles={["DOCTOR"]} />}>
         <Route element={<DoctorLayout />}>
           <Route index element={<DoctorDashboardPage />} />
+          <Route path="communication" element={<CommunicationPage />} />
           <Route path="appointments" element={<DoctorAppointmentsPage />} />
           <Route path="consultations/:appointmentId" element={<DoctorConsultationPage />} />
           <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
@@ -74,9 +80,11 @@ export function AppRouter() {
           <Route path="schedule" element={<DoctorSchedulePage />} />
           <Route path="earnings" element={<DoctorEarningsPage />} />
           <Route path="settings" element={<DoctorSettingsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Route>
 
+      {/* Admin Portal */}
       <Route path="/admin" element={<RoleRoute roles={["ADMIN"]} />}>
         <Route element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/overview" replace />} />
@@ -85,7 +93,31 @@ export function AppRouter() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="catalog" element={<AdminCatalogPage />} />
           <Route path="operations" element={<AdminOperationsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="communication" element={<CommunicationPage />} />
         </Route>
+      </Route>
+
+      <Route element={<RoleRoute roles={["PATIENT", "DOCTOR", "ADMIN"]} />}>
+        <Route element={<CommunicationLayout />}>
+          <Route path="/communication" element={<CommunicationRedirect />} />
+          <Route path="/messages" element={<Navigate to="/communication" replace />} />
+        </Route>
+      </Route>
+
+      <Route element={<RoleRoute roles={["PATIENT", "DOCTOR", "ADMIN"]} />}>
+        <Route path="/notifications" element={<SmartNotificationsRoute />} />
+      </Route>
+
+      {/* Public & General Routes */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/doctors" element={<DoctorSearchPage />} />
+        <Route path="/doctors/:doctorId" element={<DoctorDetailPage />} />
+        <Route path="/verify-prescription" element={<VerifyPrescriptionPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

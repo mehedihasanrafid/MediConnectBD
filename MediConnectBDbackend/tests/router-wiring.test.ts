@@ -13,6 +13,8 @@ import { createReviewRouter } from "../src/modules/reviews/review.routes";
 import type { ReviewService } from "../src/modules/reviews/review.service";
 import { createPrescriptionRouter } from "../src/modules/prescriptions/prescription.routes";
 import type { PrescriptionService } from "../src/modules/prescriptions/prescription.service";
+import { createCommunicationRouter } from "../src/modules/communication/communication.routes";
+import type { CommunicationService } from "../src/modules/communication/communication.service";
 
 const userId = randomUUID();
 const doctorId = randomUUID();
@@ -133,9 +135,14 @@ describe("routes after the DokanBD-style reorganization", () => {
       next();
     };
 
+    const communicationService = {
+      listConversations: vi.fn().mockResolvedValue([]),
+    } as unknown as CommunicationService;
+
     const router = Router();
     router.use("/reviews", createReviewRouter({ reviewService, authenticate }));
     router.use("/prescriptions", createPrescriptionRouter({ prescriptionService, authenticate }));
+    router.use("/communication", createCommunicationRouter(communicationService, authenticate));
     const app = createApp({
       appUrl: "http://localhost:5173",
       logLevel: "silent",
@@ -151,6 +158,7 @@ describe("routes after the DokanBD-style reorganization", () => {
     // Patient endpoint works for PATIENT role
     currentRole = "PATIENT";
     expect((await request(app).get("/api/v1/prescriptions/patients/me/prescriptions")).status).toBe(200);
+    expect((await request(app).get("/api/v1/communication/conversations")).status).toBe(200);
 
     // Admin endpoint works for ADMIN role
     currentRole = "ADMIN";

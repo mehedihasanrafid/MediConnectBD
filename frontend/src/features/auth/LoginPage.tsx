@@ -30,7 +30,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("patient.demo@mediconnect.example");
-  const [password, setPassword] = useState("#king123");
+  const [password, setPassword] = useState(import.meta.env.VITE_PUBLIC_DEMO === "true" ? "" : "#king123");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -99,7 +99,9 @@ export function LoginPage() {
           </p>
 
           <div className={styles.demoBox}>
-            <p className={styles.demoTitle}>Demo accounts (password: #king123)</p>
+            <p className={styles.demoTitle}>{import.meta.env.VITE_PUBLIC_DEMO === "true"
+              ? "Demo accounts — enter the access password provided by the demo host"
+              : "Demo accounts (password: #king123)"}</p>
             <Cluster gap={2}>
               {DEMO_ACCOUNTS.map((account) => (
                 <Button

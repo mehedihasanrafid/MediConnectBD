@@ -24,9 +24,9 @@ export function ConfirmCompletionDialog({
 
   if (!appointment) return null;
 
-  const patientName = appointment.patient
+  const patientName = appointment.familyMember?.name || (appointment.patient
     ? `${appointment.patient.firstName} ${appointment.patient.lastName}`.trim()
-    : "Patient Visit";
+    : "Patient Visit");
 
   const handleConfirm = async () => {
     if (!appointment || isSubmitting) return;

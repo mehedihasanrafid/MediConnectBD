@@ -27,6 +27,7 @@ export interface AuthContextValue {
   registerPatient: (input: RegisterPatientInput) => Promise<PublicUser>;
   registerDoctor: (input: RegisterDoctorInput) => Promise<PublicUser>;
   logout: () => Promise<void>;
+  syncDoctorProfile?: (profile: { id: string; applicationStatus: string; photoUrl?: string | null }) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,9 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const syncDoctorProfile = useCallback((profile: { id: string; applicationStatus: string; photoUrl?: string | null }) => {
+    const status = profile.applicationStatus;
+    if (status !== "DRAFT" && status !== "PENDING_REVIEW" && status !== "APPROVED" && status !== "REJECTED") return;
+    setUser((current) => current?.doctorProfile?.id === profile.id
+      ? { ...current, doctorProfile: { id: profile.id, applicationStatus: status, photoUrl: profile.photoUrl ?? null } }
+      : current);
+  }, []);
   const value = useMemo(
-    () => ({ user, loading, login, registerPatient, registerDoctor, logout }),
-    [user, loading, login, registerPatient, registerDoctor, logout],
+    () => ({ user, loading, login, registerPatient, registerDoctor, logout, syncDoctorProfile }),
+    [user, loading, login, registerPatient, registerDoctor, logout, syncDoctorProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

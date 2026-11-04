@@ -20,15 +20,10 @@
 
 .brandPanel {
   display: none;
-  background: linear-gradient(145deg, var(--teal-600) 0%, var(--teal-800) 100%);
-  color: var(--slate-50);
   padding: var(--space-10) var(--space-8);
   flex-direction: column;
   justify-content: space-between;
-}
-
-[data-theme="dark"] .brandPanel {
-  background: linear-gradient(145deg, var(--teal-900) 0%, var(--teal-950) 100%);
+  border-right: 1px solid var(--color-border);
 }
 
 .brandLogo {
@@ -38,6 +33,7 @@
   font-size: var(--text-xl);
   font-weight: var(--weight-extrabold);
   letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
 .brandIcon {
@@ -46,8 +42,8 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--slate-50) 15%, transparent);
-  backdrop-filter: blur(4px);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .brandHeadline {
@@ -55,7 +51,7 @@
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
   margin-top: var(--space-6);
-  color: var(--slate-50);
+  color: var(--color-text);
 }
 
 .brandBenefits {
@@ -72,18 +68,18 @@
   align-items: flex-start;
   gap: var(--space-3);
   font-size: var(--text-sm);
-  color: var(--teal-100);
+  color: var(--color-text-muted);
 }
 
 .benefitIcon {
   flex-shrink: 0;
   margin-top: 0.125rem;
-  color: var(--teal-300);
+  color: var(--color-primary);
 }
 
 .brandFooter {
   font-size: var(--text-xs);
-  color: var(--teal-200);
+  color: var(--color-text-subtle);
   margin-top: var(--space-8);
 }
 

@@ -5,6 +5,7 @@
  */
 
 import { createSchedulingRouter } from "../scheduling/scheduling.routes";
+import { createDoctorPhotoRouter } from "./photos/doctor-photo.routes";
 import { createDoctorController, createAdminDoctorController, createCatalogController } from './doctor.controller';
 import { Router, type RequestHandler } from "express";
 import { requireRole } from "../auth/auth.middleware";
@@ -20,6 +21,7 @@ interface ProtectedRouterOptions {
 export function createDoctorRouter(options: ProtectedRouterOptions): Router {
     const controller = createDoctorController(options);
     const router = Router();
+    router.use(createDoctorPhotoRouter(options));
     router.get("/", controller.listPublic);
     router.get("/me", options.authenticate, requireRole("DOCTOR"), controller.getMyProfile);
     router.get("/me/earnings", options.authenticate, requireRole("DOCTOR"), controller.getMyEarnings);

@@ -1,0 +1,48 @@
+.page, .stack { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.top, .sectionTop { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.top h1 { margin: 0; font-size: var(--text-lg); font-weight: 600; }
+.topRight, .counts { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.counts { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); font-variant-numeric: tabular-nums; gap: var(--space-2); }
+.counts div { display: flex; gap: 4px; }
+.counts div + div { border-left: 1px solid var(--color-border); padding-left: var(--space-2); }
+.counts dt { order: 2; }
+.counts dd { margin: 0; font-weight: 600; color: var(--color-text); }
+.focusCard, .queueCard { min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.focusCard { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-6); border-top: 3px solid var(--color-primary); }
+.focusCard h2, .queueCard h2 { margin: 0; font-size: var(--text-base); }
+.focusCard p { margin: 0; }
+.eyebrow { font-size: var(--text-xs); color: var(--color-primary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.07em; }
+.person { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.person > div:last-child { min-width: 0; }
+.person h2 { font-size: clamp(1.25rem, 2.4vw, 1.8rem); font-weight: 600; overflow-wrap: anywhere; }
+.avatar { width: 60px; height: 60px; flex-shrink: 0; display: grid; place-items: center; background: var(--color-primary-soft); color: var(--color-primary); border-radius: var(--radius-lg); font-size: var(--text-lg); }
+.nameLine { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+.muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+.caption { color: var(--color-text-muted); font-size: var(--text-xs); }
+.details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); border-block: 1px solid var(--color-border); padding: var(--space-5) 0; margin: 0; }
+.detailItem { min-width: 0; }
+.details dt { color: var(--color-text-muted); font-size: var(--text-xs); margin-bottom: var(--space-1); }
+.details dd { margin: 0; overflow-wrap: anywhere; font-size: var(--text-sm); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.readiness { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full); color: var(--color-text-subtle); flex-shrink: 0; }
+.readiness:hover { background: var(--color-bg-subtle); color: var(--color-text); }
+.queueCard { padding: var(--space-5); }
+.sectionTop { margin-bottom: var(--space-3); }
+.sectionTop a { color: var(--color-primary); font-size: var(--text-xs); }
+.queue { list-style: none; padding: 0; margin: 0; }
+.queueRow { display: grid; grid-template-columns: 5rem minmax(0, 1fr) 5rem auto; align-items: center; gap: var(--space-3); padding: 10px 0; border-top: 1px solid var(--color-border); }
+.queueRow time, .mode { font-size: var(--text-xs); color: var(--color-text-muted); }
+.queueIdentity { min-width: 0; overflow-wrap: anywhere; }
+.tool { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4); }
+.tool h3 { margin: 0; font-size: var(--text-base); }
+.stack textarea { width: 100%; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); }
+.page :focus-visible, .stack :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+@media (max-width: 650px) {
+  .focusCard { padding: var(--space-4); }
+  .details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .queueRow { grid-template-columns: 3.5rem minmax(0, 1fr) auto; gap: var(--space-2); }
+  .mode { display: none; }
+  .queueCard { padding: var(--space-4); }
+  .topRight { gap: var(--space-1); }
+}
+@media (pointer: coarse) { .readiness { min-width: 44px; min-height: 44px; } }

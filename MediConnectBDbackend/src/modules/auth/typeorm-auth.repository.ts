@@ -226,6 +226,7 @@ export class TypeOrmAuthRepository implements AuthRepository {
         ? {
             id: user.doctorProfile.id,
             applicationStatus: user.doctorProfile.applicationStatus,
+            photoUrl: user.doctorProfile.photoUrl,
           }
         : null,
     };

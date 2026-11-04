@@ -32,6 +32,7 @@ export interface DoctorProfileData {
 }
 
 export interface DoctorProfilePatchPayload {
+  photoUrl?: string | null;
   degrees?: string | null;
   experienceYears?: number;
   bio?: string | null;

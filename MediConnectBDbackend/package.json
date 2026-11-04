@@ -21,7 +21,9 @@
     "db:seed": "npm run build && npm run seed",
     "seed:demo-call": "node scripts/seed-demo-appointment.cjs",
     "db:setup:local": "node scripts/setup-local-database.cjs",
-    "db:revert": "npm run build && npm run migration:revert"
+    "db:revert": "npm run build && npm run migration:revert",
+    "seed:communication": "npm run build && node scripts/seed-communication-demo.cjs",
+    "seed:public-demo-communication": "node scripts/seed-public-demo-communication.cjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -38,6 +40,7 @@
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
+    "sharp": "^0.35.5",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.27",
     "zod": "^4.1.12"

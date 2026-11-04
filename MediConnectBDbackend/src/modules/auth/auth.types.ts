@@ -18,6 +18,7 @@ export interface AuthUser {
   doctorProfile: {
     id: string;
     applicationStatus: DoctorApplicationStatus;
+    photoUrl?: string | null;
   } | null;
 }
 

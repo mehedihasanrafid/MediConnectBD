@@ -10,27 +10,34 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .bellButton:hover {
   background: var(--color-bg-subtle);
   color: var(--color-text);
-  border-color: var(--color-border-strong);
+  border-color: transparent;
+}
+
+.bellButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .bellButtonActive {
   background: var(--color-primary-soft);
   color: var(--color-primary);
-  border-color: var(--color-primary);
+  border-color: transparent;
 }
 
 .badge {

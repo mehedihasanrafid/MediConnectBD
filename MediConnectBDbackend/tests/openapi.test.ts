@@ -35,6 +35,9 @@ import type { MedicalReportService } from "../src/modules/patients/medical-repor
 import { createMedicalReportSchema } from "../src/modules/patients/medical-report.schema";
 import { createInAppNotificationRouter } from "../src/modules/notifications/in-app-notification.routes";
 import type { InAppNotificationService } from "../src/modules/notifications/in-app-notification.service";
+import { createCommunicationRouter } from "../src/modules/communication/communication.routes";
+import type { CommunicationService } from "../src/modules/communication/communication.service";
+import { createMessageSchema } from "../src/modules/communication/communication.schema";
 
 type Layer = { route?: { path: string | string[]; methods: Record<string, boolean> }; handle?: { stack?: Layer[] } };
 const methods = ["get", "post", "put", "patch", "delete"] as const;
@@ -81,6 +84,7 @@ describe("OpenAPI and Swagger", () => {
     const familyMemberService = {} as FamilyMemberService;
     const medicalReportService = {} as MedicalReportService;
     const inAppNotificationService = {} as InAppNotificationService;
+    const communicationService = {} as CommunicationService;
     const doctorOptions = { doctorService, schedulingService, authenticate };
     const actual = ["GET /",
       ...collect(createHealthRouter({ database: async () => undefined, redis: async () => undefined }), "/health"),
@@ -97,6 +101,7 @@ describe("OpenAPI and Swagger", () => {
       ...collect(createPrescriptionRouter({ prescriptionService, authenticate }), "/api/v1/prescriptions"),
       ...collect(createAdminRouter({ adminService, authenticate }), "/api/v1/admin"),
       ...collect(createInAppNotificationRouter(inAppNotificationService, authenticate), "/api/v1/notifications"),
+      ...collect(createCommunicationRouter(communicationService, authenticate), "/api/v1/communication"),
     ];
     const documented = Object.entries(openApiDocument.paths).flatMap(([path, item]) => methods.filter(method => item?.[method]).map(method => `${method.toUpperCase()} ${path}`));
     expect(documented.sort()).toEqual(actual.sort());
@@ -111,6 +116,7 @@ describe("OpenAPI and Swagger", () => {
     ["RescheduleAppointment", rescheduleAppointmentSchema],
     ["CreateFamilyMember", createFamilyMemberSchema], ["UpdateFamilyMember", updateFamilyMemberSchema],
     ["CreateMedicalReport", createMedicalReportSchema],
+    ["CreateMessage", createMessageSchema],
     ["PaymentCustomer", paymentCustomerSchema], ["PaymentCallback", paymentCallbackSchema],
   ] as const)("keeps the %s example valid against the real Zod request schema", (name, schema) => {
     expect(schema.safeParse(requestExamples[name]).success).toBe(true);

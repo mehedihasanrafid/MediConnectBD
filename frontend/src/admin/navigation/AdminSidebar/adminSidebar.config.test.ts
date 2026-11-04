@@ -14,6 +14,8 @@ describe("adminSidebarSections", () => {
       "/admin/catalog",
       "/admin/users",
       "/admin/operations",
+      "/admin/notifications",
+      "/admin/communication",
       "/doctors",
       "/verify-prescription",
     ]);

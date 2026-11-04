@@ -18,7 +18,7 @@ export function DoctorProfileHeader({ doctor, reviews }: DoctorProfileHeaderProp
   return (
     <Card className={styles.container}>
       <div className={styles.head}>
-        <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} size="xl" />
+        <Avatar name={`Dr. ${doctor.firstName} ${doctor.lastName}`} src={doctor.photoUrl} size="xl" />
         <div>
           <h1 className={styles.title}>
             Dr. {doctor.firstName} {doctor.lastName}

@@ -4,7 +4,7 @@
 
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import { PublicHeader } from "../public/shell/PublicHeader";
+import { WebsiteHeader } from "./WebsiteHeader";
 import { SiteFooter } from "../public/shell/SiteFooter";
 import { Container } from "../shared/ui";
 import styles from "./MainLayout.module.css";
@@ -16,7 +16,7 @@ export function MainLayout() {
 
   return (
     <div className={styles.root}>
-      <PublicHeader />
+      <WebsiteHeader />
       <main className={styles.main}>
         {isHome ? (
           <Outlet />

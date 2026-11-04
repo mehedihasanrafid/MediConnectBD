@@ -17,7 +17,8 @@ export const updateDoctorProfileSchema = z
     degrees: nullableTrimmedText(500).optional(),
     experienceYears: z.number().int().min(0).max(80).optional(),
     bio: nullableTrimmedText(5_000).optional(),
-    photoUrl: z.union([z.string().trim().url().max(500), z.null()]).optional(),
+    photoUrl: z.union([z.string().trim().url().max(500),
+      z.string().regex(/^\/api\/v1\/doctors\/photos\/[0-9a-f-]{36}$/i), z.null()]).optional(),
     languages: z
       .array(z.string().trim().min(1).max(50))
       .max(10)

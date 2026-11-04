@@ -1,8 +1,10 @@
 import {
   Activity,
+  Bell,
   Building2,
   FileCheck2,
   LayoutDashboard,
+  MessageSquare,
   ShieldCheck,
   Stethoscope,
   Users,
@@ -35,6 +37,8 @@ export const adminSidebarSections: AdminSidebarSection[] = [
     items: [
       { to: "/admin/users", label: "Users", icon: Users },
       { to: "/admin/operations", label: "Bookings & Refunds", icon: Activity },
+      { to: "/admin/notifications", label: "Notification Center", icon: Bell },
+      { to: "/admin/communication", label: "Messages & Support", icon: MessageSquare },
     ],
   },
   {

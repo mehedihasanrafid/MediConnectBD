@@ -1,78 +1,40 @@
-import { AlertTriangle } from "lucide-react";
+import { useState } from "react";
 import { Alert, Button, Dialog, DialogContent } from "../../../../shared/ui";
 import type { ScheduleRuleItem } from "../../types/doctorSchedule.types";
+import { scheduleDays } from "../../compact/scheduleView.model";
+import styles from "../../compact/ScheduleView.module.css";
 
 interface DeleteRuleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rule: ScheduleRuleItem | null;
-  onConfirmDelete: () => Promise<void>;
+  onConfirmDelete: () => Promise<boolean>;
   isDeleting?: boolean;
+  serverError?: string | null;
 }
 
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-export function DeleteRuleDialog({
-  open,
-  onOpenChange,
-  rule,
-  onConfirmDelete,
-  isDeleting = false,
-}: DeleteRuleDialogProps) {
+export function DeleteRuleDialog({ open, onOpenChange, rule, onConfirmDelete,
+  isDeleting = false, serverError }: DeleteRuleDialogProps) {
+  const [attempted, setAttempted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!rule) return null;
-
-  const dayName = WEEKDAYS[rule.dayOfWeek] ?? "Day";
-  const start = rule.startTime.slice(0, 5);
-  const end = rule.endTime.slice(0, 5);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        title="Remove Working Hours"
-        description="Please confirm removal of this recurring consultation period."
-        footer={
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              loading={isDeleting}
-              onClick={async () => {
-                await onConfirmDelete();
-                onOpenChange(false);
-              }}
-            >
-              Remove Hours
-            </Button>
-          </div>
-        }
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-          <Alert kind="warning">
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-2)" }}>
-              <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
-              <div>
-                <strong>Notice:</strong> Removing recurring hours for{" "}
-                <strong>{dayName} ({start} – {end})</strong> will update your weekly availability.
-                Future slots in this period will not be generated.
-              </div>
-            </div>
-          </Alert>
-
-          <p style={{ margin: 0, fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-            Existing confirmed patient appointments on your queue are preserved and are not
-            automatically cancelled or rescheduled. If you need to cancel already-booked consultations,
-            please coordinate via your Appointment Queue.
-          </p>
+  async function remove() {
+    if (isDeleting) return;
+    setAttempted(true); setError(null);
+    try { if (await onConfirmDelete()) onOpenChange(false); }
+    catch { setError("Could not remove hours. Please try again."); }
+  }
+  return <Dialog open={open} onOpenChange={(next) => { if (!isDeleting) onOpenChange(next); }}>
+    <DialogContent title="Remove hours?"
+      description={`${scheduleDays[rule.dayOfWeek]} · ${rule.startTime.slice(0, 5)}–${rule.endTime.slice(0, 5)}`}>
+      <div className={styles.stack}>
+        <p>Future slots will no longer be generated for these hours. Existing appointments remain booked.</p>
+        {(error || attempted && serverError) && <Alert kind="error">{error || serverError}</Alert>}
+        <div className={styles.actions}>
+          <Button variant="secondary" disabled={isDeleting} onClick={() => onOpenChange(false)}>Keep hours</Button>
+          <Button variant="danger" loading={isDeleting} onClick={() => void remove()}>Remove hours</Button>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+      </div>
+    </DialogContent>
+  </Dialog>;
 }

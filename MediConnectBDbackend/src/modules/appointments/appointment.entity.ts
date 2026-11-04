@@ -88,6 +88,9 @@ export class Appointment {
   @UpdateDateColumn({ name: "updated_at", type: "datetime", precision: 3 })
   updatedAt!: Date;
 
+  @Column({ name: "completed_at", type: "datetime", precision: 3, nullable: true })
+  completedAt!: Date | null;
+
   @ManyToOne(() => AppointmentSlot, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "slot_id" })
   slot!: AppointmentSlot;

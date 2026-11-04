@@ -7,6 +7,7 @@ import type { OpenAPIV3 } from "openapi-types";
 
 type Schema = OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
 export const schemaRef = (name: string): OpenAPIV3.ReferenceObject => ({ $ref: `#/components/schemas/${name}` });
+const nullableRef = (name: string): Schema => ({ $ref: `#/components/schemas/${name}`, nullable: true } as unknown as Schema);
 const uuid: OpenAPIV3.SchemaObject = { type: "string", format: "uuid" };
 const timestamp: OpenAPIV3.SchemaObject = { type: "string", format: "date-time" };
 const money: OpenAPIV3.SchemaObject = { type: "number", minimum: 0, maximum: 1_000_000 };
@@ -30,7 +31,7 @@ const hospitalProperties = { id: uuid, name: text(), slug: text(), area: text(),
 const chamber = object({ id: uuid, roomOrUnit: nullable(text()), consultationFee: money, isActive: { type: "boolean" }, hospital: schemaRef("Hospital") });
 const publicDoctor = {
   id: uuid, firstName: text(), lastName: text(), degrees: nullable(text()), experienceYears: { type: "integer", minimum: 0 },
-  bio: nullable(text()), photoUrl: nullable({ type: "string", format: "uri" }), languages: array(text()),
+  bio: nullable(text()), photoUrl: nullable({ type: "string", format: "uri-reference" }), languages: array(text()),
   videoConsultationFee: nullable(money), minimumFee: nullable(money),
   averageRating: nullable({ type: "number", minimum: 1, maximum: 5 }), reviewCount: { type: "integer", minimum: 0 },
   specialties: array(schemaRef("Specialty")), chambers: array(chamber),
@@ -47,6 +48,7 @@ export const requestExamples = {
   DoctorRegistration: { email: "doctor@example.com", password: "ExamplePassword123!", firstName: "Test", lastName: "Doctor", bmdcNumber: "DEMO-NOT-REAL-123" },
   Login: { email: "patient@example.com", password: "ExamplePassword123!" },
   DoctorProfilePatch: { degrees: "Synthetic MBBS", experienceYears: 5, bio: "Synthetic doctor for development testing.", languages: ["Bangla", "English"], videoConsultationFee: 800, specialtyIds: [] },
+  DoctorPhotoUpload: { mimeType: "image/png", contentBase64: "ReplaceWithActualImageBase64==" },
   DoctorReview: { decision: "APPROVED" },
   ReplaceSchedule: { rules: [{ dayOfWeek: 1, startTime: "18:00", endTime: "20:00", slotDurationMinutes: 20, mode: "VIDEO" }] },
   CreateTimeOff: { date: "2026-10-25", reason: "Unavailable for the day" },
@@ -67,6 +69,7 @@ export const requestExamples = {
   UpdateHospital: { name: "Dhaka Medical College", isActive: true },
   PaymentCustomer: { name: "Test Patient", email: "patient@example.com", phone: "01700000000", address: "Test Road", city: "Dhaka", postcode: "1200" },
   PaymentCallback: { tran_id: "MCexample_transaction", val_id: "provider_validation_reference" },
+  CreateMessage: { content: "Doctor, I have received the test results.", idempotencyKey: "test-msg-001" },
 } satisfies Record<string, unknown>;
 
 /** Request examples are synthetic. Replace UUIDs with IDs returned by real API calls. */
@@ -78,7 +81,8 @@ export const openApiSchemas: Record<string, Schema> = {
   Login: object({ email: registrationIdentity.email, password: { type: "string", format: "password", writeOnly: true, minLength: 1, maxLength: 128 } }),
   User: object({ id: uuid, email: { type: "string", format: "email" }, firstName: text(), lastName: text(),
     status: { type: "string", enum: ["ACTIVE", "PENDING", "SUSPENDED"] }, roles: array({ type: "string", enum: ["PATIENT", "DOCTOR", "ADMIN"] }),
-    patientProfileId: nullable(uuid), doctorProfile: nullable(object({ id: uuid, applicationStatus: { type: "string", enum: applicationStatuses } })) }),
+    patientProfileId: nullable(uuid), doctorProfile: nullable(object({ id: uuid, applicationStatus: { type: "string", enum: applicationStatuses },
+      photoUrl: nullable({ type: "string", format: "uri-reference" }) }, ["id", "applicationStatus"])) }),
   AuthResponse: object({ accessToken: { type: "string", description: "Short-lived JWT. Copy this value into Authorize; do not include the Bearer prefix." },
     accessTokenExpiresIn: { type: "integer", example: 900 }, tokenType: { type: "string", enum: ["Bearer"] }, user: schemaRef("User") }),
   Specialty: object({ id: uuid, name: text(), slug: text() }),
@@ -88,7 +92,7 @@ export const openApiSchemas: Record<string, Schema> = {
   PublicDoctor: object(publicDoctor),
   DoctorDetails: object({
     id: uuid, userId: uuid, email: { type: "string", format: "email" }, firstName: text(), lastName: text(), bmdcNumber: text(),
-    degrees: nullable(text()), experienceYears: { type: "integer" }, bio: nullable(text()), photoUrl: nullable({ type: "string", format: "uri" }), languages: array(text()),
+    degrees: nullable(text()), experienceYears: { type: "integer" }, bio: nullable(text()), photoUrl: nullable({ type: "string", format: "uri-reference" }), languages: array(text()),
     videoConsultationFee: nullable(money), applicationStatus: { type: "string", enum: applicationStatuses }, reviewedAt: nullable(timestamp), reviewedByUserId: nullable(uuid),
     rejectionReason: nullable(text()), specialties: array(schemaRef("Specialty")), chambers: array(chamber), createdAt: timestamp, updatedAt: timestamp,
   }),
@@ -104,9 +108,12 @@ export const openApiSchemas: Record<string, Schema> = {
     byDay: array(schemaRef("DoctorEarningsPeriod")),
     byMonth: array(schemaRef("DoctorEarningsPeriod")),
   }),
+  DoctorPhotoUpload: object({ mimeType: { type: "string", enum: ["image/jpeg", "image/png", "image/webp"] },
+    contentBase64: { type: "string", minLength: 4, maxLength: 2796204, description: "Raw base64 without a data URL prefix. Decoded image must be at most 2 MB and 20 megapixels." } }),
+  DoctorPhotoResult: object({ photoUrl: { type: "string", format: "uri-reference", description: "Public image path. Include it in PATCH /doctors/me to attach it to your profile." } }),
   DoctorProfilePatch: { ...object({
     degrees: nullable({ type: "string", minLength: 1, maxLength: 500 }), experienceYears: { type: "integer", minimum: 0, maximum: 80 },
-    bio: nullable({ type: "string", minLength: 1, maxLength: 5000 }), photoUrl: nullable({ type: "string", format: "uri", maxLength: 500 }),
+    bio: nullable({ type: "string", minLength: 1, maxLength: 5000 }), photoUrl: nullable({ type: "string", format: "uri-reference", maxLength: 500 }),
     languages: { ...array({ type: "string", minLength: 1, maxLength: 50 }), maxItems: 10 }, videoConsultationFee: nullable(money),
     specialtyIds: { ...array(uuid), maxItems: 10 },
     chambers: { ...array(object({ hospitalId: uuid, roomOrUnit: nullable({ type: "string", minLength: 1, maxLength: 120 }), consultationFee: money }, ["hospitalId", "consultationFee"])), maxItems: 20 },
@@ -251,6 +258,99 @@ export const openApiSchemas: Record<string, Schema> = {
   MarkSingleNotificationReadResult: object({
     success: { type: "boolean" },
   }),
+  Beneficiary: object({
+    id: uuid,
+    name: text(),
+    relationship: text(),
+  }),
+  CommunicationEntitlement: object({
+    windowStartsAt: timestamp,
+    windowExpiresAt: timestamp,
+    isExpired: { type: "boolean" },
+    daysRemaining: { type: "integer", minimum: 0 },
+    isExtended: { type: "boolean" },
+  }),
+  CommunicationParticipant: object({
+    userId: uuid,
+    role: { type: "string", enum: ["DOCTOR", "PATIENT"] },
+    name: text(),
+    subtitle: nullable(text()),
+    avatarUrl: nullable({ type: "string", format: "uri-reference" }),
+  }),
+  Message: object({
+    id: uuid,
+    conversationId: uuid,
+    senderId: uuid,
+    senderRole: { type: "string", enum: ["DOCTOR", "PATIENT"] },
+    senderName: text(),
+    content: text(),
+    idempotencyKey: nullable(text(128)),
+    createdAt: timestamp,
+  }),
+  ConversationSummary: object({
+    canSend: { type: "boolean" },
+    videoAvailable: { type: "boolean" },
+    communicationState: { type: "string", enum: ["AVAILABLE", "EXPIRED", "UNAVAILABLE"] },
+    unavailableReason: text(),
+
+    id: uuid,
+    appointmentId: uuid,
+    appointmentMode: { type: "string", enum: ["VIDEO", "CHAMBER"] },
+    appointmentStatus: text(),
+    status: { type: "string", enum: ["ACTIVE", "EXPIRED", "BLOCKED"] },
+    participant: schemaRef("CommunicationParticipant"),
+    beneficiary: nullableRef("Beneficiary"),
+    entitlement: schemaRef("CommunicationEntitlement"),
+    lastMessage: nullableRef("Message"),
+    unreadCount: { type: "integer", minimum: 0 },
+    updatedAt: timestamp,
+  }),
+  ConversationsList: object({
+    items: array(schemaRef("ConversationSummary")),
+  }),
+  ConversationDetail: object({
+    canSend: { type: "boolean" },
+    videoAvailable: { type: "boolean" },
+    communicationState: { type: "string", enum: ["AVAILABLE", "EXPIRED", "UNAVAILABLE"] },
+    unavailableReason: text(),
+    participant: schemaRef("CommunicationParticipant"),
+    id: uuid,
+    appointmentId: uuid,
+    appointmentMode: { type: "string", enum: ["VIDEO", "CHAMBER"] },
+    appointmentStatus: text(),
+    scheduledStartAt: timestamp,
+    scheduledEndAt: timestamp,
+    status: { type: "string", enum: ["ACTIVE", "EXPIRED", "BLOCKED"] },
+    doctor: object({
+      profileId: uuid,
+      userId: uuid,
+      name: text(),
+      specialty: nullable(text()),
+      hospital: nullable(text()),
+      avatarUrl: nullable({ type: "string", format: "uri-reference" }),
+    }),
+    patient: object({
+      profileId: uuid,
+      userId: uuid,
+      name: text(),
+    }),
+    beneficiary: nullableRef("Beneficiary"),
+    entitlement: schemaRef("CommunicationEntitlement"),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }),
+  PaginatedMessages: object({
+    items: array(schemaRef("Message")),
+    nextCursor: nullable(uuid),
+    hasMore: { type: "boolean" },
+  }),
+  CreateMessage: {
+    ...object({
+      content: { type: "string", minLength: 1, maxLength: 2000 },
+      idempotencyKey: nullable(text(128)),
+    }, ["content"]),
+    additionalProperties: false,
+  },
   Liveness: object({ status: { type: "string", enum: ["ok"] }, service: { type: "string", enum: ["mediconnect-api"] } }),
   Readiness: object({ status: { type: "string", enum: ["ready", "not_ready"] }, dependencies: object({ database: { type: "string", enum: ["up", "down"] }, redis: { type: "string", enum: ["up", "down"] } }) }),
   ApiInfo: object({ name: text(), version: text(), documentation: text() }),

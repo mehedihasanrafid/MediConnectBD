@@ -1,192 +1,65 @@
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { DoctorSchedulePage } from "../DoctorSchedulePage";
-import * as useDoctorScheduleModule from "../hooks/useDoctorSchedule";
+import { useDoctorSchedule } from "../hooks/useDoctorSchedule";
 
 vi.mock("../hooks/useDoctorSchedule");
-
+type ScheduleState = ReturnType<typeof useDoctorSchedule>;
+function state(overrides: Partial<ScheduleState> = {}): ScheduleState {
+  return {
+    profile: { id: "doctor", bmdcNumber: "TEST", applicationStatus: "APPROVED",
+      degrees: "", experienceYears: 0, bio: "", languages: [], rejectionReason: null,
+      videoConsultationFee: 800, specialties: [], chambers: [] },
+    schedule: { rules: [
+      { id: "video", dayOfWeek: 0, startTime: "09:00:00", endTime: "12:00:00", slotDurationMinutes: 15, mode: "VIDEO" },
+      { id: "chamber", dayOfWeek: 1, startTime: "17:00:00", endTime: "21:00:00", slotDurationMinutes: 20, mode: "CHAMBER",
+        chamberId: "chamber", chamber: { id: "chamber", roomOrUnit: "Room 402", hospital: { name: "Synthetic Hospital" } } },
+    ], timeOff: [{ id: "leave", date: "2026-11-15", startTime: null, endTime: null, reason: "Synthetic conference" }] },
+    loading: false, error: null, notice: null, busy: false, generatingSlots: false,
+    slotsGeneratedCount: null, isApproved: true, activeChambers: [],
+    addRule: vi.fn(), editRule: vi.fn(), removeRule: vi.fn(), generateSlots: vi.fn(),
+    addTimeOff: vi.fn(), removeTimeOff: vi.fn(), reload: vi.fn(), ...overrides,
+  };
+}
+function render(value: ScheduleState) {
+  vi.mocked(useDoctorSchedule).mockReturnValue(value);
+  return renderToString(<MemoryRouter><DoctorSchedulePage /></MemoryRouter>).replace(/<!--.*?-->/g, "");
+}
 describe("DoctorSchedulePage", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("renders locked banner when doctor is not approved (PENDING_REVIEW)", () => {
-    vi.spyOn(useDoctorScheduleModule, "useDoctorSchedule").mockReturnValue({
-      profile: {
-        id: "doc-1",
-        userId: "user-1",
-        fullName: "Dr. Farhana Yasmin",
-        bmdcNumber: "BMDC-12345",
-        applicationStatus: "PENDING_REVIEW",
-        chambers: [],
-      } as any,
-      schedule: null,
-      loading: false,
-      error: null,
-      notice: null,
-      busy: false,
-      generatingSlots: false,
-      slotsGeneratedCount: null,
-      isApproved: false,
-      activeChambers: [],
-      addRule: vi.fn(),
-      editRule: vi.fn(),
-      removeRule: vi.fn(),
-      generateSlots: vi.fn(),
-      addTimeOff: vi.fn(),
-      removeTimeOff: vi.fn(),
-      reload: vi.fn(),
-    });
-
-    const html = renderToString(
-      <MemoryRouter>
-        <DoctorSchedulePage />
-      </MemoryRouter>,
-    );
-
+  beforeEach(() => vi.clearAllMocks());
+  it("preserves the approval gate and hides scheduling actions for pending doctors", () => {
+    const value = state();
+    const html = render({ ...value, profile: { ...value.profile!, applicationStatus: "PENDING_REVIEW" },
+      isApproved: false, schedule: null });
     expect(html).toContain("Schedule &amp; Leave");
-    expect(html).toContain("PENDING REVIEW");
-    expect(html).toContain("Practice Schedule is Locked");
     expect(html).toContain("Under Administrator Review");
-    expect(html).toContain("Complete Profile &amp; Application");
-    expect(html).toContain("href=\"/doctor/profile\"");
-    expect(html).not.toContain("Add Working Hours");
+    expect(html).toContain("Practice Schedule is Locked");
+    expect(html).toContain('href="/doctor/profile"');
+    expect(html).not.toContain("More schedule actions");
+    expect(html).not.toContain("Weekly hours");
   });
-
-  it("renders full weekly calendar, time-off management, and slot generator when doctor is APPROVED", () => {
-    vi.spyOn(useDoctorScheduleModule, "useDoctorSchedule").mockReturnValue({
-      profile: {
-        id: "doc-1",
-        userId: "user-1",
-        fullName: "Dr. Farhana Yasmin",
-        bmdcNumber: "BMDC-12345",
-        applicationStatus: "APPROVED",
-        chambers: [
-          {
-            id: "cham-1",
-            doctorId: "doc-1",
-            hospitalId: "hosp-1",
-            hospitalName: "Popular Diagnostic Center",
-            hospitalArea: "Dhanmondi",
-            hospitalAddress: "House 16, Road 2",
-            roomNumber: "Room 402",
-            consultationFee: 1200,
-            followUpFee: 800,
-            isActive: true,
-          },
-        ],
-      } as any,
-      schedule: {
-        doctorId: "doc-1",
-        rules: [
-          {
-            id: "rule-1",
-            dayOfWeek: 0, // Sunday
-            startTime: "09:00:00",
-            endTime: "12:00:00",
-            slotDurationMinutes: 15,
-            mode: "VIDEO",
-          },
-          {
-            id: "rule-2",
-            dayOfWeek: 1, // Monday
-            startTime: "17:00:00",
-            endTime: "21:00:00",
-            slotDurationMinutes: 20,
-            mode: "CHAMBER",
-            chamberId: "cham-1",
-            chamber: {
-              id: "cham-1",
-              roomOrUnit: "Room 402",
-              hospital: {
-                id: "hosp-1",
-                name: "Popular Diagnostic Center",
-                area: "Dhanmondi",
-                address: "House 16, Road 2",
-              },
-            },
-          },
-        ],
-        timeOff: [
-          {
-            id: "to-1",
-            doctorId: "doc-1",
-            date: "2026-11-15",
-            startTime: null,
-            endTime: null,
-            reason: "National Medical Conference",
-          },
-        ],
-      },
-      loading: false,
-      error: null,
-      notice: null,
-      busy: false,
-      generatingSlots: false,
-      slotsGeneratedCount: null,
-      isApproved: true,
-      activeChambers: [
-        {
-          id: "cham-1",
-          doctorId: "doc-1",
-          hospitalId: "hosp-1",
-          hospitalName: "Popular Diagnostic Center",
-          hospitalArea: "Dhanmondi",
-          hospitalAddress: "House 16, Road 2",
-          roomNumber: "Room 402",
-          consultationFee: 1200,
-          followUpFee: 800,
-          isActive: true,
-        },
-      ] as any,
-      addRule: vi.fn(),
-      editRule: vi.fn(),
-      removeRule: vi.fn(),
-      generateSlots: vi.fn(),
-      addTimeOff: vi.fn(),
-      removeTimeOff: vi.fn(),
-      reload: vi.fn(),
-    });
-
-    const html = renderToString(
-      <MemoryRouter>
-        <DoctorSchedulePage />
-      </MemoryRouter>,
-    );
-
-    // Header & Actions
-    expect(html).toContain("Schedule &amp; Leave");
-    expect(html).toContain("Application Approved");
-    expect(html).toContain("Generate 7-Day Slots");
-    expect(html).toContain("Add Working Hours");
-
-    // Mode filter pills
-    expect(html).toContain("All Modes");
-    expect(html).toContain("Video");
-    expect(html).toContain("Chamber");
-
-    // Days in WeeklyCalendarView
-    expect(html).toContain("Sunday");
-    expect(html).toContain("Monday");
-    expect(html).toContain("Tuesday");
-    expect(html).toContain("Wednesday");
-    expect(html).toContain("Thursday");
-    expect(html).toContain("Friday");
-    expect(html).toContain("Saturday");
-
-    // Working blocks
-    expect(html).toContain("09:00");
-    expect(html).toContain("12:00");
-    expect(html).toContain("17:00");
-    expect(html).toContain("21:00");
-    expect(html).toContain("Popular Diagnostic Center");
-
-    // Time Off Section
-    expect(html).toContain("Time Off &amp; Blocked Periods");
-    expect(html).toContain("National Medical Conference");
-    expect(html).toContain("Emergency Blackout");
-    expect(html).toContain("Add Leave Date");
+  it("shows concise weekly hours and keeps secondary controls and leave details hidden", () => {
+    const html = render(state());
+    expect(html).toContain("Weekly hours");
+    expect(html).toContain("Dhaka · UTC+6");
+    expect(html).toContain("More schedule actions");
+    expect(html).toContain("Leave (1)");
+    for (const day of ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]) {
+      expect(html).toContain(`aria-label="${day}"`);
+    }
+    expect(html).toContain("09:00–12:00");
+    expect(html).toContain("Room 402");
+    for (const hidden of ["Application Approved", "Generate 7-day slots", "Synthetic conference", "Remove hours", "Emergency leave"]) {
+      expect(html).not.toContain(hidden);
+    }
+  });
+  it("shows loading and service failure without a false empty week or locked application", () => {
+    expect(render(state({ loading: true }))).toContain("Loading schedule");
+    const html = render(state({ profile: null, schedule: null, isApproved: false, error: "Schedule unavailable" }));
+    expect(html).toContain("Schedule unavailable");
+    expect(html).toContain("Retry");
+    expect(html).not.toContain("Weekly hours");
+    expect(html).not.toContain("Practice Schedule is Locked");
   });
 });

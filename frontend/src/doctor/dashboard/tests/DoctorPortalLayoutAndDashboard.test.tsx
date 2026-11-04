@@ -163,6 +163,7 @@ describe("Doctor Portal Layout & Operational Dashboard (Phase 2)", () => {
     expect(html).toContain("Profile &amp; Chambers");
     expect(html).toContain("Earnings");
     expect(html).toContain("Account");
+    expect(html).toContain("Notification Center");
     expect(html).toContain("Settings");
     expect(html).toContain("Help &amp; Support");
     expect(html).toContain("Mahmudur");

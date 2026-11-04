@@ -1,6 +1,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import styles from "./Avatar.module.css";
+import { apiAssetUrl } from "../../utils/apiAssetUrl";
 
 function initials(name: string): string {
   return name
@@ -19,15 +20,20 @@ export interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({ name, src, size = "md", className }: AvatarProps) {
+export function Avatar(props: AvatarProps) {
+  return <AvatarImage key={props.src ?? props.name} {...props} />;
+}
+
+function AvatarImage({ name, src, size = "md", className }: AvatarProps) {
   const [hasError, setHasError] = useState(false);
-  const showImage = Boolean(src) && !hasError;
+  const resolved = apiAssetUrl(src);
+  const showImage = Boolean(resolved) && !hasError;
 
   return (
     <span data-size={size} className={clsx(styles.root, className)} aria-hidden={!showImage}>
       {showImage ? (
         <img
-          src={src!}
+          src={resolved}
           alt={name}
           className={styles.img}
           onError={() => setHasError(true)}

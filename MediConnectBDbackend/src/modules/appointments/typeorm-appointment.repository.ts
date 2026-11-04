@@ -468,6 +468,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       }
 
       appointment.status = input.targetStatus;
+      if (input.targetStatus === AppointmentStatus.COMPLETED) appointment.completedAt ??= input.now;
       const saved = await appointments.save(appointment);
       saved.slot = appointment.slot;
       return { kind: "UPDATED", appointment: this.toAppointment(saved) };

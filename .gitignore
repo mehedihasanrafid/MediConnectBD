@@ -20,3 +20,4 @@ mysql-run/
 test-results/
 playwright-report/
 MediConnectBD_Day1_Blueprint.zip
+!.env.demo.example

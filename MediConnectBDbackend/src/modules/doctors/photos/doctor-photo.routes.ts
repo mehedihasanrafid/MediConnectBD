@@ -5,7 +5,7 @@ import { AppError } from "../../../utils/app-error";
 import { requireRole, type AuthenticatedLocals } from "../../auth/auth.middleware";
 import type { DoctorService } from "../doctor.service";
 import { MAX_PHOTO_BYTES, normalizeDoctorPhoto } from "./doctor-photo.image";
-import { DoctorPhotoStore } from "./doctor-photo.store";
+import { DoctorPhotoStore, type DoctorPhotoStorage } from "./doctor-photo.store";
 
 const uploadSchema = z.object({
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
@@ -13,7 +13,7 @@ const uploadSchema = z.object({
 }).strict();
 
 export function createDoctorPhotoRouter(options: {
-  authenticate: RequestHandler; doctorService: DoctorService; photoStore?: DoctorPhotoStore;
+  authenticate: RequestHandler; doctorService: DoctorService; photoStore?: DoctorPhotoStorage | undefined;
 }): Router {
   const router = Router(), store = options.photoStore ?? new DoctorPhotoStore();
   router.post("/me/photo", options.authenticate, requireRole("DOCTOR"),

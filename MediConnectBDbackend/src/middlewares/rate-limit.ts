@@ -19,12 +19,7 @@ export function createRateLimiter(options: RateLimitOptions): RequestHandler {
 
   return (request, response, next) => {
     const now = Date.now();
-    const clientIp =
-      request.ip ||
-      (typeof request.headers["x-forwarded-for"] === "string"
-        ? request.headers["x-forwarded-for"].split(",")[0]?.trim()
-        : undefined) ||
-      "local";
+    const clientIp = response.locals.clientIp ?? request.ip ?? "local";
     const key = `${prefix}:${clientIp}`;
 
     const current = buckets.get(key);

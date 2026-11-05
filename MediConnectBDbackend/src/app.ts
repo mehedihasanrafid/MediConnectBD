@@ -5,6 +5,8 @@
  */
 
 import cors from "cors";
+import { timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import cookieParser from "cookie-parser";
 import express from "express";
 import type { Router } from "express";
@@ -20,6 +22,7 @@ import { createHealthRouter, type ReadinessChecks } from "./modules/health/healt
 export interface AppOptions {
   appUrl: string;
   logLevel?: string;
+  pagesProxyKey?: string | undefined;
   readiness: ReadinessChecks;
   apiRouter?: Router;
 }
@@ -35,8 +38,12 @@ export function createApp(options: AppOptions): express.Express {
       redact: [
         "req.headers.authorization",
         "req.headers.cookie",
+        "req.headers.x-mediconnect-proxy-key",
         "res.headers.set-cookie",
       ],
+      serializers: {
+        req: (request) => ({ method: request.method, url: request.url?.split("?")[0] }),
+      },
     }),
   );
   app.use(helmet());
@@ -48,6 +55,17 @@ export function createApp(options: AppOptions): express.Express {
   );
   app.use(express.json({ limit: "5mb" }));
   app.use(cookieParser());
+  if (options.pagesProxyKey) {
+    const expectedKey = Buffer.from(options.pagesProxyKey);
+    app.use((request, response, next) => {
+      const key = Buffer.from(request.get("x-mediconnect-proxy-key") ?? "");
+      const ip = request.get("x-mediconnect-client-ip");
+      if (ip && isIP(ip) && key.length === expectedKey.length && timingSafeEqual(key, expectedKey)) {
+        response.locals.clientIp = ip;
+      }
+      next();
+    });
+  }
 
   app.get("/", (_request, response) => {
     response.status(200).json({

@@ -58,6 +58,7 @@ function add(method: Method, path: string, operationId: string, tag: string, sum
 
 add("get", "/", "getApiInfo", "Platform", "API information", "ApiInfo");
 add("get", "/health/live", "getLiveness", "Health", "Check that the HTTP process is alive", "Liveness");
+add("get", "/health", "getHealth", "Health", "Check that the HTTP process is alive", "Liveness");
 add("get", "/health/ready", "getReadiness", "Health", "Check MySQL and Redis readiness", "Readiness");
 paths["/health/ready"]!.get!.responses[503] = jsonResponse("Readiness", "A required local dependency is unavailable.");
 

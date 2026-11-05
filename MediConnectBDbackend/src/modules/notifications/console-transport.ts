@@ -9,6 +9,7 @@ const logger = pino({ level: process.env.LOG_LEVEL ?? "info" });
 
 export class ConsoleTransport implements EmailTransport {
   async send(message: EmailMessage): Promise<void> {
+    if (process.env.NODE_ENV === "production") return;
     logger.info(
       { to: message.to, subject: message.subject },
       "[DEV] Email would be sent",

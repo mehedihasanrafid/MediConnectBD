@@ -28,7 +28,12 @@ import {
   registerSystemJobSchedules,
 } from "./system-jobs";
 
-const logger = pino({ level: env.LOG_LEVEL });
+const logger = pino({
+  level: env.LOG_LEVEL,
+  serializers: {
+    error: env.NODE_ENV === "production" ? () => ({ message: "Background operation failed" }) : pino.stdSerializers.err,
+  },
+});
 let connection: Redis | null = null;
 let queue: Queue | null = null;
 let worker: Worker | null = null;
@@ -109,6 +114,16 @@ async function main(): Promise<void> {
   reminderWorker.on("error", (error) => logger.error({ error }, "Reminder worker error"));
   await Promise.all([reminderWorker.waitUntilReady(), reminderQueue.waitUntilReady()]);
   await registerReminderSchedules(reminderQueue);
+
+  if (env.RENDER === "true") {
+    const systemQueue = queue;
+    const reminders = reminderQueue;
+    connection.on("ready", () => {
+      if (stopping) return;
+      void Promise.all([registerSystemJobSchedules(systemQueue), registerReminderSchedules(reminders)])
+        .catch((error: unknown) => logger.error({ error }, "Could not restore job schedules after Redis reconnect"));
+    });
+  }
 
   logger.info("Background worker is ready");
 

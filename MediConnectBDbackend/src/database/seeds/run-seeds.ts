@@ -807,6 +807,9 @@ async function seedDemoData(roles: Map<string, Role>, password: string): Promise
 }
 
 async function main(): Promise<void> {
+  if (env.NODE_ENV === "production" && (!env.SEED_DEMO_PASSWORD || env.SEED_DEMO_PASSWORD === "#king123")) {
+    throw new Error("Production-mode demo seeding requires an explicit non-default SEED_DEMO_PASSWORD");
+  }
   await AppDataSource.initialize();
 
   try {

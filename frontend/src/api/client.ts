@@ -5,11 +5,12 @@
  */
 
 import type { AuthResponse, CancellationOutcome } from "../shared/types";
-import { ApiRequestError, type ApiError } from "../shared/utils/apiError";
+import { ApiRequestError } from "../shared/utils/apiError";
+import { apiUnavailable, parseResponse } from "./httpResponse";
 
-export { ApiRequestError, type ApiError };
+export { ApiRequestError, type ApiError } from "../shared/utils/apiError";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
+const API_BASE = (import.meta.env.VITE_API_BASE?.trim() || "/api/v1").replace(/\/+$/, "");
 
 let accessToken: string | null = null;
 let refreshInFlight: Promise<AuthResponse> | null = null;
@@ -31,32 +32,14 @@ async function rawFetch(path: string, options: RequestInit = {}): Promise<Respon
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  return fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
-}
-
-async function parseResponse<T>(response: Response): Promise<T> {
-  if (response.status === 204) {
-    return undefined as T;
+  const timeout = AbortSignal.timeout(75_000);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+  try {
+    return await fetch(`${API_BASE}${path}`, { ...options, headers, signal, credentials: "include" });
+  } catch (error) {
+    if (options.signal?.aborted) throw error;
+    throw apiUnavailable();
   }
-
-  const text = await response.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
-
-  if (!response.ok) {
-    const error = data as ApiError | null;
-    throw new ApiRequestError(
-      response.status,
-      error?.code ?? "REQUEST_FAILED",
-      error?.message ?? "The request could not be completed",
-      error?.fieldErrors,
-    );
-  }
-
-  return data as T;
 }
 
 /**
@@ -92,12 +75,12 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   if (response.status === 401 && !isAuthEndpoint(path)) {
     try {
       await refreshSession();
-      const retried = await rawFetch(path, options);
-      return parseResponse<T>(retried);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof ApiRequestError) || error.status !== 401) throw error;
       setAccessToken(null);
       return parseResponse<T>(response);
     }
+    return parseResponse<T>(await rawFetch(path, options));
   }
 
   return parseResponse<T>(response);
@@ -109,16 +92,7 @@ export async function downloadBlob(path: string): Promise<Blob> {
     await refreshSession();
     response = await rawFetch(path, { method: "GET" });
   }
-  if (!response.ok) {
-    const text = await response.text();
-    const error = text ? (JSON.parse(text) as ApiError) : null;
-    throw new ApiRequestError(
-      response.status,
-      error?.code ?? "REQUEST_FAILED",
-      error?.message ?? "Could not download file",
-      error?.fieldErrors,
-    );
-  }
+  if (!response.ok) await parseResponse<never>(response);
   return response.blob();
 }
 

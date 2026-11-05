@@ -6,16 +6,19 @@
 
 import "reflect-metadata";
 import { createServer } from "node:http";
+import { once } from "node:events";
 import Redis from "ioredis";
 import { createApiRouter } from "./routes/v1";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import AppDataSource from "./database/data-source";
+import { assertMigrationsApplied } from "./database/check-schema";
 import { AccessTokenService } from "./modules/auth/access-token.service";
 import { AuthService } from "./modules/auth/auth.service";
 import { BcryptPasswordHasher } from "./modules/auth/password-hasher";
 import { TypeOrmAuthRepository } from "./modules/auth/typeorm-auth.repository";
 import { DoctorService } from "./modules/doctors/doctor.service";
+import { MysqlDoctorPhotoStore } from "./modules/doctors/photos/mysql-doctor-photo.store";
 import { TypeOrmDoctorRepository } from "./modules/doctors/typeorm-doctor.repository";
 import { SchedulingService } from "./modules/scheduling/scheduling.service";
 import { TypeOrmSchedulingRepository } from "./modules/scheduling/typeorm-scheduling.repository";
@@ -49,15 +52,26 @@ import { CallStore } from "./modules/communication/calls/call.store";
 import { CallAccess } from "./modules/communication/calls/call.access";
 import { CallService } from "./modules/communication/calls/call.service";
 
+const redis = new Redis(env.REDIS_URL, {
+  lazyConnect: true,
+  maxRetriesPerRequest: 1,
+  connectTimeout: 5_000,
+  commandTimeout: 3_000,
+});
+redis.on("error", () => {});
+let startupStage = "connect to MySQL";
+
 async function main(): Promise<void> {
   await AppDataSource.initialize();
+  if (env.RENDER === "true") {
+    startupStage = "check database migrations. Run the reviewed migrations before deployment";
+    await assertMigrationsApplied(AppDataSource);
+  }
 
-  const redis = new Redis(env.REDIS_URL, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-  });
+  startupStage = "connect to Redis";
   await redis.connect();
   await redis.ping();
+  startupStage = "start the HTTP service";
 
   const authRepository = new TypeOrmAuthRepository(AppDataSource);
   const accessTokens = new AccessTokenService(
@@ -126,7 +140,7 @@ async function main(): Promise<void> {
     paymentService: new PaymentService(new TypeOrmPaymentRepository(AppDataSource, notificationService),
       env.SSLCOMMERZ_STORE_ID && env.SSLCOMMERZ_STORE_PASSWORD && env.PUBLIC_API_URL
         ? new SslcommerzPaymentProvider(env.SSLCOMMERZ_STORE_ID, env.SSLCOMMERZ_STORE_PASSWORD, env.PUBLIC_API_URL)
-        : new MockPaymentProvider(env.APP_URL)),
+        : env.RENDER === "true" ? null : new MockPaymentProvider(env.APP_URL)),
     familyMemberService,
     medicalReportService,
     reviewService,
@@ -140,6 +154,7 @@ async function main(): Promise<void> {
     authRepository,
     accessTokens,
     doctorService,
+    photoStore: env.RENDER === "true" ? new MysqlDoctorPhotoStore(AppDataSource) : undefined,
     schedulingService,
     appointmentService,
     secureCookies: env.NODE_ENV === "production",
@@ -148,6 +163,7 @@ async function main(): Promise<void> {
   const app = createApp({
     appUrl: env.APP_URL,
     logLevel: env.LOG_LEVEL,
+    pagesProxyKey: env.PAGES_PROXY_KEY,
     apiRouter,
     readiness: {
       database: async () => {
@@ -160,11 +176,14 @@ async function main(): Promise<void> {
   });
   const server = createServer(app);
 
-  server.listen(env.PORT, () => {
-    process.stdout.write(`MediConnect API listening on port ${env.PORT}\n`);
+  server.listen(env.PORT, "0.0.0.0");
+  await once(server, "listening");
+  process.stdout.write(`MediConnect API listening on port ${env.PORT}\n`);
+  if (env.NODE_ENV !== "production") {
     process.stdout.write(`Swagger UI: http://localhost:${env.PORT}/api-docs/\n`);
     process.stdout.write(`OpenAPI JSON: http://localhost:${env.PORT}/openapi.json\n`);
-  });
+  }
+  process.send?.("api-ready");
 
   let stopping = false;
   const shutdown = async (signal: string): Promise<void> => {
@@ -175,7 +194,7 @@ async function main(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
-    await redis.quit();
+    redis.disconnect();
     await AppDataSource.destroy();
   };
 
@@ -184,7 +203,8 @@ async function main(): Promise<void> {
       void shutdown(signal)
         .then(() => process.exit(0))
         .catch((error: unknown) => {
-          process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
+          process.stderr.write(env.NODE_ENV === "production" ? "API shutdown failed.\n" :
+            `${error instanceof Error ? error.stack : String(error)}\n`);
           process.exit(1);
         });
     });
@@ -192,7 +212,9 @@ async function main(): Promise<void> {
 }
 
 void main().catch(async (error: unknown) => {
-  process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
-  if (AppDataSource.isInitialized) await AppDataSource.destroy();
+  process.stderr.write(env.NODE_ENV === "production" ? `API startup failed: could not ${startupStage}.\n` :
+    `${error instanceof Error ? error.stack : String(error)}\n`);
+  redis.disconnect();
+  if (AppDataSource.isInitialized) await AppDataSource.destroy().catch(() => {});
   process.exitCode = 1;
 });

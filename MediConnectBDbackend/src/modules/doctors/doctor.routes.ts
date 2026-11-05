@@ -6,6 +6,7 @@
 
 import { createSchedulingRouter } from "../scheduling/scheduling.routes";
 import { createDoctorPhotoRouter } from "./photos/doctor-photo.routes";
+import type { DoctorPhotoStorage } from "./photos/doctor-photo.store";
 import { createDoctorController, createAdminDoctorController, createCatalogController } from './doctor.controller';
 import { Router, type RequestHandler } from "express";
 import { requireRole } from "../auth/auth.middleware";
@@ -16,6 +17,7 @@ interface ProtectedRouterOptions {
     doctorService: DoctorService;
     schedulingService: SchedulingService;
     appointmentService?: AppointmentService;
+    photoStore?: DoctorPhotoStorage | undefined;
     authenticate: RequestHandler;
 }
 export function createDoctorRouter(options: ProtectedRouterOptions): Router {

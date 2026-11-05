@@ -29,7 +29,9 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
     return;
   }
   response.status(500).json({ code: "INTERNAL_SERVER_ERROR", message: "An unexpected error occurred" });
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV === "production") {
+    process.stderr.write("Unhandled API error. Check the request status and dependency health.\n");
+  } else if (process.env.NODE_ENV !== "test") {
     process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
   }
 };

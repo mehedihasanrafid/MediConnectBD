@@ -4,6 +4,13 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.production.example
+.dev.vars
+.dev.vars.*
+.wrangler/
+*.pem
+*.key
+*.p12
 *.log
 .DS_Store
 .idea/

@@ -14,6 +14,7 @@ import { createAuthRouter } from "../modules/auth/auth.routes";
 import type { AuthService } from "../modules/auth/auth.service";
 import type { AccessTokenService } from "../modules/auth/access-token.service";
 import type { DoctorService } from "../modules/doctors/doctor.service";
+import type { DoctorPhotoStorage } from "../modules/doctors/photos/doctor-photo.store";
 import type { SchedulingService } from "../modules/scheduling/scheduling.service";
 import type { AppointmentService } from "../modules/appointments/appointment.service";
 import type { PaymentService } from "../modules/payments/payment.service";
@@ -47,6 +48,7 @@ export interface ApiRouterOptions {
   authRepository: AuthRepository;
   accessTokens: AccessTokenService;
   doctorService: DoctorService;
+  photoStore?: DoctorPhotoStorage | undefined;
   schedulingService: SchedulingService;
   appointmentService: AppointmentService;
   paymentService?: PaymentService;
@@ -79,6 +81,7 @@ export function createApiRouter(options: ApiRouterOptions): Router {
     "/doctors",
     createDoctorRouter({
       doctorService: options.doctorService,
+      photoStore: options.photoStore,
       schedulingService: options.schedulingService,
       appointmentService: options.appointmentService,
       authenticate,

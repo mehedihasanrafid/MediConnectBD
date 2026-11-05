@@ -1,5 +1,6 @@
 import { HardenCommunication1761800000000 } from "./migrations/1761800000000-harden-communication";
 import { AddDirectCommunication1761900000000 } from "./migrations/1761900000000-add-direct-communication";
+import { AddDoctorPhotoAssets1762000000000 } from "./migrations/1762000000000-add-doctor-photo-assets";
 import { DirectConversation, DirectMessage } from "../modules/communication/direct/direct.entities";
 import { CommunicationCall } from "../modules/communication/calls/call.entity";
 /**
@@ -65,7 +66,12 @@ const AppDataSource = new DataSource({
   charset: "utf8mb4",
   timezone: "Z",
   synchronize: false,
-  logging: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  migrationsRun: false,
+  logging: env.NODE_ENV === "development" ? ["error", "warn"] : false,
+  ...(env.DB_SSL_CA ? {
+    ssl: { ca: env.DB_SSL_CA, rejectUnauthorized: true, verifyIdentity: true },
+    poolSize: 5,
+  } : {}),
   entities: [
     User,
     Role,
@@ -114,6 +120,7 @@ const AppDataSource = new DataSource({
     AddCommunicationMessaging1761700000000,
     HardenCommunication1761800000000,
     AddDirectCommunication1761900000000,
+    AddDoctorPhotoAssets1762000000000,
   ],
   migrationsTableName: "typeorm_migrations",
 });

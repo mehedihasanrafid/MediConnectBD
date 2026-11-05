@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/server.js",
+    "start:render": "node scripts/start-render.cjs",
     "test": "vitest run",
     "test:docs": "vitest run tests/openapi.test.ts",
     "migration:run": "typeorm migration:run -d dist/database/data-source.js",

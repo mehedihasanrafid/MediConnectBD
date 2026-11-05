@@ -25,12 +25,15 @@ const BENEFITS = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
+const PUBLIC_DEMO = import.meta.env.VITE_PUBLIC_DEMO === "true";
+const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV || PUBLIC_DEMO;
+const LOCAL_DEMO_PASSWORD = import.meta.env.DEV && !PUBLIC_DEMO ? "#king123" : "";
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("patient.demo@mediconnect.example");
-  const [password, setPassword] = useState(import.meta.env.VITE_PUBLIC_DEMO === "true" ? "" : "#king123");
+  const [email, setEmail] = useState(SHOW_DEMO_ACCOUNTS ? DEMO_ACCOUNTS[0].email : "");
+  const [password, setPassword] = useState(LOCAL_DEMO_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -98,8 +101,8 @@ export function LoginPage() {
             New to MediConnect BD? <Link to="/register">Create a patient or doctor account</Link>
           </p>
 
-          <div className={styles.demoBox}>
-            <p className={styles.demoTitle}>{import.meta.env.VITE_PUBLIC_DEMO === "true"
+          {SHOW_DEMO_ACCOUNTS && <div className={styles.demoBox}>
+            <p className={styles.demoTitle}>{PUBLIC_DEMO
               ? "Demo accounts — enter the access password provided by the demo host"
               : "Demo accounts (password: #king123)"}</p>
             <Cluster gap={2}>
@@ -110,14 +113,14 @@ export function LoginPage() {
                   size="sm"
                   onClick={() => {
                     setEmail(account.email);
-                    setPassword("#king123");
+                    setPassword(LOCAL_DEMO_PASSWORD);
                   }}
                 >
                   {account.label}
                 </Button>
               ))}
             </Cluster>
-          </div>
+          </div>}
         </section>
       </div>
     </div>

@@ -12,6 +12,7 @@ export interface ReadinessChecks {
 export function createHealthRouter(checks: ReadinessChecks): Router {
     const controller = createHealthController(checks);
     const router = Router();
+    router.get("/", controller.live);
     router.get("/live", controller.live);
     router.get("/ready", controller.ready);
     return router;

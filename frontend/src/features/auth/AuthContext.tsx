@@ -18,11 +18,13 @@ import {
   type RegisterPatientInput,
 } from "../../api/auth";
 import { setAccessToken } from "../../api/client";
+import { ApiRequestError, getErrorMessage } from "../../shared/utils/apiError";
 import type { PublicUser } from "../../shared/types";
 
 export interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
+  sessionError?: string | null;
   login: (email: string, password: string) => Promise<PublicUser>;
   registerPatient: (input: RegisterPatientInput) => Promise<PublicUser>;
   registerDoctor: (input: RegisterDoctorInput) => Promise<PublicUser>;
@@ -35,6 +37,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,8 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setAccessToken(result.accessToken);
         setUser(result.user);
-      } catch {
-        if (!cancelled) setUser(null);
+      } catch (error) {
+        if (!cancelled && (!(error instanceof ApiRequestError) || error.status !== 401)) {
+          setSessionError(getErrorMessage(error, "Could not check your session. Please try again."));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -57,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await authApi.login(email, password);
+    setSessionError(null);
     setAccessToken(result.accessToken);
     setUser(result.user);
     return result.user;
@@ -64,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerPatient = useCallback(async (input: RegisterPatientInput) => {
     const result = await authApi.registerPatient(input);
+    setSessionError(null);
     setAccessToken(result.accessToken);
     setUser(result.user);
     return result.user;
@@ -71,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerDoctor = useCallback(async (input: RegisterDoctorInput) => {
     const result = await authApi.registerDoctor(input);
+    setSessionError(null);
     setAccessToken(result.accessToken);
     setUser(result.user);
     return result.user;
@@ -93,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       : current);
   }, []);
   const value = useMemo(
-    () => ({ user, loading, login, registerPatient, registerDoctor, logout, syncDoctorProfile }),
-    [user, loading, login, registerPatient, registerDoctor, logout, syncDoctorProfile],
+    () => ({ user, loading, sessionError, login, registerPatient, registerDoctor, logout, syncDoctorProfile }),
+    [user, loading, sessionError, login, registerPatient, registerDoctor, logout, syncDoctorProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

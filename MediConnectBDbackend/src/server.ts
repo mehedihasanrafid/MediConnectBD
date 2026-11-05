@@ -160,10 +160,12 @@ async function main(): Promise<void> {
     secureCookies: env.NODE_ENV === "production",
   });
 
+  if (env.FRONTEND_DIST_DIR) startupStage = "load the frontend build. Check FRONTEND_DIST_DIR";
   const app = createApp({
     appUrl: env.APP_URL,
     logLevel: env.LOG_LEVEL,
     pagesProxyKey: env.PAGES_PROXY_KEY,
+    frontendDirectory: env.FRONTEND_DIST_DIR,
     apiRouter,
     readiness: {
       database: async () => {
@@ -174,6 +176,7 @@ async function main(): Promise<void> {
       },
     },
   });
+  startupStage = "start the HTTP service";
   const server = createServer(app);
 
   server.listen(env.PORT, "0.0.0.0");

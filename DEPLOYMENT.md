@@ -2,6 +2,23 @@
 
 Prepared November 5, 2026. The target is a low-traffic demo on Cloudflare Pages, a Render Free Web Service, and Aiven Free MySQL. GitHub supplies both deployments. The existing BullMQ worker also needs **one free Render Key Value instance** in the same region as the API.
 
+## Single Render Web Service
+
+For the one-service setup, use the following overrides. The Pages instructions below apply to the separate frontend setup.
+
+| Render setting | Value |
+| --- | --- |
+| Runtime and plan | Node, Free Web Service |
+| Root directory | Leave blank so both packages are available at the repository root |
+| Build command | `npm --prefix frontend ci --include=dev && npm --prefix MediConnectBDbackend ci --include=dev && npm run build` |
+| Start command | `FRONTEND_DIST_DIR=frontend/dist node MediConnectBDbackend/scripts/start-render.cjs` |
+| Health check path | `/health/ready` |
+| Pre-deploy command | Leave empty |
+
+Use the backend environment checklist below, with `APP_URL` set to the exact Render HTTPS origin. Set the public build variable `VITE_API_BASE=/api/v1`. Omit `PAGES_PROXY_KEY` and the Pages bindings. `FRONTEND_DIST_DIR` in the start command enables static React serving and the browser-route fallback. The API and React share the Render origin, so the existing session cookie stays same-origin. Keep the same free Render Key Value dependency for the worker.
+
+The manual Aiven migration command is unchanged. Review the empty target first and keep `sql_require_primary_key` enabled. After deployment, verify `/health/ready`, `/`, `/api/v1/catalog/specialties`, and a refresh on a protected portal route.
+
 ## Repository and deployment design
 
 | Part | Existing entry point | Cloud configuration |

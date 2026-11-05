@@ -18,6 +18,7 @@ import { createRateLimiter } from "./middlewares/rate-limit";
 import { requestId } from "./middlewares/request-id";
 import { createOpenApiRouter } from "./docs/openapi.routes";
 import { createHealthRouter, type ReadinessChecks } from "./modules/health/health.routes";
+import { createFrontendRouter } from "./routes/frontend";
 
 export interface AppOptions {
   appUrl: string;
@@ -25,6 +26,7 @@ export interface AppOptions {
   pagesProxyKey?: string | undefined;
   readiness: ReadinessChecks;
   apiRouter?: Router;
+  frontendDirectory?: string | undefined;
 }
 
 export function createApp(options: AppOptions): express.Express {
@@ -67,13 +69,15 @@ export function createApp(options: AppOptions): express.Express {
     });
   }
 
-  app.get("/", (_request, response) => {
-    response.status(200).json({
-      name: "MediConnect BD API",
-      version: "0.1.0",
-      documentation: "/api-docs",
+  if (!options.frontendDirectory) {
+    app.get("/", (_request, response) => {
+      response.status(200).json({
+        name: "MediConnect BD API",
+        version: "0.1.0",
+        documentation: "/api-docs",
+      });
     });
-  });
+  }
   app.use("/health", createHealthRouter(options.readiness));
   app.use(createOpenApiRouter());
   if (options.apiRouter) {
@@ -94,6 +98,7 @@ export function createApp(options: AppOptions): express.Express {
     app.use("/api/v1", options.apiRouter);
   }
 
+  if (options.frontendDirectory) app.use(createFrontendRouter(options.frontendDirectory));
   app.use(notFound);
   app.use(errorHandler);
 

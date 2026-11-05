@@ -21,6 +21,7 @@ const envSchema = z.object({
   RENDER: z.string().optional(),
   PORT: z.coerce.number().int().positive().default(4000),
   APP_URL: z.string().url().default("http://localhost:5173"),
+  FRONTEND_DIST_DIR: z.string().trim().min(1).optional(),
   DB_HOST: z.string().min(1).default("localhost"),
   DB_PORT: z.coerce.number().int().positive().default(3306),
   DB_NAME: z.string().min(1).default("mediconnect"),

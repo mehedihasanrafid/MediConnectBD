@@ -1,8 +1,3 @@
-/**
- * Login page with demo account shortcuts. The demo credentials are synthetic seed accounts and
- * are safe to display for local demonstration only.
- */
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, Stethoscope } from "lucide-react";
@@ -12,12 +7,6 @@ import { ApiRequestError } from "../../shared/api";
 import { defaultHomePathFor } from "../../shared/utils/roles";
 import styles from "./AuthLayout.module.css";
 
-const DEMO_ACCOUNTS = [
-  { label: "Patient", email: "patient.demo@mediconnect.example" },
-  { label: "Doctor", email: "doctor.demo@mediconnect.example" },
-  { label: "Admin", email: "admin.demo@mediconnect.example" },
-];
-
 const BENEFITS = [
   "Verified BMDC licensed doctors across Bangladesh",
   "Real-time appointments, instant slot holds & digital queue",
@@ -26,13 +15,29 @@ const BENEFITS = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PUBLIC_DEMO = import.meta.env.VITE_PUBLIC_DEMO === "true";
-const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV || PUBLIC_DEMO;
 const LOCAL_DEMO_PASSWORD = import.meta.env.DEV && !PUBLIC_DEMO ? "#king123" : "";
+const DEMO_ACCOUNTS = [
+  {
+    label: "Patient",
+    email: "patient.demo@mediconnect.example",
+    password: PUBLIC_DEMO ? import.meta.env.VITE_DEMO_PATIENT_PASSWORD : LOCAL_DEMO_PASSWORD,
+  },
+  {
+    label: "Doctor",
+    email: "doctor.demo@mediconnect.example",
+    password: PUBLIC_DEMO ? import.meta.env.VITE_DEMO_DOCTOR_PASSWORD : LOCAL_DEMO_PASSWORD,
+  },
+  {
+    label: "Admin",
+    email: "admin.demo@mediconnect.example",
+    password: PUBLIC_DEMO ? import.meta.env.VITE_DEMO_ADMIN_PASSWORD : LOCAL_DEMO_PASSWORD,
+  },
+].filter((account) => Boolean(account.password));
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(SHOW_DEMO_ACCOUNTS ? DEMO_ACCOUNTS[0].email : "");
+  const [email, setEmail] = useState(DEMO_ACCOUNTS[0]?.email ?? "");
   const [password, setPassword] = useState(LOCAL_DEMO_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -101,10 +106,8 @@ export function LoginPage() {
             New to MediConnect BD? <Link to="/register">Create a patient or doctor account</Link>
           </p>
 
-          {SHOW_DEMO_ACCOUNTS && <div className={styles.demoBox}>
-            <p className={styles.demoTitle}>{PUBLIC_DEMO
-              ? "Demo accounts — enter the access password provided by the demo host"
-              : "Demo accounts (password: #king123)"}</p>
+          {DEMO_ACCOUNTS.length > 0 && <div className={styles.demoBox}>
+            <p className={styles.demoTitle}>Fill in a demo account</p>
             <Cluster gap={2}>
               {DEMO_ACCOUNTS.map((account) => (
                 <Button
@@ -113,7 +116,8 @@ export function LoginPage() {
                   size="sm"
                   onClick={() => {
                     setEmail(account.email);
-                    setPassword(LOCAL_DEMO_PASSWORD);
+                    setPassword(account.password);
+                    setError(null);
                   }}
                 >
                   {account.label}

@@ -136,6 +136,13 @@ After Render returns 200 at `https://your-api.onrender.com/health/ready`, create
 | `VITE_API_BASE` | `/api/v1` |
 | `VITE_PUBLIC_DEMO` | `false` for a new database without the existing demo shortcut accounts |
 
+For public login shortcuts, set `VITE_PUBLIC_DEMO=true` and supply
+`VITE_DEMO_PATIENT_PASSWORD` and `VITE_DEMO_DOCTOR_PASSWORD` for the synthetic
+patient and doctor accounts in the Pages build environment. Vite exposes these
+demo passwords to visitors. Configure only accounts intended for public use.
+Set `VITE_DEMO_ADMIN_PASSWORD` only for a synthetic demo with sandbox or disabled
+payments. A public Admin shortcut gives visitors administrative access to that demo.
+
 Add these **Production** variables in **Settings → Variables and Secrets**:
 
 - `API_ORIGIN=https://your-api.onrender.com` (plain text, no path or slash).
